@@ -51,7 +51,7 @@ namespace Discord_OpenAI
 
             try
             {
-                // Função executada apenas após a conexão bem-sucedida. Mas evita alertas.
+                // Function executed only after successful connection. But avoid alerts.
                 if (Client == null)
                     return;
 
