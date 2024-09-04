@@ -1,7 +1,8 @@
-﻿using Discord;
+﻿using Ares.Guild;
+using Discord;
 using Discord.WebSocket;
 
-namespace Discord_OpenAI.commands
+namespace Ares.commands
 {
     internal class PingCommand
     {

@@ -1,8 +1,8 @@
-﻿using Discord_OpenAI.Util.Extra;
+﻿using Ares.Util.Extra;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
 
-namespace Discord_OpenAI.Backend.Database.MongoDB
+namespace Ares.Backend.Database.MongoDB
 {
     internal class MongoDatabase : Database
     {
@@ -33,8 +33,6 @@ namespace Discord_OpenAI.Backend.Database.MongoDB
         {
             long start = TimeUtil.CurrentTimeMillis();
 
-            LogUtil.Separator();
-
             LogUtil.Log("MONGO", "Connecting...");
 
             try
@@ -52,8 +50,6 @@ namespace Discord_OpenAI.Backend.Database.MongoDB
             {
                 LogUtil.Error("MONGO", "Unable to connect...", e.Message);
             }
-
-            LogUtil.Separator();
         }
 
         public void Close()

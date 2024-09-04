@@ -1,4 +1,4 @@
-﻿namespace Discord_OpenAI.Backend.Database
+﻿namespace Ares.Backend.Database
 {
  
     internal interface Database

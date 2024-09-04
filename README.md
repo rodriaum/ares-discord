@@ -1,1 +1,1 @@
-# Discord-OpenAI
+# Ares

@@ -1,35 +1,42 @@
-﻿using MongoDB.Bson.IO;
-using System.Runtime.CompilerServices;
+﻿using Discord;
+using Ares.Backend.Data;
+using Ares.Guild.ChatData;
+using Ares.Guild.IdData;
+using Ares.Objects.OpenAI;
+using OpenAI.Chat;
 
-namespace Discord_OpenAI.Data
+namespace Ares.Guild
 {
     internal class Guild
     {
         public readonly string Id;
 
-        private string OpenAiToken { get; set; }
+        public string OpenAiToken { get; set; }
 
-        private string MemberRoleId { get; set; }
-        private string OpenAiRoleId { get; set; }
-        private string OpenAiExclusiveRoleId { get; set; }
+        public GuildIdData GuildIdData { get; set; }
 
-        private string SetupChatsChannelId { get; set; }
+        public GuildChatData GuilChatData { get; set; }
 
-        private string ChatsCategoryId { get; set; }
-
-        public Guild(string guildId)
+        public Guild(string id)
         {
-            this.Id = guildId;
+            this.Id = id;
 
             this.OpenAiToken = "";
 
-            this.MemberRoleId = "";
-            this.OpenAiRoleId = "";
-            this.OpenAiExclusiveRoleId = "";
+            this.GuildIdData = new GuildIdData
+            {
+                MemberRoleId = 0L,
+                UsageRoleId = 0L,
+                ExclusiveRoleId = 0L,
+                SetupChannelId = 0L,
+                ChatsCategoryId = 0L
+            };
 
-            this.SetupChatsChannelId = "";
-
-            this.ChatsCategoryId = "";
+            this.GuilChatData = new GuildChatData
+            {
+                ConversationModels = new Dictionary<ulong, OpenAiModel>(),
+                ConversationHistorics = new Dictionary<ulong, List<ChatMessage>>()
+            };
         }
 
         /// <summary>
@@ -39,9 +46,12 @@ namespace Discord_OpenAI.Data
 
         public async Task Save(List<string> fields)
         {
+            GuildData? data = Core.GuildData;
+            if (data == null) return;
+
             foreach (string field in fields)
             {
-                await Core.GuildData.Update(this, field.ToLower());
+                await data.Update(this, field);
             }
         }
 
@@ -52,50 +62,82 @@ namespace Discord_OpenAI.Data
 
         /** Setup Chats Channel Id */
 
-        public async void SetField(
-            string? openAiToken = null,
-            string? memberRoleId = null,
-            string? openAiRoleId = null,
-            string? openAiExclusiveRoleId = null,
-            string? setupChatsChannelId = null,
-            string? chatsCategoryId = null
-            )
+        public async void SetField(string? openAiToken = null, GuildIdData? guildIdData = null)
         {
             if (openAiToken != null)
             {
                 this.OpenAiToken = openAiToken;
-                await Save("openAiToken");
+                await Save("OpenAiToken");
             }
 
-            if (memberRoleId != null)
+            if (guildIdData != null)
             {
-                this.MemberRoleId = memberRoleId;
-                await Save("memberRoleId");
+                this.GuildIdData = guildIdData;
+                await Save("GuildIdData");
             }
+        }
 
-            if (openAiRoleId != null)
-            {
-                this.OpenAiRoleId = openAiRoleId;
-                await Save("openAiRoleId");
-            }
+        /** Conversation System */
 
-            if (openAiExclusiveRoleId != null)
-            {
-                this.OpenAiExclusiveRoleId = openAiExclusiveRoleId;
-                await Save("openAiExclusiveRoleId");
-            }
+        public Dictionary<ulong, List<ChatMessage>> ConversationHistorics()
+        {
+            return this.GuilChatData.ConversationHistorics;
+        }
 
-            if (setupChatsChannelId != null)
-            {
-                this.SetupChatsChannelId = setupChatsChannelId;
-                await Save("setupChatsChannelId");
-            }
+        public async Task<bool> CreateConversation(IUser user, OpenAiModel model)
+        {
+            if (HasUserConversation(user) || HasUserConversationModel(user))
+                return false;
 
-            if (chatsCategoryId != null)
-            {
-                this.ChatsCategoryId = chatsCategoryId;
-                await Save("chatsCategoryId");
-            }
+            bool sucess = 
+                this.GuilChatData.ConversationHistorics.TryAdd(user.Id, new List<ChatMessage>()) &&
+                this.GuilChatData.ConversationModels.TryAdd(user.Id, model);
+
+            await Save("GuilChatData");
+
+            return sucess;
+        }
+
+        public async Task EndConversation(IUser user)
+        {
+            if (!HasUserConversation(user) || !HasUserConversationModel(user))
+                return;
+
+            this.GuilChatData.ConversationHistorics.Remove(user.Id);
+            this.GuilChatData.ConversationModels.Remove(user.Id);
+
+            await Save("GuilChatData");
+        }
+
+        public void AddConversation(IUser user, List<ChatMessage> messages)
+        {
+            this.GuilChatData.ConversationHistorics.Add(user.Id, messages);
+        }
+
+        public bool HasUserConversation(IUser user)
+        {
+            return ConversationHistorics().ContainsKey(user.Id);
+        }
+
+        public Dictionary<ulong, OpenAiModel> ConversationModels()
+        {
+            return this.GuilChatData.ConversationModels;
+
+        }
+        public bool AddModel(IUser user, OpenAiModel model)
+        {
+            return this.GuilChatData.ConversationModels.TryAdd(user.Id, model);
+        }
+
+        public OpenAiModel? GetModelByUser(IUser user)
+        {
+             ConversationModels().TryGetValue(user.Id, out OpenAiModel? model);
+            return model;
+        }
+
+        public bool HasUserConversationModel(IUser user)
+        {
+            return ConversationModels().TryGetValue(user.Id, out _);
         }
     }
 }

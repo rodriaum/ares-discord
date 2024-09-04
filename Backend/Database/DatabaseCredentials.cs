@@ -1,6 +1,6 @@
 ﻿using Lombok.NET;
 
-namespace Discord_OpenAI.Backend.Database
+namespace Ares.Backend.Database
 {
     [AllArgsConstructor]
     internal partial class DatabaseCredentials

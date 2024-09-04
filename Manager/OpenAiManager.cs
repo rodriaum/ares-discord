@@ -1,8 +1,8 @@
 ﻿using Discord;
-using Discord_OpenAI.Objects.OpenAI;
-using Discord_OpenAI.Objects.OpenAI.Model.Category;
+using Ares.Objects.OpenAI;
+using Ares.Objects.OpenAI.Model.Category;
 
-namespace Discord_OpenAI.Manager
+namespace Ares.Manager
 {
     internal class OpenAiManager : OpenAi
     {

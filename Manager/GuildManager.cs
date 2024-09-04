@@ -1,33 +1,30 @@
-﻿using Discord_OpenAI.Data;
-
-namespace Discord_OpenAI.Manager
+﻿namespace Ares.Manager
 {
     internal class GuildManager
     {
-        private readonly Dictionary<string, Guild> GUILD_DICTIONARY = new Dictionary<string, Guild>();
+        private readonly Dictionary<string, Guild.Guild> GUILD_DICTIONARY = new Dictionary<string, Guild.Guild>();
 
-        public IEnumerable<Guild> Fetch()
+        public IEnumerable<Guild.Guild> Fetch()
         {
             return GUILD_DICTIONARY.Values.ToList();
         }
 
-        public IEnumerable<Guild> Fetch(Predicate<Guild> filter)
+        public IEnumerable<Guild.Guild> Fetch(Predicate<Guild.Guild> filter)
         {
             return Fetch().Where(it => filter(it)).ToList();
         }
 
-        public bool IsPresent(Predicate<Guild> filter)
+        public bool IsPresent(Predicate<Guild.Guild> filter)
         {
             return Fetch().Any(it => filter(it));
         }
 
-        public Guild? Fetch(string guildId)
+        public Guild.Guild? Fetch(string guildId)
         {
-            GUILD_DICTIONARY.TryGetValue(guildId, out Guild? guild);
-            return guild;
+            return GUILD_DICTIONARY.GetValueOrDefault(guildId);
         }
 
-        public void Save(Guild guild)
+        public void Save(Guild.Guild guild)
         {
             GUILD_DICTIONARY.TryAdd(guild.Id, guild);
         }

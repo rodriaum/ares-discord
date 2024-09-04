@@ -1,4 +1,4 @@
-﻿namespace Discord_OpenAI.Util.Extra
+﻿namespace Ares.Util.Extra
 {
     internal class LogUtil
     {
@@ -19,11 +19,6 @@
 
         }
 
-        public static void Separator()
-        {
-            Console.WriteLine("------------------------------------------------------------------------------------------");
-        }
-
         public static async Task LogAsync(string prefix, string message)
         {
             await Console.Out.WriteLineAsync(Output(prefix, message));
@@ -41,7 +36,7 @@
             bool isError = !string.IsNullOrEmpty(error);
             string date = $"{time.Hour}:{time.Minute}:{time.Second}";
 
-            return $"[{date} - {(isError ? "ERROR" : "INFO")}] {(!string.IsNullOrEmpty(prefix) ? $"{prefix}: " : "")}{message}{(isError ? $"\n-> {error}" : "")}";
+            return $"[{date} - {(isError ? "ERROR" : "INFO")}] {(!string.IsNullOrEmpty(prefix) ? $"{prefix}: " : "")}{message}{(isError ? $"\n -> {error}" : "")}";
         }
     }
 }

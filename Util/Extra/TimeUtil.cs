@@ -1,4 +1,4 @@
-﻿namespace Discord_OpenAI.Util.Extra
+﻿namespace Ares.Util.Extra
 {
     internal class TimeUtil
     {

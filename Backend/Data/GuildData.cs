@@ -1,13 +1,12 @@
-﻿using Discord_OpenAI.Backend.Database.MongoDB;
-using Discord_OpenAI.Data;
-using Discord_OpenAI.Manager;
+﻿using Ares.Backend.Database.MongoDB;
+using Ares.Manager;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 using MongoDB.Driver;
-using Discord_OpenAI.Util.Extra;
+using Ares.Util.Extra;
 using System.Collections.Concurrent;
 
-namespace Discord_OpenAI.Backend.Data
+namespace Ares.Backend.Data
 {
     internal class GuildData
     {
@@ -24,28 +23,37 @@ namespace Discord_OpenAI.Backend.Data
             CreateIndexes();
         }
 
-        public async Task CreateIndexes()
+        public async void CreateIndexes()
         {
-            var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("id");
+            var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
             var indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+
             await collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
         }
 
-        public async Task<Guild?> Save(string guildId)
+        public async Task<Guild.Guild?> Save(string id)
         {
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", guildId);
-            BsonDocument element = await collection.Find(filter).FirstOrDefaultAsync();
+            var filter = Builders<BsonDocument>.Filter.Eq("Id", id);
+            var element = await collection.Find(filter).FirstOrDefaultAsync();
 
-            Guild guild = new Guild(guildId);
+            Guild.Guild? guild = new Guild.Guild(id);
 
             if (element != null)
             {
-                guild = JsonConvert.DeserializeObject<Guild>(element.ToJson());
+                try
+                {
+                    var bsonDocument = BsonTypeMapper.MapToDotNetValue(element);
+                    var jsonString = JsonConvert.SerializeObject(bsonDocument);
+                    guild = JsonConvert.DeserializeObject<Guild.Guild>(jsonString);
+                }
+                catch (JsonReaderException ex)
+                {
+                    await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
+                }
             }
             else
             {
                 var document = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
-
                 await collection.InsertOneAsync(document);
                 manager.Save(guild);
             }
@@ -53,25 +61,39 @@ namespace Discord_OpenAI.Backend.Data
             return guild;
         }
 
-        public async Task<Guild?> Fetch(string guildId)
+
+        public async Task<Guild.Guild?> Fetch(string id)
         {
-            Guild? guild = manager.Fetch(guildId);
+            Guild.Guild? guild = manager.Fetch(id);
 
             if (guild == null)
             {
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", guildId);
-                BsonDocument element = await collection.Find(filter).FirstOrDefaultAsync();
+                BsonDocument element = await collection.Find(Builders<BsonDocument>.Filter.Eq("Id", id)).FirstOrDefaultAsync();
 
                 if (element != null)
                 {
-                    guild = JsonConvert.DeserializeObject<Guild>(element.ToJson());
+                    try
+                    {
+                        var bsonDocument = BsonTypeMapper.MapToDotNetValue(element);
+                        var jsonString = JsonConvert.SerializeObject(bsonDocument);
+                        guild = JsonConvert.DeserializeObject<Guild.Guild>(jsonString);
+                    }
+                    catch (JsonReaderException ex)
+                    {
+                        await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
+                    }
                 }
             }
 
             return guild;
         }
 
-        public async Task Update(Guild guild, string field)
+        public async Task<Guild.Guild?> Fetch(ulong id)
+        {
+            return await Fetch(id + "");
+        }
+
+        public async Task Update(Guild.Guild guild, string field)
         {
             try
             {
@@ -80,7 +102,8 @@ namespace Discord_OpenAI.Backend.Data
 
                 BsonValue? value = tree.TryGetElement(field, out valueElement) ? BsonValue.Create(valueElement.ToString()) : null;
 
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", guild.Id);
+                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
+
                 BsonDocument element = await collection.Find(filter).FirstOrDefaultAsync();
 
                 if (element != null)
@@ -101,12 +124,29 @@ namespace Discord_OpenAI.Backend.Data
                 manager.Delete(id);
         }
 
-        public ConcurrentBag<Guild> GetGuilds(int limit = 0)
+        public async Task<ConcurrentBag<Guild.Guild>> GetGuilds(int limit = 0)
         {
-            var documents = collection.Find(new BsonDocument()).Limit(limit).ToList();
-            var accounts = new ConcurrentBag<Guild>();
+            var findOptions = new FindOptions<BsonDocument> { Limit = limit };
+            var documents = await collection.FindAsync(new BsonDocument(), findOptions);
+            var accounts = new ConcurrentBag<Guild.Guild>();
 
-            documents.ForEach(document => JsonConvert.DeserializeObject(document.ToJson()));
+            await documents.ForEachAsync(async document =>
+            {
+                try
+                {
+                    var json = document.ToJson();
+                    var bsonDocument = BsonTypeMapper.MapToDotNetValue(document);
+                    var jsonString = JsonConvert.SerializeObject(bsonDocument);
+                    var guild = JsonConvert.DeserializeObject<Guild.Guild>(jsonString);
+
+                    if (guild != null)
+                        accounts.Add(guild);
+                }
+                catch (JsonReaderException ex)
+                {
+                    await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
+                }
+            });
 
             return accounts;
         }

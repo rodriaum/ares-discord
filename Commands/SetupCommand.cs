@@ -1,9 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Discord_OpenAI.Objects.OpenAI;
+using Ares.Objects.OpenAI;
 using System.Text;
 
-namespace Discord_OpenAI.Commands
+namespace Ares.Commands
 {
     internal class SetupCommand
     {
@@ -36,7 +36,7 @@ namespace Discord_OpenAI.Commands
             {
                 case "setup-openai-menu":
                     embed.Title = "Inteligência Artificial";
-                    embed.Description = "Inicie uma conversa com um modelo da OpenAI.";
+                    embed.Description = "Inicie uma conversa com um modelo A.I";
                     embed.ThumbnailUrl = "https://imgur.com/tnh71Er.gif";
 
                     embed.AddField("🤔 Como Funciona", "Escolha um modelo e um canal privado será criado.");

@@ -2,7 +2,7 @@
 using Discord.WebSocket;
 using Discord;
 
-namespace Discord_OpenAI.logger
+namespace Ares.logger
 {
     internal class LoggingService
     {

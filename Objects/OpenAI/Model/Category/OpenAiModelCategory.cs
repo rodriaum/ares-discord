@@ -1,4 +1,4 @@
-﻿namespace Discord_OpenAI.Objects.OpenAI.Model.Category
+﻿namespace Ares.Objects.OpenAI.Model.Category
 {
     internal enum OpenAiModelCategory
     {

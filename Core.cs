@@ -1,11 +1,9 @@
-﻿using Discord_OpenAI.Backend.Data;
-using Discord_OpenAI.Backend.Database;
-using Discord_OpenAI.Backend.Database.MongoDB;
-using Discord_OpenAI.Data;
-using Discord_OpenAI.Manager;
-using Discord_OpenAI.Util.Extra;
+﻿using Ares.Backend.Data;
+using Ares.Backend.Database;
+using Ares.Backend.Database.MongoDB;
+using Ares.Manager;
 
-namespace Discord_OpenAI
+namespace Ares
 {
     internal class Core
     {
@@ -20,7 +18,7 @@ namespace Discord_OpenAI
             MongoDatabase database = new MongoDatabase(new DatabaseCredentials
             {
                 Host = "127.0.0.1",
-                Database = "discord_openai",
+                Database = "ares",
                 Port = 27017
             });
 
@@ -29,28 +27,7 @@ namespace Discord_OpenAI
             Database = database;
 
             GuildData = new GuildData(database);
-
             GuildManager = new GuildManager();
-
-            string id = "1248820762123702315";
-
-            Guild guild = await GuildData.Fetch(id);
-
-            if (guild == null)
-            {
-                guild = await GuildData.Save(id);
-
-                if (guild == null)
-                {
-                    LogUtil.Error("ACCOUNT", "Unable to save account for id \"" + id + "\"", "");
-                }
-                else
-                {
-                    LogUtil.Log("ACCOUNT", "New account created and saved: " + guild);
-                }
-            }
-
-            GuildManager.Save(guild);
         }
     }
 }
