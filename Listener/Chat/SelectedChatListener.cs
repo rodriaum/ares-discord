@@ -10,11 +10,11 @@ using Ares.Objects.OpenAI.Model.Category;
 
 namespace Ares.Listener.Chat
 {
-    internal class SelectChatListener
+    internal class SelectedChatListener
     {
         private static DiscordSocketClient? Client { get; set; }
 
-        public SelectChatListener(DiscordSocketClient client)
+        public SelectedChatListener(DiscordSocketClient client)
         {
             client.SelectMenuExecuted += SelectMenuHandler;
             Client = client;

@@ -100,7 +100,8 @@ namespace Ares.Backend.Data
                 BsonDocument tree = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
                 BsonElement valueElement;
 
-                BsonValue? value = tree.TryGetElement(field, out valueElement) ? BsonValue.Create(valueElement.ToString()) : null;
+                // Verifica se o campo existe e obtém o valor
+                BsonValue? value = tree.TryGetElement(field, out valueElement) ? valueElement.Value : null;
 
                 FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
 

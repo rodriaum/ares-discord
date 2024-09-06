@@ -2,7 +2,7 @@
 using Discord.WebSocket;
 using Discord;
 
-namespace Ares.logger
+namespace Ares.Service
 {
     internal class LoggingService
     {

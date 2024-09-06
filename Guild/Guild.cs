@@ -4,6 +4,7 @@ using Ares.Guild.ChatData;
 using Ares.Guild.IdData;
 using Ares.Objects.OpenAI;
 using OpenAI.Chat;
+using Ares.Util.Extra;
 
 namespace Ares.Guild
 {
@@ -15,7 +16,7 @@ namespace Ares.Guild
 
         public GuildIdData GuildIdData { get; set; }
 
-        public GuildChatData GuilChatData { get; set; }
+        public GuildChatData GuildChatData { get; set; }
 
         public Guild(string id)
         {
@@ -32,10 +33,11 @@ namespace Ares.Guild
                 ChatsCategoryId = 0L
             };
 
-            this.GuilChatData = new GuildChatData
+            this.GuildChatData = new GuildChatData
             {
                 ConversationModels = new Dictionary<ulong, OpenAiModel>(),
-                ConversationHistorics = new Dictionary<ulong, List<ChatMessage>>()
+                ConversationHistorics = new Dictionary<ulong, List<ChatMessage>>(),
+                CompletionHistorics = new Dictionary<ulong, List<ChatCompletion>>()
             };
         }
 
@@ -81,7 +83,17 @@ namespace Ares.Guild
 
         public Dictionary<ulong, List<ChatMessage>> ConversationHistorics()
         {
-            return this.GuilChatData.ConversationHistorics;
+            return this.GuildChatData.ConversationHistorics;
+        }
+
+        public Dictionary<ulong, List<ChatCompletion>> CompletionHistorics()
+        {
+            return this.GuildChatData.CompletionHistorics;
+        }
+
+        public List<ChatMessage>? Messages(IUser user)
+        {
+            return this.GuildChatData.ConversationHistorics.GetValueOrDefault(user.Id);
         }
 
         public async Task<bool> CreateConversation(IUser user, OpenAiModel model)
@@ -90,10 +102,10 @@ namespace Ares.Guild
                 return false;
 
             bool sucess = 
-                this.GuilChatData.ConversationHistorics.TryAdd(user.Id, new List<ChatMessage>()) &&
-                this.GuilChatData.ConversationModels.TryAdd(user.Id, model);
+                this.GuildChatData.ConversationHistorics.TryAdd(user.Id, new List<ChatMessage>()) &&
+                this.GuildChatData.ConversationModels.TryAdd(user.Id, model);
 
-            await Save("GuilChatData");
+            await SaveGuildChatData();
 
             return sucess;
         }
@@ -103,15 +115,65 @@ namespace Ares.Guild
             if (!HasUserConversation(user) || !HasUserConversationModel(user))
                 return;
 
-            this.GuilChatData.ConversationHistorics.Remove(user.Id);
-            this.GuilChatData.ConversationModels.Remove(user.Id);
+            this.GuildChatData.ConversationHistorics.Remove(user.Id);
+            this.GuildChatData.ConversationModels.Remove(user.Id);
 
-            await Save("GuilChatData");
+            await SaveGuildChatData();
         }
 
-        public void AddConversation(IUser user, List<ChatMessage> messages)
+        public async void AddCompletion(IUser user, List<ChatCompletion> completions)
         {
-            this.GuilChatData.ConversationHistorics.Add(user.Id, messages);
+            if (HasUserCompletion(user))
+                this.GuildChatData.CompletionHistorics[user.Id] = completions;
+            else
+                this.GuildChatData.CompletionHistorics.Add(user.Id, completions);
+
+            await SaveGuildChatData();
+        }
+
+        public void AddCompletion(IUser user, ChatCompletion completion)
+        {
+            CompletionHistorics().TryGetValue(user.Id, out List<ChatCompletion>? completions);
+
+            if (completions == null)
+            {
+                LogUtil.Error("METHOD", "Cannot get chat completion from user.");
+                return;
+            }
+
+            completions.Add(completion);
+
+            AddCompletion(user, completions);
+        }
+
+        public async void AddConversation(IUser user, List<ChatMessage> messages)
+        {
+            if (HasUserConversation(user))
+                this.GuildChatData.ConversationHistorics[user.Id] = messages;
+            else
+                this.GuildChatData.ConversationHistorics.Add(user.Id, messages);
+
+            await SaveGuildChatData();
+        }
+
+        public void AddConversation(IUser user, ChatMessage message)
+        {
+            ConversationHistorics().TryGetValue(user.Id, out List<ChatMessage>? messages);
+
+            if (messages == null)
+            {
+                LogUtil.Error("METHOD", "Cannot get chat messages from user.");
+                return;
+            }
+
+            messages.Add(message);
+
+            AddConversation(user, messages);
+        }
+
+        public async Task SaveGuildChatData()
+        {
+            await Save("GuildChatData");
         }
 
         public bool HasUserConversation(IUser user)
@@ -119,14 +181,19 @@ namespace Ares.Guild
             return ConversationHistorics().ContainsKey(user.Id);
         }
 
+        public bool HasUserCompletion(IUser user)
+        {
+            return CompletionHistorics().ContainsKey(user.Id);
+        }
+
         public Dictionary<ulong, OpenAiModel> ConversationModels()
         {
-            return this.GuilChatData.ConversationModels;
+            return this.GuildChatData.ConversationModels;
 
         }
         public bool AddModel(IUser user, OpenAiModel model)
         {
-            return this.GuilChatData.ConversationModels.TryAdd(user.Id, model);
+            return this.GuildChatData.ConversationModels.TryAdd(user.Id, model);
         }
 
         public OpenAiModel? GetModelByUser(IUser user)
@@ -138,6 +205,11 @@ namespace Ares.Guild
         public bool HasUserConversationModel(IUser user)
         {
             return ConversationModels().TryGetValue(user.Id, out _);
+        }
+
+        public int GetTotalMessagesByRoleChat(IUser user, ChatMessageRole role)
+        {
+            return 0;
         }
     }
 }

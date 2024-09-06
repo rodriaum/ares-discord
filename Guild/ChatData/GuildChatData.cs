@@ -9,5 +9,6 @@ namespace Ares.Guild.ChatData
     {
         public required Dictionary<ulong, OpenAiModel> ConversationModels {  get; set; }
         public required Dictionary<ulong, List<ChatMessage>> ConversationHistorics {  get; set; }
+        public required Dictionary<ulong, List<ChatCompletion>> CompletionHistorics { get; set; }
     }
 }

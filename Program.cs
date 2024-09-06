@@ -8,6 +8,8 @@ using Ares.Manager;
 using Ares.Util.Extra;
 using Newtonsoft.Json;
 using Ares.Listener.Chat.Button;
+using OpenAI;
+using DotNetEnv;
 
 namespace Ares
 {
@@ -22,8 +24,9 @@ namespace Ares
 
         static async Task Main()
         {
+            Env.Load();
             Core.Init();
-
+            
             string token = "MTI3ODQ0NzI3NzkwNzY0NDU3OA.G3M0OQ.g-cEiALVtPO4trpE6r2u2XjpmMR8LMGlkWD01o";
 
             var config = new DiscordSocketConfig()
@@ -37,8 +40,9 @@ namespace Ares
             await Client.StartAsync();
 
             // Listeners
-            new SelectChatListener(Client);
+            new SelectedChatListener(Client);
             new ButtonChatListener(Client);
+            new ReceivedContentListener(Client);
 
             // Commands
             new PingCommand(Client);

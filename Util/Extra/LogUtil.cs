@@ -15,7 +15,7 @@
 
         public static void Error(string prefix, string message, string error = "")
         {
-            Console.Error.WriteLine(Output(prefix, message, error));
+            Console.Error.WriteLine("\n" + Output(prefix, message, error) + "\n");
 
         }
 
@@ -26,7 +26,7 @@
 
         public static async Task ErrorAsync(string prefix, string message, string error = "")
         {
-            await Console.Error.WriteLineAsync(Output(prefix, message, error));
+            await Console.Error.WriteLineAsync("\n" + Output(prefix, message, error)  + "\n");
         }
 
         /* HELPERS */
