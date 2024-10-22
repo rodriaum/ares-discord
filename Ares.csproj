@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Objects\OpenAI\Model\Category\NovaPasta\**" />
-    <EmbeddedResource Remove="Objects\OpenAI\Model\Category\NovaPasta\**" />
-    <None Remove="Objects\OpenAI\Model\Category\NovaPasta\**" />
+    <Compile Remove="src\Objects\OpenAI\Model\Category\NovaPasta\**" />
+    <EmbeddedResource Remove="src\Objects\OpenAI\Model\Category\NovaPasta\**" />
+    <None Remove="src\Objects\OpenAI\Model\Category\NovaPasta\**" />
   </ItemGroup>
 
   <ItemGroup>
