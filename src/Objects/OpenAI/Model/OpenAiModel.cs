@@ -3,7 +3,7 @@ using Ares.src.OpenAi;
 
 namespace Ares.src.Objects.OpenAI.Model
 {
-    internal class OpenAiModel
+    public class OpenAiModel
     {
         public OpenAiModelCategory OpenAiModelCategory;
         public string DisplayName;

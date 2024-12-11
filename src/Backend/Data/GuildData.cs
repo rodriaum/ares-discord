@@ -1,155 +1,245 @@
-﻿using MongoDB.Bson;
-using Newtonsoft.Json;
-using MongoDB.Driver;
-using System.Collections.Concurrent;
+﻿using Ares.src.Backend.Database.Mongo;
+using Ares.src.Guild;
 using Ares.src.Manager;
 using Ares.src.Util.Extra;
-using Ares.src.Backend.Database.Mongo;
+using Ares.src;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using Newtonsoft.Json;
 
-namespace Ares.src.Backend.Data
+
+using System.Collections.Concurrent;
+
+
+/// <summary>
+/// Classe responsável por gerenciar dados de guildas no banco de dados MongoDB.
+/// </summary>
+internal class GuildData
 {
-    internal class GuildData
+    /// <summary>
+    /// Representa a coleção "guilds" no banco de dados MongoDB.
+    /// </summary>
+    private readonly IMongoCollection<BsonDocument>? _collection;
+
+    /// <summary>
+    /// Referência ao gerenciador de guildas usado para operações de cache e lógica relacionada.
+    /// </summary>
+    private readonly GuildManager _manager;
+
+    /// <summary>
+    /// Inicializa uma nova instância da classe <see cref="GuildData"/> com a coleção de guildas e o gerenciador de guildas.
+    /// </summary>
+    /// <param name="database">Instância do banco de dados MongoDB que contém a coleção "guilds".</param>
+    public GuildData(MongoDatabase database)
     {
-        private readonly IMongoCollection<BsonDocument> collection;
+        this._collection = database.mongoDatabase?.GetCollection<BsonDocument>("guilds");
+        this._manager = Core.GuildManager;
 
-        private readonly GuildManager? manager;
+        // Criação de índices na coleção para otimização de consultas.
+        this.CreateIndexes();
+    }
 
-        public GuildData(MongoDatabase database)
+    /// <summary>
+    /// Cria índices na coleção "guilds" para melhorar a performance das consultas.
+    /// </summary>
+    public async void CreateIndexes()
+    {
+        var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
+        var indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+
+        // Verifica se a coleção foi inicializada antes de tentar criar os índices.
+        if (this._collection == null)
         {
-            collection = database.mongoDatabase.GetCollection<BsonDocument>("guilds");
-
-            manager = Core.GuildManager;
-
-            CreateIndexes();
+            LogUtil.Error("CollectionNull", "Collection returned null when creating guild data indexes.");
+            return;
         }
 
-        public async void CreateIndexes()
-        {
-            var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
-            var indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+        // Cria os índices no banco de dados de forma assíncrona.
+        await this._collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
+    }
 
-            await collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
+    /// <summary>
+    /// Salva ou atualiza uma guilda no banco de dados, retornando o objeto atualizado.
+    /// </summary>
+    /// <param name="id">ID único da guilda.</param>
+    /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda salva ou atualizada.</returns>
+    public async Task<Guild?> Save(string id)
+    {
+        if (this._collection == null)
+        {
+            LogUtil.Error("CollectionNull", "Collection returned null when save guild data.");
+            return null;
         }
 
-        public async Task<Guild.Guild?> Save(string id)
-        {
-            var filter = Builders<BsonDocument>.Filter.Eq("Id", id);
-            var element = await collection.Find(filter).FirstOrDefaultAsync();
+        var filter = Builders<BsonDocument>.Filter.Eq("Id", id);
+        var element = await this._collection.Find(filter).FirstOrDefaultAsync();
 
-            Guild.Guild? guild = new Guild.Guild(id);
+        Guild? guild = new Guild(id);
+
+        if (element != null)
+        {
+            try
+            {
+                // Converte o documento BSON para JSON e desserializa para o objeto Guild.Guild.
+                var document = BsonTypeMapper.MapToDotNetValue(element);
+                var json = JsonConvert.SerializeObject(document);
+
+                guild = JsonConvert.DeserializeObject<Guild>(json);
+            }
+            catch (JsonReaderException ex)
+            {
+                await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
+            }
+        }
+        else
+        {
+            // Insere o documento no banco de dados caso não exista.
+            var document = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
+            await this._collection.InsertOneAsync(document);
+
+            _manager.Save(guild);
+        }
+
+        return guild;
+    }
+
+    /// <summary>
+    /// Recupera uma guilda do cache ou do banco de dados usando o ID.
+    /// </summary>
+    /// <param name="id">ID único da guilda.</param>
+    /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
+    public async Task<Guild?> Fetch(string id)
+    {
+        Guild? guild = _manager.Fetch(id);
+
+        if (guild == null)
+        {
+            BsonDocument element = await _collection.Find(Builders<BsonDocument>.Filter.Eq("Id", id)).FirstOrDefaultAsync();
 
             if (element != null)
             {
                 try
                 {
-                    var bsonDocument = BsonTypeMapper.MapToDotNetValue(element);
-                    var jsonString = JsonConvert.SerializeObject(bsonDocument);
-                    guild = JsonConvert.DeserializeObject<Guild.Guild>(jsonString);
+                    // Converte o documento BSON para JSON e desserializa para o objeto Guild.Guild.
+                    var document = BsonTypeMapper.MapToDotNetValue(element);
+                    var json = JsonConvert.SerializeObject(document);
+
+                    guild = JsonConvert.DeserializeObject<Guild>(json);
                 }
                 catch (JsonReaderException ex)
                 {
                     await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
                 }
             }
-            else
+        }
+
+        return guild;
+    }
+
+    /// <summary>
+    /// Sobrecarga do método Fetch que aceita um ID numérico do tipo ulong.
+    /// </summary>
+    /// <param name="id">ID numérico da guilda.</param>
+    /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
+    public async Task<Guild?> Fetch(ulong id)
+    {
+        return await this.Fetch(id.ToString());
+    }
+
+    /// <summary>
+    /// Atualiza um campo específico de uma guilda no banco de dados.
+    /// </summary>
+    /// <param name="guild">Objeto <see cref="Guild.Guild"/> representando a guilda a ser atualizada.</param>
+    /// <param name="field">Nome do campo a ser atualizado.</param>
+    public async Task<bool> Update(Guild guild, string field)
+    {
+        if (this._collection == null)
+        {
+            LogUtil.Error("CollectionNull", "Collection returned null when update guild data.");
+            return false;
+        }
+
+        try
+        {
+            // Converte a guilda para BSON para manipulação no MongoDB.
+            BsonDocument tree = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
+            BsonElement valueElement;
+
+            // Obtém o valor do campo especificado, se existir.
+            BsonValue? value = tree.TryGetElement(field, out valueElement) ? valueElement.Value : null;
+
+            // Cria um filtro para localizar a guilda no banco de dados.
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
+
+            BsonDocument element = await _collection.Find(filter).FirstOrDefaultAsync();
+
+            if (element != null)
             {
-                var document = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
-                await collection.InsertOneAsync(document);
-                manager.Save(guild);
+                // Define ou remove o campo no documento do banco de dados.
+                var update = value != null ? Builders<BsonDocument>.Update.Set(field, value) : Builders<BsonDocument>.Update.Unset(field);
+                await this._collection.UpdateOneAsync(filter, update);
+
+                return true;
             }
 
-            return guild;
         }
-
-
-        public async Task<Guild.Guild?> Fetch(string id)
+        catch (Exception e)
         {
-            Guild.Guild? guild = manager.Fetch(id);
+            string? src = e.Source;
 
-            if (guild == null)
-            {
-                BsonDocument element = await collection.Find(Builders<BsonDocument>.Filter.Eq("Id", id)).FirstOrDefaultAsync();
-
-                if (element != null)
-                {
-                    try
-                    {
-                        var bsonDocument = BsonTypeMapper.MapToDotNetValue(element);
-                        var jsonString = JsonConvert.SerializeObject(bsonDocument);
-                        guild = JsonConvert.DeserializeObject<Guild.Guild>(jsonString);
-                    }
-                    catch (JsonReaderException ex)
-                    {
-                        await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
-                    }
-                }
-            }
-
-            return guild;
+            LogUtil.Error((string.IsNullOrEmpty(src) ? "Exception" : src), "Unable to save data.", e.Message);
         }
 
-        public async Task<Guild.Guild?> Fetch(ulong id)
+        return false;
+    }
+
+    /// <summary>
+    /// Remove uma guilda do cache local.
+    /// </summary>
+    /// <param name="id">ID único da guilda a ser removida do cache.</param>
+    public void DeleteCache(string id)
+    {
+        _manager?.Delete(id);
+    }
+
+    /// <summary>
+    /// Recupera todas as guildas do banco de dados, com a opção de limitar o número de resultados.
+    /// </summary>
+    /// <param name="limit">Número máximo de guildas a serem recuperadas (0 para sem limite).</param>
+    /// <returns>Uma <see cref="ConcurrentBag{T}"/> contendo as guildas recuperadas.</returns>
+    public async Task<ConcurrentBag<Guild>> GetGuilds(int limit = 0)
+    {
+        var accounts = new ConcurrentBag<Guild>();
+
+        if (this._collection == null)
         {
-            return await Fetch(id + "");
+            LogUtil.Error("CollectionNull", "Collection returned null when get all guilds.");
+            return accounts;
+
         }
 
-        public async Task Update(Guild.Guild guild, string field)
+        var options = new FindOptions<BsonDocument> { Limit = limit };
+        var documents = await _collection.FindAsync(new BsonDocument(), options);
+
+        await documents.ForEachAsync(async document =>
         {
             try
             {
-                BsonDocument tree = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
-                BsonElement valueElement;
+                // Converte o documento BSON para JSON e desserializa para o objeto Guild.Guild.
+                var json = document.ToJson();
+                var bsonDocument = BsonTypeMapper.MapToDotNetValue(document);
+                var jsonString = JsonConvert.SerializeObject(bsonDocument);
+                var guild = JsonConvert.DeserializeObject<Guild>(jsonString);
 
-                // Verifica se o campo existe e obtém o valor
-                BsonValue? value = tree.TryGetElement(field, out valueElement) ? valueElement.Value : null;
-
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
-
-                BsonDocument element = await collection.Find(filter).FirstOrDefaultAsync();
-
-                if (element != null)
-                {
-                    var update = value != null ? Builders<BsonDocument>.Update.Set(field, value) : Builders<BsonDocument>.Update.Unset(field);
-                    await collection.UpdateOneAsync(filter, update);
-                }
+                if (guild != null)
+                    accounts.Add(guild);
             }
-            catch (Exception e)
+            catch (JsonReaderException ex)
             {
-                LogUtil.Error(e.Source, "Unable to save data:", e.Message);
+                await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
             }
-        }
+        });
 
-        public void Cache(string id)
-        {
-            if (manager != null)
-                manager.Delete(id);
-        }
-
-        public async Task<ConcurrentBag<Guild.Guild>> GetGuilds(int limit = 0)
-        {
-            var findOptions = new FindOptions<BsonDocument> { Limit = limit };
-            var documents = await collection.FindAsync(new BsonDocument(), findOptions);
-            var accounts = new ConcurrentBag<Guild.Guild>();
-
-            await documents.ForEachAsync(async document =>
-            {
-                try
-                {
-                    var json = document.ToJson();
-                    var bsonDocument = BsonTypeMapper.MapToDotNetValue(document);
-                    var jsonString = JsonConvert.SerializeObject(bsonDocument);
-                    var guild = JsonConvert.DeserializeObject<Guild.Guild>(jsonString);
-
-                    if (guild != null)
-                        accounts.Add(guild);
-                }
-                catch (JsonReaderException ex)
-                {
-                    await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
-                }
-            });
-
-            return accounts;
-        }
+        return accounts;
     }
 }

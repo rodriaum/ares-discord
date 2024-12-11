@@ -1,5 +1,4 @@
-﻿using Ares.src.Guild.IdData;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
 
 namespace Ares.src.Commands.Data
 {
@@ -16,6 +15,8 @@ namespace Ares.src.Commands.Data
         private async Task SlashCommandHandler(SocketSlashCommand command)
         {
             Guild.Guild? guild = await Core.GuildData.Fetch("1270010171116224562");
+
+            // terminar aqui
 
             guild.SetField(guildIdData: new GuildIdData
             {

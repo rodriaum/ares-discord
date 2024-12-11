@@ -1,9 +1,6 @@
-﻿using Ares.Backend.Database;
-using Ares.src.Backend.Data;
+﻿using Ares.src.Backend.Database;
 using Ares.src.Backend.Database.Mongo;
 using Ares.src.Manager;
-
-using Ares.src.Backend.Database;
 
 namespace Ares.src
 {
@@ -13,9 +10,9 @@ namespace Ares.src
         public static MongoDatabase? Database { get; set; }
 
         public static GuildData? GuildData { get; set; }
-        public static GuildManager? GuildManager = new GuildManager();
+        public static GuildManager GuildManager = new GuildManager();
 
-        public async static void Init()
+        public static void Init()
         {
             MongoDatabase database = new MongoDatabase(new DatabaseCredentials
             {

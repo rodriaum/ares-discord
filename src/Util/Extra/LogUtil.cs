@@ -16,7 +16,6 @@
         public static void Error(string prefix, string message, string error = "")
         {
             Console.Error.WriteLine("\n" + Output(prefix, message, error) + "\n");
-
         }
 
         public static async Task LogAsync(string prefix, string message)

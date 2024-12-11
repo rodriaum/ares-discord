@@ -2,6 +2,7 @@
 using Ares.src.Objects;
 using Ares.src.Objects.OpenAI.Model;
 using Ares.src.Objects.OpenAI.Model.Category;
+using Ares.src.OpenAi;
 using Ares.src.Util.Extra;
 using Discord;
 using Discord.Rest;
@@ -96,7 +97,7 @@ namespace Ares.src.Listener.Chat
                 switch (model.OpenAiModelCategory)
                 {
                     case OpenAiModelCategory.CHAT:
-                        string response = await OpenAi.GenerateConversation(guild, socketGuild.GetUser(user.Id), model, message.Content);
+                        string response = await OpenAiService.GenerateConversation(guild, socketGuild.GetUser(user.Id), model, message.Content);
 
                         embed.WithDescription(response);
                         break;

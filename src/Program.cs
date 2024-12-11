@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Ares.src.Listener.Chat.Button;
 using DotNetEnv;
 using Ares.src.Util.Extra;
+using Ares.src.Commands.System;
 namespace Ares.src
 {
     internal class Program

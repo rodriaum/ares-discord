@@ -5,7 +5,7 @@ using OpenAI.Chat;
 namespace Ares.src.Guild.ChatData
 {
     [AllArgsConstructor]
-    internal partial class GuildChatData
+    public partial class GuildChatData
     {
         public required Dictionary<ulong, OpenAiModel> ConversationModels { get; set; }
         public required Dictionary<ulong, List<ChatMessage>> ConversationHistorics { get; set; }
