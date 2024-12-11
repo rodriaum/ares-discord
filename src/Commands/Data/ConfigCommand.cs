@@ -1,4 +1,5 @@
-﻿using Discord.WebSocket;
+﻿using Ares.src.Guild.ChatData;
+using Discord.WebSocket;
 
 namespace Ares.src.Commands.Data
 {
@@ -14,18 +15,23 @@ namespace Ares.src.Commands.Data
 
         private async Task SlashCommandHandler(SocketSlashCommand command)
         {
-            Guild.Guild? guild = await Core.GuildData.Fetch("1270010171116224562");
+            Guild.Guild? guild = await Core.GuildData?.Fetch("1277819529602400306");
 
             // terminar aqui
 
-            guild.SetField(guildIdData: new GuildIdData
+
+            if (guild != null)
             {
-                MemberRoleId = 1270034491301302293,
-                UsageRoleId = 1270726265497980960,
-                ExclusiveRoleId = 1270600361509388368,
-                SetupChannelId = 1270562665311240263,
-                ChatsCategoryId = 1270562537498476758
-            });
+                await guild.SaveGuildIdData(
+                    new GuildIdData
+                    {
+                        MemberRoleId = 1277819529602400313,
+                        UsageRoleId = 1277819529619308561,
+                        ExclusiveRoleId = 1277819529619308562,
+                        SetupChannelId = 1277819529979756634,
+                        ChatsCategoryId = 1316513138845286499
+                    });
+            }
         }
     }
 }

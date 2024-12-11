@@ -3,9 +3,10 @@ using Discord.Rest;
 using Discord.WebSocket;
 using Ares.src.Objects;
 using Ares.src.Util.Extra;
-using Ares.src.Backend.Data;
 using Ares.src.Objects.OpenAI.Model;
 using Ares.src.Objects.OpenAI.Model.Category;
+using Ares.src.Guild.Information;
+using Ares.src.Guild.ChatData;
 
 namespace Ares.src.Listener.Chat
 {
@@ -60,7 +61,24 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                IRole usageRole = socketGuild.GetRole(guild.GuildIdData.UsageRoleId);
+                GuildInformation information = guild.Information;
+
+                if (information == null)
+                {
+                    await args.FollowupAsync("Não foi possível encontrar as informações da guilda atual no banco de dados.");
+                    return;
+                }
+
+                GuildIdData? gid = information.GuildIdData;
+
+                if (gid == null)
+                {
+                    await args.FollowupAsync("Não foi possível encontrar as informações sobre os IDs.");
+                    return;
+                }
+
+
+                IRole usageRole = socketGuild.GetRole(gid.UsageRoleId);
 
                 if (usageRole == null)
                 {
@@ -91,9 +109,9 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                if (await guild.CreateConversation(user, model))
+                if (await guild.CreateChatData(user, model))
                 {
-                    SocketCategoryChannel category = socketGuild.GetCategoryChannel(guild.GuildIdData.ChatsCategoryId);
+                    SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
                     RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
 
                     EmbedBuilder embed = new EmbedBuilder()
@@ -110,11 +128,15 @@ namespace Ares.src.Listener.Chat
                         case OpenAiModelCategory.IMAGE:
                             embed.WithDescription("Insira a sua frase para gerar a imagem.");
                             break;
+
+                            default:
+                            embed.WithDescription("Insira o parâmetro para iniciar o seu pedido.");
+                            break;
                     }
 
                     embed.AddField("Modelo", model.DisplayName);
                     embed.AddField("Regras", "Tenha respeito no canal atual.");
-                    embed.AddField("Tempo", "Pode demorar até minutos para processar o seu pedido.");
+                    embed.AddField("Tempo", "Pode demorar até minuto(s) para processar o seu pedido.");
 
                     ButtonBuilder button = new ButtonBuilder()
                        .WithLabel("Terminar Conversa")

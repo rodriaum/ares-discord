@@ -52,7 +52,7 @@ namespace Ares.src.Listener.Chat.Button
 
                 if (channel != null)
                 {
-                    await guild.EndConversation(user);
+                    await guild.DeleteChatData(user);
 
                     await args.FollowupAsync("Obrigado por usar **Ares**! A fechar a conversa...");
 

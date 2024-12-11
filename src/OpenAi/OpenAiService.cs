@@ -21,19 +21,21 @@ namespace Ares.src.OpenAi
             {
                 if (guild != null)
                 {
-                    guild.AddConversation(user, new UserChatMessage(prompt));
+                    await guild.AddConversationAsync(user, new UserChatMessage(prompt));
 
-                    ChatClient client = new ChatClient(model.Model, guild.OpenAiToken);
+                    ChatClient client = new ChatClient(model.Model, guild.Information.OpenAiToken);
                     ChatCompletion completion = await client.CompleteChatAsync(guild.Messages(user));
 
-                    guild.AddConversation(user, new AssistantChatMessage(completion));
-                    guild.AddCompletion(user, completion);
+                    await guild.AddConversationAsync(user, new AssistantChatMessage(completion));
+                    await guild.AddCompletion(user, completion);
 
                     sb.Append(completion).Append("\n");
                 }
             }
             catch (ClientResultException e)
             {
+                Console.WriteLine(e.Message);
+
                 if (e.Status == 429)
                 {
                     if (e.Message.Contains("insufficient_quota"))

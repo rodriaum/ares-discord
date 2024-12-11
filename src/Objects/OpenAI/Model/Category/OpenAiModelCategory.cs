@@ -1,6 +1,6 @@
 ﻿namespace Ares.src.Objects.OpenAI.Model.Category
 {
-    internal enum OpenAiModelCategory
+    public enum OpenAiModelCategory
     {
         CHAT,
         QUESTION,

@@ -91,60 +91,104 @@ namespace Ares.src.Guild
             return await Save("Information");
         }
 
+        public async Task<bool> SaveGuildChatData(GuildChatData data)
+        {
+            GuildInformation updatedInformation = Information;
+            updatedInformation.GuildChatData = data;
+
+            return await SaveInformation(updatedInformation);
+        }
+
+        public async Task<bool> SaveGuildIdData(GuildIdData data)
+        {
+            GuildInformation updatedInformation = Information;
+            updatedInformation.GuildIdData = data;
+
+            return await SaveInformation(updatedInformation);
+        }
+
         /** Conversation System */
 
         public Dictionary<ulong, List<ChatMessage>>? ConversationHistorics()
         {
-            GuildChatData? guildChatData = Information.GuildChatData;
+            GuildChatData? gcd = Information.GuildChatData;
 
-            return (guildChatData != null ? guildChatData.ConversationHistorics : null);
+            return (gcd != null ? gcd.ConversationHistorics : null);
         }
 
         public Dictionary<ulong, List<ChatCompletion>>? CompletionHistorics()
         {
-            GuildChatData? guildChatData = Information.GuildChatData;
+            GuildChatData? gcd = Information.GuildChatData;
 
-            return (guildChatData != null ? guildChatData.CompletionHistorics : null);
+            return (gcd != null ? gcd.CompletionHistorics : null);
         }
 
         public List<ChatMessage>? Messages(IUser user)
         {
-            if (CompletionHistorics() == null) return null;
+            if (user == null) throw new ArgumentNullException(nameof(user));
+
+            var completionHistorics = CompletionHistorics();
+
+            if (completionHistorics == null)
+            {
+                LogUtil.Log(nameof(Messages), "CompletionHistorics está nulo. Não foi possível recuperar as mensagens.");
+                return null;
+            }
 
             return ConversationHistorics()?.GetValueOrDefault(user.Id);
         }
 
         public async Task<bool> CreateChatData(IUser user, OpenAiModel model)
         {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (model == null) throw new ArgumentNullException(nameof(model));
+
             if (HasUserConversation(user) || HasUserConversationModel(user))
+            {
+                LogUtil.Log(nameof(CreateChatData), "O usuário já possui uma conversa ou modelo. Nenhuma ação necessária.");
                 return false;
+            }
 
-            GuildChatData? guildChatData = Information.GuildChatData;
+            var gcd = Information.GuildChatData;
+            if (gcd == null)
+            {
+                LogUtil.Error(nameof(CreateChatData), "GuildChatData está nulo. Não foi possível criar dados de chat para o usuário.");
+                return false;
+            }
 
-            bool sucess =
-                guildChatData != null &&
-                guildChatData.ConversationHistorics.TryAdd(user.Id, new List<ChatMessage>()) &&
-                guildChatData.ConversationModels.TryAdd(user.Id, model);
+            try
+            {
+                bool success =
+                    gcd.ConversationHistorics.TryAdd(user.Id, new List<ChatMessage>()) &&
+                    gcd.ConversationModels.TryAdd(user.Id, model);
 
-            GuildInformation updatedInformation = Information;
-            updatedInformation.GuildChatData = guildChatData;
+                if (!success)
+                {
+                    LogUtil.Error(nameof(CreateChatData), "Falha ao adicionar o usuário nos dados de chat.");
+                    return false;
+                }
 
-            await SaveInformation(updatedInformation);
+                return await this.SaveGuildChatData(gcd);
 
-            return sucess;
+            }
+            catch (Exception ex)
+            {
+                LogUtil.Error(nameof(CreateChatData), "Erro ao tentar criar dados de chat para o usuário.", ex.Message);
+                return false;
+            }
         }
 
-        public async Task DeleteChatData(IUser user)
+        public async Task<bool> DeleteChatData(IUser user)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
 
             if (!HasUserConversation(user) && !HasUserConversationModel(user))
-                return;
+                return false;
 
             if (Information.GuildChatData is not { } gcd)
             {
                 LogUtil.Error(nameof(DeleteChatData), "GuildChatData está nulo. Não foi possível deletar os dados de chat.");
-                return;
+                return false;
             }
 
             gcd.ConversationHistorics.Remove(user.Id);
@@ -152,14 +196,12 @@ namespace Ares.src.Guild
 
             try
             {
-                GuildInformation updatedInformation = Information;
-                updatedInformation.GuildChatData = gcd;
-
-                await SaveInformation(updatedInformation);
+                return await this.SaveGuildChatData(gcd);
             }
             catch (Exception ex)
             {
                 LogUtil.Error(nameof(DeleteChatData), "Erro ao salvar as alterações após deletar os dados de chat.", ex.Message);
+                return false;
             }
         }
 
