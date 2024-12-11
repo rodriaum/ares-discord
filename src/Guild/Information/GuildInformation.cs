@@ -6,17 +6,17 @@ namespace Ares.src.Guild.Information
 {
     public class GuildInformation
     {
-        private string? _openAiToken;
+        public string OpenAiToken;
 
-        public GuildIdData? GuildIdData { get; }
-        public GuildChatData? GuildChatData { get; }
+        public GuildIdData? GuildIdData { get; set; }
+        public GuildChatData? GuildChatData { get; set; }
 
         /// <summary>
         /// Construtor padrão que inicializa a classe GuildInformation com valores padrão.
         /// </summary>
         public GuildInformation()
         {
-            this._openAiToken = "";
+            this.OpenAiToken = "";
 
             this.GuildIdData = new GuildIdData
             {
@@ -43,7 +43,7 @@ namespace Ares.src.Guild.Information
         /// <param name="guildChatData">Dados relacionados às conversas de guilda.</param>
         public GuildInformation(string openAiToken = "", GuildIdData? guildIdData = null, GuildChatData? guildChatData = null)
         {
-            this._openAiToken = openAiToken;
+            this.OpenAiToken = openAiToken;
 
             this.GuildIdData = guildIdData;
             this.GuildChatData = guildChatData;
