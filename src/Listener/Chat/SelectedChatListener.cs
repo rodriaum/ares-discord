@@ -77,7 +77,6 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-
                 IRole usageRole = socketGuild.GetRole(gid.UsageRoleId);
 
                 if (usageRole == null)

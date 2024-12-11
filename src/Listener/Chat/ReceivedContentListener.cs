@@ -1,4 +1,5 @@
-﻿using Ares.src.Backend.Data;
+﻿using Ares.src.Guild.ChatData;
+using Ares.src.Guild.Information;
 using Ares.src.Objects;
 using Ares.src.Objects.OpenAI.Model;
 using Ares.src.Objects.OpenAI.Model.Category;
@@ -54,7 +55,7 @@ namespace Ares.src.Listener.Chat
                 }
 
                 SocketGuild socketGuild = channel.Guild;
-
+                
                 if (socketGuild == null)
                 {
                     await channel.SendMessageAsync(embed: embed.WithDescription(Constant.UNABLE_GET_MEMBER).Build());
@@ -69,7 +70,23 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                if (!(channel.CategoryId.Equals(guild.GuildIdData.ChatsCategoryId) && guild.HasUserConversation(user))) return;
+                GuildInformation information = guild.Information;
+
+                if (information == null)
+                {
+                    await channel.SendMessageAsync(embed: embed.WithDescription("Não foi possível encontrar as informações da guilda atual no banco de dados.").Build());
+                    return;
+                }
+
+                GuildIdData? gid = information.GuildIdData;
+
+                if (gid == null)
+                {
+                    await channel.SendMessageAsync(embed: embed.WithDescription("Não foi possível encontrar as informações sobre os IDs.").Build());
+                    return;
+                }
+
+                if (!(channel.CategoryId.Equals(gid.ChatsCategoryId) && guild.HasUserConversation(user))) return;
 
                 // O método só é ivocado aqui porque ele iria enviar mensagem sem a verificação de cima estar finalizada.
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
@@ -83,7 +100,7 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                IRole exclusiveRole = socketGuild.GetRole(guild.GuildIdData.ExclusiveRoleId);
+                IRole exclusiveRole = socketGuild.GetRole(gid.ExclusiveRoleId);
 
                 OpenAiModel? model = guild.GetModelByUser(user);
 
