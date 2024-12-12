@@ -9,6 +9,7 @@ using Ares.src.Listener.Chat.Button;
 using DotNetEnv;
 using Ares.src.Util.Extra;
 using Ares.src.Commands.System;
+using Ares.src.Commands.Data;
 namespace Ares.src
 {
     internal class Program
@@ -46,6 +47,7 @@ namespace Ares.src
             // Commands
             new PingCommand(Client);
             new SetupCommand(Client);
+            new ConfigCommand(Client);
 
             // Managers
             new OpenAiManager().Init();
@@ -77,6 +79,10 @@ namespace Ares.src
                 new SlashCommandBuilder()
                .WithName("ping")
                .WithDescription("Ping do gateway atual"),
+
+               new SlashCommandBuilder()
+               .WithName("config")
+               .WithDescription("Configure o bot atual."),
 
                 new SlashCommandBuilder()
                 .WithName("setup")

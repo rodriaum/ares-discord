@@ -7,7 +7,7 @@ using OpenAI.Chat;
 
 namespace Ares.src.Guild
 {
-    internal class Guild
+    public class Guild
     {
         public readonly string Id;
 
@@ -265,44 +265,61 @@ namespace Ares.src.Guild
             return await AddCompletionData(user, completions);
         }
 
-        public async Task<bool> AddConversationAsync(IUser user, List<ChatMessage> messages)
+        public async Task<bool> UpdateConversationAsync(IUser user, List<ChatMessage> messages)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
             if (messages == null) throw new ArgumentNullException(nameof(messages));
 
-            if (Information.GuildChatData is not { } guildChatData)
+            if (Information.GuildChatData is not { } gcd)
                 return false;
 
-            guildChatData.ConversationHistorics[user.Id] = messages;
+            gcd.ConversationHistorics[user.Id] = messages;
 
-            Information.GuildChatData = guildChatData;
+            Information.GuildChatData = gcd;
             return await SaveInformation(Information);
         }
 
-        public async Task<bool> AddConversationAsync(IUser user, ChatMessage message)
+        public async Task<bool> UpdateConversationAsync(IUser user, ChatMessage message)
         {
-            if (user == null) throw new ArgumentNullException(nameof(user));
-            if (message == null) throw new ArgumentNullException(nameof(message));
-
             var conversationHistorics = this.ConversationHistorics();
 
             if (conversationHistorics == null)
             {
-                LogUtil.Error(nameof(this.AddConversationAsync), "Conversation historics are null.");
+                LogUtil.Error(nameof(this.UpdateConversationAsync), "Conversation historics are null.");
                 return false;
             }
 
             if (!conversationHistorics.TryGetValue(user.Id, out var messages) || messages == null)
             {
-                LogUtil.Error(nameof(this.AddConversationAsync), $"Cannot retrieve chat messages for user ID {user.Id}.");
+                LogUtil.Error(nameof(this.UpdateConversationAsync), $"Cannot retrieve chat messages for user ID {user.Id}.");
                 return false;
             }
 
             messages.Add(message);
 
-            return await this.AddConversationAsync(user, messages);
+            return await this.UpdateConversationAsync(user, messages);
         }
 
+        public async Task<bool> RemoveConversationAsync(IUser user, ChatMessage message)
+        {
+            var conversationHistorics = this.ConversationHistorics();
+
+            if (conversationHistorics == null)
+            {
+                LogUtil.Error(nameof(this.UpdateConversationAsync), "Conversation historics are null.");
+                return false;
+            }
+
+            if (!conversationHistorics.TryGetValue(user.Id, out var messages) || messages == null)
+            {
+                LogUtil.Error(nameof(this.UpdateConversationAsync), $"Cannot retrieve chat messages for user ID {user.Id}.");
+                return false;
+            }
+
+            messages.Remove(message);
+
+            return await this.UpdateConversationAsync(user, messages);
+        }
 
         public bool HasUserConversation(IUser user)
         {

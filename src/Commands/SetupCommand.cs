@@ -17,7 +17,7 @@ namespace Ares.src.Commands
 
         private async Task SlashCommandHandler(SocketSlashCommand command)
         {
-            if (!command.Data.Name.Equals("setup")) return;
+            if (Client == null || !command.Data.Name.Equals("setup")) return;
 
             await command.DeferAsync();
 
@@ -47,7 +47,7 @@ namespace Ares.src.Commands
                         .WithPlaceholder("Escolha um modelo")
                         .WithCustomId("openai-chat-menu");
 
-                    foreach (OpenAiModel model in OpenAi.OpenAiService.OpenAiModels)
+                    foreach (OpenAiModel model in OpenAiService.OpenAiModels)
                     {
                         menu.AddOption(new SelectMenuOptionBuilder
                         {

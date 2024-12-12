@@ -91,8 +91,10 @@ namespace Ares.src.Listener.Chat
                 // O método só é ivocado aqui porque ele iria enviar mensagem sem a verificação de cima estar finalizada.
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
 
-                if (!channel.Name.Contains(user.GlobalName))
+                // Verificar com banco de dados depois.
+                if (!channel.Name.Contains(user.GlobalName.ToLower()))
                 {
+                    // Verificar mensagem. WTF
                     await botMessage.ModifyAsync(message => message.Embed = embed.WithDescription(Constant.UNABLE_GET_MEMBER).Build());
 
                     await Task.Delay(TimeSpan.FromSeconds(1));

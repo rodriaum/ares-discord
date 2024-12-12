@@ -44,7 +44,7 @@ namespace Ares.src.Backend.Database.Mongo
                 client = new MongoClient(settings);
                 mongoDatabase = client.GetDatabase(credentials.Database);
 
-                LogUtil.Log("MONGO", $"Connection established successfully. ({start}ms)");
+                LogUtil.Log("MONGO", $"Connection established successfully. ({FormatterUtil.formatSeconds(start)})");
             }
             catch (Exception e)
             {

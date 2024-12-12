@@ -16,10 +16,8 @@ namespace Ares.src.Commands.System
 
         private async Task SlashCommandHandler(SocketSlashCommand command)
         {
-            if (Client == null) return;
-
-            if (command.Data.Name.Equals("ping"))
-            {
+            if (Client == null || !command.Data.Name.Equals("ping")) return;
+            
                 int ms = Client.Latency;
 
                 Color color = ms < 30 ? Color.Green : ms >= 30 && ms <= 150 ? Color.Gold : ms > 150 ? Color.Red : Color.Default;
@@ -33,8 +31,6 @@ namespace Ares.src.Commands.System
                 .WithCurrentTimestamp()
                 .Build();
 
-                await command.RespondAsync(embed: embed, ephemeral: true);
-            }
-        }
+                await command.RespondAsync(embed: embed, ephemeral: true);        }
     }
 }

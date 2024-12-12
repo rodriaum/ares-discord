@@ -40,12 +40,39 @@ internal class GuildData
     }
 
     /// <summary>
+    /// Tenta estabelecer uma conexão com o MongoDB, verificando a conexão a cada 15 segundos
+    /// caso a conexão falhe. A função continuará tentando até que a conexão seja bem-sucedida.
+    /// </summary>
+    /// <returns>Retorna true quando a conexão com o MongoDB for estabelecida com sucesso.</returns>
+    public async Task<bool> WaitForMongoConnectionAsync()
+    {
+        var isConnected = false;
+
+        while (!isConnected)
+        {
+            try
+            {
+                // Tenta enviar um comando ping para verificar a conexão.
+                await this._collection?.Database.RunCommandAsync((Command<BsonDocument>)"{ ping: 1 }");
+                isConnected = true;
+            }
+            catch (Exception ex)
+            {
+                LogUtil.Error("ConnectionError", $"Failed to connect to MongoDB. Retrying in 15 seconds...", ex.Message);
+                await Task.Delay(15000);
+            }
+        }
+
+        return isConnected;
+    }
+
+
+    /// <summary>
     /// Cria índices na coleção "guilds" para melhorar a performance das consultas.
     /// </summary>
     public async void CreateIndexes()
     {
-        var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
-        var indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+        await LogUtil.LogAsync("MONGO", "Criando índices no banco de dados...");
 
         // Verifica se a coleção foi inicializada antes de tentar criar os índices.
         if (this._collection == null)
@@ -54,9 +81,29 @@ internal class GuildData
             return;
         }
 
-        // Cria os índices no banco de dados de forma assíncrona.
-        await this._collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
+        // Chama a função para aguardar a conexão com o MongoDB.
+        bool isConnected = await WaitForMongoConnectionAsync();
+
+        if (isConnected)
+        {
+            // Após a conexão ser bem-sucedida, cria os índices.
+            try
+            {
+                var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
+                var indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+
+                await this._collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
+
+                await LogUtil.LogAsync("MONGO", "Índices criados com sucesso.");
+
+            }
+            catch (Exception ex)
+            {
+                LogUtil.Error("IndexCreationError", $"Error creating indexes: {ex.Message}");
+            }
+        }
     }
+
 
     /// <summary>
     /// Salva ou atualiza uma guilda no banco de dados, retornando o objeto atualizado.

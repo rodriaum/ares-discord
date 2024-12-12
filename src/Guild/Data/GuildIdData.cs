@@ -10,6 +10,7 @@ namespace Ares.src.Guild.ChatData
         public ulong ExclusiveRoleId { get; set; }
 
         public ulong SetupChannelId { get; set; }
+        public ulong LogChannelId { get; set; }
 
         public ulong ChatsCategoryId { get; set; }
     }

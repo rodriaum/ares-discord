@@ -15,10 +15,9 @@ namespace Ares.src.Commands.Data
 
         private async Task SlashCommandHandler(SocketSlashCommand command)
         {
-            Guild.Guild? guild = await Core.GuildData?.Fetch("1277819529602400306");
+            if (Client == null || !command.Data.Name.Equals("config")) return;
 
-            // terminar aqui
-
+            Guild.Guild? guild = await Core.GuildData?.Save("1277819529602400306");
 
             if (guild != null)
             {
