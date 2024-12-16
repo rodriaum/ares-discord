@@ -2,7 +2,7 @@
 using MongoDB.Bson;
 using Newtonsoft.Json.Linq;
 
-namespace Ares.src.Util.Extra.Json
+namespace Ares.src.Utils.Extra.Json
 {
     internal class JsonUtil
     {

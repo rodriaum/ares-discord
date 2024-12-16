@@ -4,7 +4,8 @@ using Ares.src.Logging;
 using Ares.src.Objects;
 using Ares.src.Objects.OpenAI.Model;
 using Ares.src.Objects.OpenAI.Model.Category;
-using Ares.src.Util.Extra;
+using Ares.src.Utils.Extra;
+using Ares.src.Utils;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -39,7 +40,8 @@ namespace Ares.src.Listener.Chat
 
                 EmbedBuilder embed = new EmbedBuilder()
                     .WithTitle("Inteligência Artificial")
-                    .WithDescription("A processar...");
+                    .WithDescription("A processar...")
+                    .WithColor(Color.Gold);
 
                 IUser user = args.Author;
 
@@ -103,13 +105,7 @@ namespace Ares.src.Listener.Chat
                 IRole exclusiveRole = socketGuild.GetRole(gid.ExclusiveRoleId);
 
                 OpenAiModel? model = guild.GetModelByUser(user);
-
-                if (model == null)
-                {
-                    return;
-                }
-
-                //int totalQuestions = guild
+                if (model == null) return;
 
                 SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
                 string prompt = message.Content;
@@ -119,7 +115,8 @@ namespace Ares.src.Listener.Chat
                     case OpenAiModelCategory.CHAT:
                         string responseText = await OpenAiService.GenerateConversationAsync(guild, guildUser, model, prompt);
 
-                        embed.WithDescription(responseText);
+                        embed.WithDescription(responseText)
+                            .WithColor(Color.Green);
                         break;
 
                     case OpenAiModelCategory.IMAGE:
@@ -135,8 +132,19 @@ namespace Ares.src.Listener.Chat
 
                         string responseImageUrl = await OpenAiService.GenerateImageUrlAsync(guild, guildUser, model, options, prompt);
 
-                        embed.WithDescription("Em anexo a imagem solicitada:");
-                        embed.WithImageUrl(responseImageUrl);
+                        // Como pode retornar um url ou mensagem de erro, fazemos essa verificação.
+                        if (Util.IsValidUrl(responseImageUrl))
+                        {
+                            embed.WithDescription("Em anexo a imagem solicitada:")
+                                .WithColor(Color.Green);
+
+                            embed.WithImageUrl(responseImageUrl);
+                        }
+                        else
+                        {
+                            embed.WithDescription(responseImageUrl)
+                                .WithColor(Color.Red);
+                        }
                         break;
                 }
 

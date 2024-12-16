@@ -1,7 +1,7 @@
 ﻿using Ares.src.Guild.ChatData;
 using Ares.src.Guild.Information;
 using Ares.src.Objects.OpenAI.Model;
-using Ares.src.Util.Extra;
+using Ares.src.Utils.Extra;
 using Discord;
 using OpenAI.Chat;
 using OpenAI.Images;
@@ -368,13 +368,13 @@ namespace Ares.src.Guild
 
             if (historic == null)
             {
-                LogUtil.Error(nameof(this.UpdateConversationAsync), "Generated Images historics are null.");
+                LogUtil.Error(nameof(historic), "Generated Images historics are null.");
                 return false;
             }
 
             if (!historic.TryGetValue(user.Id, out var images) || images == null)
             {
-                LogUtil.Error(nameof(this.UpdateConversationAsync), $"Cannot retrieve generated images for user ID {user.Id}.");
+                LogUtil.Error(nameof(historic), $"Cannot retrieve generated images for user ID {user.Id}.");
                 return false;
             }
 

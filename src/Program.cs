@@ -7,7 +7,7 @@ using Ares.src.Manager;
 using Newtonsoft.Json;
 using Ares.src.Listener.Chat.Button;
 using DotNetEnv;
-using Ares.src.Util.Extra;
+using Ares.src.Utils.Extra;
 using Ares.src.Commands.System;
 using Ares.src.Commands.Data;
 namespace Ares.src

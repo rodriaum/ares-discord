@@ -1,7 +1,7 @@
 ﻿using Ares.src.Backend.Database.Mongo;
 using Ares.src.Guild;
 using Ares.src.Manager;
-using Ares.src.Util.Extra;
+using Ares.src.Utils.Extra;
 using Ares.src;
 using MongoDB.Bson;
 using MongoDB.Driver;

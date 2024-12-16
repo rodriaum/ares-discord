@@ -1,19 +1,11 @@
 ﻿using Discord.WebSocket;
-using System.Text;
 using OpenAI.Chat;
-using System.ClientModel;
 using Ares.src.Objects;
-using Ares.src.Util.Extra;
 using Ares.src.Objects.OpenAI.Model;
-using Ares.src.Objects.OpenAI.Error;
 using Discord;
-using Microsoft.VisualBasic;
 using Ares.src.Guild.Information;
-using Ares.src.Guild.ChatData;
-using Ares.src.Guild;
 using OpenAI.Images;
 using Ares.src.Objects.OpenAI.Model.Category;
-using System;
 
 
 namespace Ares.src.Logging
@@ -21,6 +13,8 @@ namespace Ares.src.Logging
     public class OpenAiService
     {
         public static List<OpenAiModel> OpenAiModels = new List<OpenAiModel>();
+
+        // Futuro: Fazer retornar o url e um bool de sucesso.
 
         public async static Task<string> GenerateImageUrlAsync(Guild.Guild guild, SocketGuildUser user, OpenAiModel model, ImageGenerationOptions options, string prompt)
         {
@@ -34,7 +28,6 @@ namespace Ares.src.Logging
 
             // Obtenção das informações da guilda
             GuildInformation information = guild.Information;
-            ChatMessage userChatMessage = new UserChatMessage(prompt);
 
             // Validação do token
             string token = information.OpenAiToken;
@@ -45,9 +38,6 @@ namespace Ares.src.Logging
 
             try
             {
-                // Adicionar a imagem do usuário
-                await guild.AddConversationAsync(user, userChatMessage);
-
                 // Inicializar cliente de imagem
                 ImageClient client = new ImageClient(model.Model, token);
                 GeneratedImage image = await client.GenerateImageAsync(prompt, options);
@@ -59,15 +49,12 @@ namespace Ares.src.Logging
             }
             catch (Exception e)
             {
-                if (!await guild.RemoveConversationAsync(user, userChatMessage))
-                {
-                    throw new Exception("Não foi possível remover a conversa do usuário após um problema interno.", e);
-                }
-
                 return Constant.UNABLE_PERFORM_TASK;
             }
         }
 
+
+        // Futuro: Fazer retornar o texto e um bool de sucesso.
         public async static Task<string> GenerateConversationAsync(Guild.Guild guild, SocketGuildUser user, OpenAiModel model, string prompt)
         {
             VerifyParameters(guild, user, model, prompt);

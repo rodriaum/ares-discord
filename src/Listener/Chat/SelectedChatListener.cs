@@ -2,7 +2,7 @@
 using Discord.Rest;
 using Discord.WebSocket;
 using Ares.src.Objects;
-using Ares.src.Util.Extra;
+using Ares.src.Utils.Extra;
 using Ares.src.Objects.OpenAI.Model;
 using Ares.src.Objects.OpenAI.Model.Category;
 using Ares.src.Guild.Information;

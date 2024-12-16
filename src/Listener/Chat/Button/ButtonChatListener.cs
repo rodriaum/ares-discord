@@ -1,5 +1,5 @@
 ﻿using Ares.src.Objects;
-using Ares.src.Util.Extra;
+using Ares.src.Utils.Extra;
 using Discord;
 using Discord.WebSocket;
 
