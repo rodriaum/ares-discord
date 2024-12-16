@@ -1,18 +1,18 @@
-﻿using Ares.src.Objects.OpenAI.Model.Category;
-using Ares.src.OpenAi;
+﻿using Ares.src.Logging;
+using Ares.src.Objects.OpenAI.Model.Category;
 
 namespace Ares.src.Objects.OpenAI.Model
 {
     public class OpenAiModel
     {
-        public OpenAiModelCategory OpenAiModelCategory;
+        public OpenAiModelCategory Category;
         public string DisplayName;
         public string Model;
         public bool Exclusive;
 
         public OpenAiModel(OpenAiModelCategory openAiModelCategory, string displayName, string model, bool exclusive = false)
         {
-            OpenAiModelCategory = openAiModelCategory;
+            Category = openAiModelCategory;
             DisplayName = displayName;
             Model = model;
             Exclusive = exclusive;
@@ -21,7 +21,7 @@ namespace Ares.src.Objects.OpenAI.Model
         public static List<OpenAiModel> GetModelsByCategory(OpenAiModelCategory category)
         {
             return OpenAiService.OpenAiModels
-                .Where(model => model.OpenAiModelCategory.Equals(category))
+                .Where(model => model.Category.Equals(category))
                 .ToList();
         }
 

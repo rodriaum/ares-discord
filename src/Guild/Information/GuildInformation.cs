@@ -1,6 +1,7 @@
 ﻿using Ares.src.Guild.ChatData;
 using Ares.src.Objects.OpenAI.Model;
 using OpenAI.Chat;
+using OpenAI.Images;
 
 namespace Ares.src.Guild.Information
 {
@@ -31,7 +32,8 @@ namespace Ares.src.Guild.Information
             {
                 ConversationModels = new Dictionary<ulong, OpenAiModel>(),
                 ConversationHistorics = new Dictionary<ulong, List<ChatMessage>>(),
-                CompletionHistorics = new Dictionary<ulong, List<ChatCompletion>>()
+                CompletionHistorics = new Dictionary<ulong, List<ChatCompletion>>(),
+                GeneratedImageHistorics = new Dictionary<ulong, List<GeneratedImage>>(),
             };
         }
 

@@ -1,14 +1,14 @@
 ﻿using Ares.src.Guild.ChatData;
 using Ares.src.Guild.Information;
+using Ares.src.Logging;
 using Ares.src.Objects;
 using Ares.src.Objects.OpenAI.Model;
 using Ares.src.Objects.OpenAI.Model.Category;
-using Ares.src.OpenAi;
 using Ares.src.Util.Extra;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-
+using OpenAI.Images;
 
 namespace Ares.src.Listener.Chat
 {
@@ -16,14 +16,20 @@ namespace Ares.src.Listener.Chat
     {
         private static DiscordSocketClient? Client { get; set; }
 
+        /// <summary>
+        /// Construtor que inicializa o ReceivedContentListener com um cliente Discord.
+        /// </summary>
+        /// <param name="client">O cliente Discord.</param>
         public ReceivedContentListener(DiscordSocketClient client)
         {
             client.MessageReceived += MessageReceivedHandler;
             Client = client;
         }
 
-        /* ON RECEIVED PROMPT MESSAGE CHAT */
-
+        /// <summary>
+        /// Manipulador para mensagens recebidas.
+        /// </summary>
+        /// <param name="args">A mensagem recebida.</param>
         private async Task MessageReceivedHandler(SocketMessage args)
         {
             try
@@ -55,7 +61,7 @@ namespace Ares.src.Listener.Chat
                 }
 
                 SocketGuild socketGuild = channel.Guild;
-                
+
                 if (socketGuild == null)
                 {
                     await channel.SendMessageAsync(embed: embed.WithDescription(Constant.UNABLE_GET_MEMBER).Build());
@@ -91,16 +97,8 @@ namespace Ares.src.Listener.Chat
                 // O método só é ivocado aqui porque ele iria enviar mensagem sem a verificação de cima estar finalizada.
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
 
-                // Verificar com banco de dados depois.
-                if (!channel.Name.Contains(user.GlobalName.ToLower()))
-                {
-                    // Verificar mensagem. WTF
-                    await botMessage.ModifyAsync(message => message.Embed = embed.WithDescription(Constant.UNABLE_GET_MEMBER).Build());
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                    await message.DeleteAsync();
-                    return;
-                }
+                // Verifica se o canal em que o usuário enviou a mensagem é dele. (Futuramente pode ser verificado com banco de dados)
+                if (!channel.Name.Contains(user.GlobalName.ToLower())) return;
 
                 IRole exclusiveRole = socketGuild.GetRole(gid.ExclusiveRoleId);
 
@@ -113,15 +111,32 @@ namespace Ares.src.Listener.Chat
 
                 //int totalQuestions = guild
 
-                switch (model.OpenAiModelCategory)
+                SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
+                string prompt = message.Content;
+
+                switch (model.Category)
                 {
                     case OpenAiModelCategory.CHAT:
-                        string response = await OpenAiService.GenerateConversation(guild, socketGuild.GetUser(user.Id), model, message.Content);
+                        string responseText = await OpenAiService.GenerateConversationAsync(guild, guildUser, model, prompt);
 
-                        embed.WithDescription(response);
+                        embed.WithDescription(responseText);
                         break;
 
                     case OpenAiModelCategory.IMAGE:
+
+                        // Futuramente vai dar para personalizar.
+                        ImageGenerationOptions options = new()
+                        {
+                            Quality = GeneratedImageQuality.Standard,
+                            Size = GeneratedImageSize.W1024xH1024,
+                            Style = GeneratedImageStyle.Natural,
+                            ResponseFormat = GeneratedImageFormat.Uri
+                        };
+
+                        string responseImageUrl = await OpenAiService.GenerateImageUrlAsync(guild, guildUser, model, options, prompt);
+
+                        embed.WithDescription("Em anexo a imagem solicitada:");
+                        embed.WithImageUrl(responseImageUrl);
                         break;
                 }
 

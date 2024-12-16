@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using Ares.src.Objects.OpenAI.Model;
-using Ares.src.OpenAi;
+using Ares.src.Logging;
 
 namespace Ares.src.Commands
 {

@@ -21,7 +21,7 @@ namespace Ares.src.Commands.Data
 
             if (guild != null)
             {
-                await guild.SaveGuildIdData(
+                await guild.SaveGuildIdDataAsync(
                     new GuildIdData
                     {
                         MemberRoleId = 1277819529602400313,

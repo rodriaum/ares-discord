@@ -1,0 +1,150 @@
+﻿using Discord.WebSocket;
+using System.Text;
+using OpenAI.Chat;
+using System.ClientModel;
+using Ares.src.Objects;
+using Ares.src.Util.Extra;
+using Ares.src.Objects.OpenAI.Model;
+using Ares.src.Objects.OpenAI.Error;
+using Discord;
+using Microsoft.VisualBasic;
+using Ares.src.Guild.Information;
+using Ares.src.Guild.ChatData;
+using Ares.src.Guild;
+using OpenAI.Images;
+using Ares.src.Objects.OpenAI.Model.Category;
+using System;
+
+
+namespace Ares.src.Logging
+{
+    public class OpenAiService
+    {
+        public static List<OpenAiModel> OpenAiModels = new List<OpenAiModel>();
+
+        public async static Task<string> GenerateImageUrlAsync(Guild.Guild guild, SocketGuildUser user, OpenAiModel model, ImageGenerationOptions options, string prompt)
+        {
+            VerifyParameters(guild, user, model, prompt);
+
+            // Verificação do tipo de modelo
+            if (model.Category != OpenAiModelCategory.IMAGE)
+            {
+                return "Parece que houve um problema na identificação do modelo. Tente novamente!";
+            }
+
+            // Obtenção das informações da guilda
+            GuildInformation information = guild.Information;
+            ChatMessage userChatMessage = new UserChatMessage(prompt);
+
+            // Validação do token
+            string token = information.OpenAiToken;
+            if (string.IsNullOrEmpty(token))
+            {
+                return "Ops! Parece que o servidor atual não tem um token pré-configurado.";
+            }
+
+            try
+            {
+                // Adicionar a imagem do usuário
+                await guild.AddConversationAsync(user, userChatMessage);
+
+                // Inicializar cliente de imagem
+                ImageClient client = new ImageClient(model.Model, token);
+                GeneratedImage image = await client.GenerateImageAsync(prompt, options);
+
+                // Processar a imagem
+                await guild.AddGeneratedImageAsync(user, image);
+
+                return image.ImageUri.OriginalString;
+            }
+            catch (Exception e)
+            {
+                if (!await guild.RemoveConversationAsync(user, userChatMessage))
+                {
+                    throw new Exception("Não foi possível remover a conversa do usuário após um problema interno.", e);
+                }
+
+                return Constant.UNABLE_PERFORM_TASK;
+            }
+        }
+
+        public async static Task<string> GenerateConversationAsync(Guild.Guild guild, SocketGuildUser user, OpenAiModel model, string prompt)
+        {
+            VerifyParameters(guild, user, model, prompt);
+
+            // Verificação do tipo de modelo
+            if (model.Category != OpenAiModelCategory.CHAT)
+            {
+                return "Parece que houve um problema na identificação do modelo. Tente novamente!";
+            }
+
+            // Obtenção das informações da guilda
+            GuildInformation information = guild.Information;
+            ChatMessage userChatMessage = new UserChatMessage(prompt);
+
+            // Validação do token
+            string token = information.OpenAiToken;
+            if (string.IsNullOrEmpty(token))
+            {
+                return "Ops! Parece que o servidor atual não tem um token pré-configurado.";
+            }
+
+            try
+            {
+                // Adicionar conversa do usuário
+                await guild.AddConversationAsync(user, userChatMessage);
+
+                // Inicializar cliente de chat
+                ChatClient client = new ChatClient(model.Model, token);
+                ChatCompletion completion = await client.CompleteChatAsync(guild.Messages(user));
+
+                // Processar resposta do chat
+                switch (completion.FinishReason)
+                {
+                    case ChatFinishReason.Stop:
+                        await guild.AddConversationAsync(user, new AssistantChatMessage(completion));
+                        await guild.AddCompletionAsync(user, completion);
+
+                        return completion.ToString();
+
+                    case ChatFinishReason.Length:
+                        return "Não será possível prosseguir porque o limite de token estabelecido pelo servidor atual foi excedido.";
+
+                    case ChatFinishReason.ContentFilter:
+                        return "Não foi possível gerar porque o sistema identificou palavras ofensivas no canal atual.";
+
+                    case ChatFinishReason.FunctionCall:
+                        return "Não foi possível gerar porque o sistema está lento. (FunctionCall)";
+
+                    default:
+                        return $"Não foi possível gerar a resposta. Motivo: {completion.FinishReason}";
+                }
+            }
+            catch (Exception e)
+            {
+                if (!await guild.RemoveConversationAsync(user, userChatMessage))
+                {
+                    throw new Exception("Não foi possível remover a conversa do usuário após um problema interno.", e);
+                }
+
+                return Constant.UNABLE_PERFORM_TASK;
+            }
+        }
+
+        private static void VerifyParameters(Guild.Guild guild, IGuildUser user, OpenAiModel model, String prompt)
+        {
+            // Validação de parâmetros
+            if (guild == null)
+                throw new ArgumentNullException(nameof(guild), "Houve um problema interno ao identificar uma guilda. Por favor, verifique se a guilda foi fornecida corretamente.");
+
+            if (user == null)
+                throw new ArgumentNullException(nameof(user), "Houve um problema interno ao identificar um usuário. Por favor, verifique se o usuário foi fornecido corretamente.");
+
+            if (model == null)
+                throw new ArgumentNullException(nameof(model), "Houve um problema interno ao identificar o modelo. Por favor, verifique se o modelo foi fornecido corretamente.");
+
+            if (string.IsNullOrWhiteSpace(prompt))
+                throw new ArgumentNullException(nameof(prompt), "Houve um problema interno ao identificar o prompt. Por favor, verifique se o prompt foi fornecido corretamente.");
+        }
+    }
+}

@@ -108,7 +108,7 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                if (await guild.CreateChatData(user, model))
+                if (await guild.CreateChatDataAsync(user, model))
                 {
                     SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
                     RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
@@ -118,7 +118,7 @@ namespace Ares.src.Listener.Chat
                         .WithColor(Color.Green)
                         .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} | {socketGuild.Name}"));
 
-                    switch (model.OpenAiModelCategory)
+                    switch (model.Category)
                     {
                         case OpenAiModelCategory.CHAT:
                             embed.WithDescription("Insira a sua pergunta para iniciar a conversa.");

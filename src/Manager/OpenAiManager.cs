@@ -1,6 +1,6 @@
-﻿using Ares.src.Objects.OpenAI.Model;
+﻿using Ares.src.Logging;
+using Ares.src.Objects.OpenAI.Model;
 using Ares.src.Objects.OpenAI.Model.Category;
-using Ares.src.OpenAi;
 
 namespace Ares.src.Manager
 {
