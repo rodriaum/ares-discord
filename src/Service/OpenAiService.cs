@@ -6,13 +6,14 @@ using Discord;
 using Ares.src.Guild.Information;
 using OpenAI.Images;
 using Ares.src.Objects.OpenAI.Model.Category;
+using Ares.src.Manager;
 
 
 namespace Ares.src.Logging
 {
-    public class OpenAiService
+    public class OpenAiService : OpenAiManager
     {
-        public static List<OpenAiModel> OpenAiModels = new List<OpenAiModel>();
+
 
         // Futuro: Fazer retornar o url e um bool de sucesso.
 
@@ -35,7 +36,7 @@ namespace Ares.src.Logging
             {
                 return "Ops! Parece que o servidor atual não tem um token pré-configurado.";
             }
-
+            
             try
             {
                 // Inicializar cliente de imagem
@@ -67,7 +68,13 @@ namespace Ares.src.Logging
 
             // Obtenção das informações da guilda
             GuildInformation information = guild.Information;
-            ChatMessage userChatMessage = new UserChatMessage(prompt);
+
+            UserChatMessage userChatMessage = new UserChatMessage(prompt);
+
+            // O nome do usuário na conversa é o nome do Discord.
+            // Previne o 'Erro de Instanciação de Tipo Abstrato' devido a 'ParticipantName' ser 'null'
+            // Ele ocorre porque o código está tentando criar uma instância de uma interface ou classe abstrata, o que não é possível.
+            userChatMessage.ParticipantName = user.GlobalName;
 
             // Validação do token
             string token = information.OpenAiToken;
@@ -83,13 +90,21 @@ namespace Ares.src.Logging
 
                 // Inicializar cliente de chat
                 ChatClient client = new ChatClient(model.Model, token);
+                var messages = guild.Messages(user);
                 ChatCompletion completion = await client.CompleteChatAsync(guild.Messages(user));
 
                 // Processar resposta do chat
                 switch (completion.FinishReason)
                 {
                     case ChatFinishReason.Stop:
-                        await guild.AddConversationAsync(user, new AssistantChatMessage(completion));
+                        AssistantChatMessage assistantChatMessage = new AssistantChatMessage(completion);
+
+                        // O nome do AI na conversa é 'ChatGPT'.
+                        // Previne o 'Erro de Instanciação de Tipo Abstrato' devido a 'ParticipantName' ser 'null'
+                        // Ele ocorre porque o código está tentando criar uma instância de uma interface ou classe abstrata, o que não é possível.
+                        assistantChatMessage.ParticipantName = "ChatGPT";
+
+                        await guild.AddConversationAsync(user, assistantChatMessage);
                         await guild.AddCompletionAsync(user, completion);
 
                         return completion.ToString();
