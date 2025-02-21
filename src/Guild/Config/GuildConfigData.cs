@@ -1,9 +1,9 @@
 ﻿using Lombok.NET;
 
-namespace Ares.src.Guild.ChatData
+namespace Ares.src.Guild.Config
 {
     [AllArgsConstructor]
-    public partial class GuildIdData
+    public partial class GuildConfigData
     {
         public ulong MemberRoleId { get; set; }
         public ulong UsageRoleId { get; set; }

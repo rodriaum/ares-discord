@@ -1,12 +1,14 @@
 ﻿using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using Ares.src.Objects;
 using Ares.src.Utils.Extra;
-using Ares.src.Objects.OpenAI.Model;
-using Ares.src.Objects.OpenAI.Model.Category;
 using Ares.src.Guild.Information;
-using Ares.src.Guild.ChatData;
+using Ares.src.Guild.Config;
+using Ares.src.Guild.Data;
+using OpenAI.Chat;
+using Ares.src.Guild.Chat.Sub;
+using Ares.src.Service.Model;
+using Ares.src.Service.Model.Category;
 
 namespace Ares.src.Listener.Chat
 {
@@ -69,7 +71,7 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                GuildIdData? gid = information.GuildIdData;
+                GuildConfigData? gid = information.Config;
 
                 if (gid == null)
                 {
@@ -94,7 +96,7 @@ namespace Ares.src.Listener.Chat
                 }
 
 
-                if (guild.HasUserConversation(user))
+                if (guild.HasActiveUserConversation(user))
                 {
                     await args.FollowupAsync("Ops! Detectei uma conversa ativa! Para criar uma nova, termine a conversa antiga.");
                     return;
@@ -108,7 +110,9 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                if (await guild.CreateChatDataAsync(user, model))
+                ChatHistoric historic = new ChatHistoric(model: model.Model);
+
+                if (await guild.CreateChatData(user, model))
                 {
                     SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
                     RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
@@ -118,17 +122,17 @@ namespace Ares.src.Listener.Chat
                         .WithColor(Color.Green)
                         .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} | {socketGuild.Name}"));
 
-                    switch (model.Category)
+                    switch (model.Type)
                     {
-                        case OpenAiModelCategory.CHAT:
+                        case ModelType.Chat:
                             embed.WithDescription("Insira a sua pergunta para iniciar a conversa.");
                             break;
 
-                        case OpenAiModelCategory.IMAGE:
+                        case ModelType.Image:
                             embed.WithDescription("Insira a sua frase para gerar a imagem.");
                             break;
 
-                            default:
+                        default:
                             embed.WithDescription("Insira o parâmetro para iniciar o seu pedido.");
                             break;
                     }

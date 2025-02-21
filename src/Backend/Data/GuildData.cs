@@ -135,7 +135,7 @@ internal class GuildData
             }
             catch (JsonReaderException ex)
             {
-                await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
+                await LogUtil.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
             }
         }
         else

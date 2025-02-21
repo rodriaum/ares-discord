@@ -1,15 +1,14 @@
-﻿using Ares.src.Guild.ChatData;
-using Ares.src.Guild.Information;
+﻿using Ares.src.Guild.Information;
 using Ares.src.Logging;
-using Ares.src.Objects;
-using Ares.src.Objects.OpenAI.Model;
-using Ares.src.Objects.OpenAI.Model.Category;
 using Ares.src.Utils.Extra;
 using Ares.src.Utils;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 using OpenAI.Images;
+using Ares.src.Guild.Config;
+using Ares.src.Service.Model;
+using Ares.src.Service.Model.Category;
 
 namespace Ares.src.Listener.Chat
 {
@@ -86,7 +85,7 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                GuildIdData? gid = information.GuildIdData;
+                GuildConfigData? gid = information.Config;
 
                 if (gid == null)
                 {
@@ -94,7 +93,7 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                if (!(channel.CategoryId.Equals(gid.ChatsCategoryId) && guild.HasUserConversation(user))) return;
+                if (!channel.CategoryId.Equals(gid.ChatsCategoryId) && guild.HasActiveUserConversation(user)) return;
 
                 // O método só é ivocado aqui porque ele iria enviar mensagem sem a verificação de cima estar finalizada.
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
@@ -104,22 +103,22 @@ namespace Ares.src.Listener.Chat
 
                 IRole exclusiveRole = socketGuild.GetRole(gid.ExclusiveRoleId);
 
-                OpenAiModel? model = guild.GetModelByUser(user);
+                OpenAiModel? model = guild.GetLastModelByUser(user);
                 if (model == null) return;
 
                 SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
                 string prompt = message.Content;
 
-                switch (model.Category)
+                switch (model.Type)
                 {
-                    case OpenAiModelCategory.CHAT:
+                    case ModelType.Chat:
                         string responseText = await OpenAiService.GenerateConversationAsync(guild, guildUser, model, prompt);
 
                         embed.WithDescription(responseText)
                             .WithColor(Color.Green);
                         break;
 
-                    case OpenAiModelCategory.IMAGE:
+                    case ModelType.Image:
 
                         // Futuramente vai dar para personalizar.
                         ImageGenerationOptions options = new()
@@ -135,7 +134,7 @@ namespace Ares.src.Listener.Chat
                         // Como pode retornar um url ou mensagem de erro, fazemos essa verificação.
                         if (Util.IsValidUrl(responseImageUrl))
                         {
-                            embed.WithDescription("Em anexo a imagem solicitada:")
+                            embed.WithDescription("Aqui esta a imagem solicitada:")
                                 .WithColor(Color.Green);
 
                             embed.WithImageUrl(responseImageUrl);
@@ -152,7 +151,7 @@ namespace Ares.src.Listener.Chat
             }
             catch (Exception e)
             {
-                await LogUtil.ErrorAsync("EXCEPTION", "", e.Message);
+                await LogUtil.ErrorAsync("EXCEPTION", "Can't proccess the content receiver.", e.Message);
             }
         }
     }

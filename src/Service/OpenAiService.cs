@@ -1,12 +1,13 @@
 ﻿using Discord.WebSocket;
 using OpenAI.Chat;
-using Ares.src.Objects;
-using Ares.src.Objects.OpenAI.Model;
 using Discord;
 using Ares.src.Guild.Information;
 using OpenAI.Images;
-using Ares.src.Objects.OpenAI.Model.Category;
 using Ares.src.Manager;
+using System.ClientModel;
+using Ares.src.Utils.Extra;
+using Ares.src.Service.Model;
+using Ares.src.Service.Model.Category;
 
 
 namespace Ares.src.Logging
@@ -22,7 +23,7 @@ namespace Ares.src.Logging
             VerifyParameters(guild, user, model, prompt);
 
             // Verificação do tipo de modelo
-            if (model.Category != OpenAiModelCategory.IMAGE)
+            if (model.Type != ModelType.Image)
             {
                 return "Parece que houve um problema na identificação do modelo. Tente novamente!";
             }
@@ -43,9 +44,6 @@ namespace Ares.src.Logging
                 ImageClient client = new ImageClient(model.Model, token);
                 GeneratedImage image = await client.GenerateImageAsync(prompt, options);
 
-                // Processar a imagem
-                await guild.AddGeneratedImageAsync(user, image);
-
                 return image.ImageUri.OriginalString;
             }
             catch (Exception e)
@@ -61,7 +59,7 @@ namespace Ares.src.Logging
             VerifyParameters(guild, user, model, prompt);
 
             // Verificação do tipo de modelo
-            if (model.Category != OpenAiModelCategory.CHAT)
+            if (model.Type != ModelType.Chat)
             {
                 return "Parece que houve um problema na identificação do modelo. Tente novamente!";
             }
@@ -85,27 +83,21 @@ namespace Ares.src.Logging
 
             try
             {
-                // Adicionar conversa do usuário
-                await guild.AddConversationAsync(user, userChatMessage);
-
                 // Inicializar cliente de chat
                 ChatClient client = new ChatClient(model.Model, token);
-                var messages = guild.Messages(user);
-                ChatCompletion completion = await client.CompleteChatAsync(guild.Messages(user));
+                
+                ChatCompletion completion = await client.CompleteChatAsync();
+
+                await guild.SaveHistoricAsync(user, ObjectUtil.BuildChatHistoric(prompt, completion));
 
                 // Processar resposta do chat
                 switch (completion.FinishReason)
                 {
                     case ChatFinishReason.Stop:
-                        AssistantChatMessage assistantChatMessage = new AssistantChatMessage(completion);
+                       AssistantChatMessage assistantChatMessage = new AssistantChatMessage(completion);
 
-                        // O nome do AI na conversa é 'ChatGPT'.
-                        // Previne o 'Erro de Instanciação de Tipo Abstrato' devido a 'ParticipantName' ser 'null'
-                        // Ele ocorre porque o código está tentando criar uma instância de uma interface ou classe abstrata, o que não é possível.
-                        assistantChatMessage.ParticipantName = "ChatGPT";
-
-                        await guild.AddConversationAsync(user, assistantChatMessage);
-                        await guild.AddCompletionAsync(user, completion);
+                        //await guild.AddConversationAsync(user, assistantChatMessage);
+                        //await guild.AddCompletionAsync(user, completion);
 
                         return completion.ToString();
 
@@ -124,11 +116,12 @@ namespace Ares.src.Logging
             }
             catch (Exception e)
             {
+                /*
                 if (!await guild.RemoveConversationAsync(user, userChatMessage))
                 {
                     throw new Exception("Não foi possível remover a conversa do usuário após um problema interno.", e);
                 }
-
+                */
                 return Constant.UNABLE_PERFORM_TASK;
             }
         }

@@ -59,10 +59,7 @@ namespace Ares.src
             Client.Ready += RegisterCommands;
             Client.Ready += () =>
             {
-                SocketSelfUser selfUser = Client.CurrentUser;
-
-                LogUtil.Log("READY", $"Sucess! Logged to \"{selfUser.Username}#{selfUser.Discriminator}\"");
-
+                LogUtil.Log("STATUS", $"Success! Logged to {Client.CurrentUser.Username}");
                 return Task.CompletedTask;
             };
 
@@ -112,7 +109,7 @@ namespace Ares.src
 
                     await Client.CreateGlobalApplicationCommandAsync(build);
 
-                    LogUtil.Log("COMMAND", $"Command \"{build.Name}\" registered successfully.");
+                    LogUtil.Log("COMMAND", $"Command \"{build.Name}\" registered.");
                 }
 
             }

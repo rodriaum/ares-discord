@@ -35,7 +35,7 @@
             bool isError = !string.IsNullOrEmpty(error);
             string date = $"{time.Hour}:{time.Minute}:{time.Second}";
 
-            return $"[{date} - {(isError ? "ERROR" : "INFO")}] {(!string.IsNullOrEmpty(prefix) ? $"{prefix}: " : "")}{message}{(isError ? $"\n -> {error}\n" : "")}";
+            return $"[{date} - {(isError ? "Error" : "Info")}] {(!string.IsNullOrEmpty(prefix) ? $"[{prefix}] " : "")}{message}{(isError ? $"\n -> {error}\n" : "")}";
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using MongoDB.Bson.Serialization;
 using MongoDB.Bson;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace Ares.src.Utils.Extra.Json
 {
@@ -51,21 +52,21 @@ namespace Ares.src.Utils.Extra.Json
 
         public static T MapToObject<T>(Dictionary<string, string> map)
         {
-            var jsonObject = new JObject();
+            var obj = new JObject();
 
             foreach (var kvp in map)
             {
                 try
                 {
-                    jsonObject.Add(kvp.Key, JToken.Parse(kvp.Value));
+                    obj.Add(kvp.Key, JToken.Parse(kvp.Value));
                 }
                 catch (Exception)
                 {
-                    jsonObject.Add(kvp.Key, new JValue(kvp.Value));
+                    obj.Add(kvp.Key, new JValue(kvp.Value));
                 }
             }
 
-            return jsonObject.ToObject<T>();
+            return obj.ToObject<T>();
         }
 
         public static Dictionary<string, string> ObjectToMap(object src)
@@ -74,10 +75,14 @@ namespace Ares.src.Utils.Extra.Json
 
             try
             {
-                var jsonObject = JObject.FromObject(src);
-                foreach (var kvp in jsonObject)
+                var obj = JObject.FromObject(src);
+
+                foreach (var kvp in obj)
                 {
-                    map.Add(kvp.Key, kvp.Value.ToString(Newtonsoft.Json.Formatting.None));
+                    if (kvp.Value != null)
+                    {
+                        map.Add(kvp.Key, kvp.Value.ToString(Formatting.None));
+                    }
                 }
             }
             catch (Exception) { }
@@ -91,10 +96,13 @@ namespace Ares.src.Utils.Extra.Json
 
             try
             {
-                var jsonObject = JObject.FromObject(src);
-                foreach (var kvp in jsonObject)
+                var obj = JObject.FromObject(src);
+                foreach (var kvp in obj)
                 {
-                    map.Add(kvp.Key, new List<string> { kvp.Value.ToString(Newtonsoft.Json.Formatting.None) });
+                    if (kvp.Value != null)
+                    {
+                        map.Add(kvp.Key, new List<string> { kvp.Value.ToString(Formatting.None) });
+                    }
                 }
             }
             catch (Exception) { }

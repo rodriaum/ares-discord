@@ -1,6 +1,7 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
+using Ares.src.Utils.Extra;
 
 namespace Ares.src.service
 {
@@ -14,14 +15,18 @@ namespace Ares.src.service
 
         private Task LogAsync(LogMessage message)
         {
-            if (message.Exception is CommandException cmdException)
+            if (message.Exception is CommandException ex)
             {
-                Console.WriteLine($"[Command/{message.Severity}] {cmdException.Command.Aliases.First()}"
-                    + $" failed to execute in {cmdException.Context.Channel}.");
-                Console.WriteLine(cmdException);
+                LogUtil.Error(
+                    $"Command: {message.Severity}", 
+                    $"{ex.Command.Aliases.First()} failed to execute in {ex.Context.Channel}.",
+                    ex.Message
+                    );
             }
             else
-                Console.WriteLine($"[General/{message.Severity}] {message}");
+            {
+                LogUtil.Error($"[General: {message.Severity}", "Failed to execute a command.", message.Message);
+            }
 
             return Task.CompletedTask;
         }

@@ -1,5 +1,4 @@
-﻿using Ares.src.Objects;
-using Ares.src.Utils.Extra;
+﻿using Ares.src.Utils.Extra;
 using Discord;
 using Discord.WebSocket;
 
@@ -51,7 +50,7 @@ namespace Ares.src.Listener.Chat.Button
 
                 if (channel != null)
                 {
-                    await guild.DeleteChatDataAsync(user);
+                    //await guild.DeleteChatDataAsync(user);
 
                     await args.FollowupAsync("Obrigado por usar **Ares**! A fechar a conversa...");
 

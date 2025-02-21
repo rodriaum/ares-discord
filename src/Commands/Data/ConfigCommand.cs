@@ -1,4 +1,4 @@
-﻿using Ares.src.Guild.ChatData;
+﻿using Ares.src.Guild.Config;
 using Discord.WebSocket;
 
 namespace Ares.src.Commands.Data
@@ -17,12 +17,12 @@ namespace Ares.src.Commands.Data
         {
             if (Client == null || !command.Data.Name.Equals("config")) return;
 
-            Guild.Guild? guild = await Core.GuildData?.Save("1277819529602400306");
+            Guild.Guild? guild = await Core.GuildData?.Save("1278447277907644578");
 
             if (guild != null)
             {
                 await guild.SaveGuildIdDataAsync(
-                    new GuildIdData
+                    new GuildConfigData
                     {
                         MemberRoleId = 1277819529602400313,
                         UsageRoleId = 1277819529619308561,

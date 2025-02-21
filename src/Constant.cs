@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ares.src.Objects
+namespace Ares.src
 {
     internal class Constant
     {
