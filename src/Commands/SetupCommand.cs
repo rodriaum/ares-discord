@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Ares.src.Logging;
+using Ares.src.Service;
 using Ares.src.Service.Model;
 
 namespace Ares.src.Commands
@@ -47,7 +47,7 @@ namespace Ares.src.Commands
                         .WithPlaceholder("Escolha um modelo")
                         .WithCustomId("openai-chat-menu");
 
-                    foreach (OpenAiModel model in OpenAiService.OpenAiModels)
+                    foreach (ChatModel model in OpenAiService.OpenAiModels)
                     {
                         menu.AddOption(new SelectMenuOptionBuilder
                         {

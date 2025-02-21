@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Service.Model.Category
+﻿namespace Ares.src.Service.Model
 {
     public enum ModelType
     {

@@ -1,5 +1,4 @@
 ﻿using Ares.src.Guild.Information;
-using Ares.src.Logging;
 using Ares.src.Utils.Extra;
 using Ares.src.Utils;
 using Discord;
@@ -7,8 +6,8 @@ using Discord.Rest;
 using Discord.WebSocket;
 using OpenAI.Images;
 using Ares.src.Guild.Config;
+using Ares.src.Service;
 using Ares.src.Service.Model;
-using Ares.src.Service.Model.Category;
 
 namespace Ares.src.Listener.Chat
 {
@@ -85,15 +84,15 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                GuildConfigData? gid = information.Config;
+                GuildConfigData? gcd = information.Config;
 
-                if (gid == null)
+                if (gcd == null)
                 {
                     await channel.SendMessageAsync(embed: embed.WithDescription("Não foi possível encontrar as informações sobre os IDs.").Build());
                     return;
                 }
 
-                if (!channel.CategoryId.Equals(gid.ChatsCategoryId) && guild.HasActiveUserConversation(user)) return;
+                if (!(channel.CategoryId.Equals(gcd.ChatsCategoryId) && guild.HasActiveUserConversation(user))) return;
 
                 // O método só é ivocado aqui porque ele iria enviar mensagem sem a verificação de cima estar finalizada.
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
@@ -101,9 +100,9 @@ namespace Ares.src.Listener.Chat
                 // Verifica se o canal em que o usuário enviou a mensagem é dele. (Futuramente pode ser verificado com banco de dados)
                 if (!channel.Name.Contains(user.GlobalName.ToLower())) return;
 
-                IRole exclusiveRole = socketGuild.GetRole(gid.ExclusiveRoleId);
+                IRole exclusiveRole = socketGuild.GetRole(gcd.ExclusiveRoleId);
 
-                OpenAiModel? model = guild.GetLastModelByUser(user);
+                ChatModel? model = guild.GetLastModelByUser(user);
                 if (model == null) return;
 
                 SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
@@ -151,7 +150,7 @@ namespace Ares.src.Listener.Chat
             }
             catch (Exception e)
             {
-                await LogUtil.ErrorAsync("EXCEPTION", "Can't proccess the content receiver.", e.Message);
+                await LogUtil.ErrorAsync("RecContException", "Can't proccess the content receiver.", e.Message);
             }
         }
     }

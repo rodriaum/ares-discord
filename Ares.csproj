@@ -9,12 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="src\Objects\OpenAI\Model\Category\NovaPasta\**" />
-    <EmbeddedResource Remove="src\Objects\OpenAI\Model\Category\NovaPasta\**" />
-    <None Remove="src\Objects\OpenAI\Model\Category\NovaPasta\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Discord.Net" Version="3.15.3" />
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="Lombok.NET" Version="2.4.0" />

@@ -6,11 +6,11 @@ using OpenAI.Images;
 using Ares.src.Manager;
 using System.ClientModel;
 using Ares.src.Utils.Extra;
+using Ares.src.Guild.Chat.Sub;
 using Ares.src.Service.Model;
-using Ares.src.Service.Model.Category;
 
 
-namespace Ares.src.Logging
+namespace Ares.src.Service
 {
     public class OpenAiService : OpenAiManager
     {
@@ -18,9 +18,9 @@ namespace Ares.src.Logging
 
         // Futuro: Fazer retornar o url e um bool de sucesso.
 
-        public async static Task<string> GenerateImageUrlAsync(Guild.Guild guild, SocketGuildUser user, OpenAiModel model, ImageGenerationOptions options, string prompt)
+        public async static Task<string> GenerateImageUrlAsync(Guild.Guild guild, SocketGuildUser user, ChatModel model, ImageGenerationOptions options, string prompt)
         {
-            VerifyParameters(guild, user, model, prompt);
+            HandleVerifyParameters(guild, user, model, prompt);
 
             // Verificação do tipo de modelo
             if (model.Type != ModelType.Image)
@@ -54,9 +54,9 @@ namespace Ares.src.Logging
 
 
         // Futuro: Fazer retornar o texto e um bool de sucesso.
-        public async static Task<string> GenerateConversationAsync(Guild.Guild guild, SocketGuildUser user, OpenAiModel model, string prompt)
+        public async static Task<string> GenerateConversationAsync(Guild.Guild guild, SocketGuildUser user, ChatModel model, string prompt)
         {
-            VerifyParameters(guild, user, model, prompt);
+            HandleVerifyParameters(guild, user, model, prompt);
 
             // Verificação do tipo de modelo
             if (model.Type != ModelType.Chat)
@@ -70,8 +70,6 @@ namespace Ares.src.Logging
             UserChatMessage userChatMessage = new UserChatMessage(prompt);
 
             // O nome do usuário na conversa é o nome do Discord.
-            // Previne o 'Erro de Instanciação de Tipo Abstrato' devido a 'ParticipantName' ser 'null'
-            // Ele ocorre porque o código está tentando criar uma instância de uma interface ou classe abstrata, o que não é possível.
             userChatMessage.ParticipantName = user.GlobalName;
 
             // Validação do token
@@ -81,24 +79,24 @@ namespace Ares.src.Logging
                 return "Ops! Parece que o servidor atual não tem um token pré-configurado.";
             }
 
+            ChatHistoric? historic = null;
+
             try
             {
-                // Inicializar cliente de chat
                 ChatClient client = new ChatClient(model.Model, token);
                 
-                ChatCompletion completion = await client.CompleteChatAsync();
+                List<ChatHistoric>? historics = guild.ChatHistorics(user);
+                List<ChatMessage> messages = OpenAiUtil.GetChatMessages(historics);
 
-                await guild.SaveHistoricAsync(user, ObjectUtil.BuildChatHistoric(prompt, completion));
+                ChatCompletion completion = await client.CompleteChatAsync(messages);
+
+                historic = OpenAiUtil.BuildChatHistoric(prompt, completion);
+                await guild.SaveHistoricAsync(user, historic);
 
                 // Processar resposta do chat
                 switch (completion.FinishReason)
                 {
                     case ChatFinishReason.Stop:
-                       AssistantChatMessage assistantChatMessage = new AssistantChatMessage(completion);
-
-                        //await guild.AddConversationAsync(user, assistantChatMessage);
-                        //await guild.AddCompletionAsync(user, completion);
-
                         return completion.ToString();
 
                     case ChatFinishReason.Length:
@@ -116,17 +114,17 @@ namespace Ares.src.Logging
             }
             catch (Exception e)
             {
-                /*
-                if (!await guild.RemoveConversationAsync(user, userChatMessage))
+                
+                if (historic != null && !await guild.RemoveConversationAsync(user, historic))
                 {
                     throw new Exception("Não foi possível remover a conversa do usuário após um problema interno.", e);
                 }
-                */
+                
                 return Constant.UNABLE_PERFORM_TASK;
             }
         }
 
-        private static void VerifyParameters(Guild.Guild guild, IGuildUser user, OpenAiModel model, String prompt)
+        private static void HandleVerifyParameters(Guild.Guild guild, IGuildUser user, ChatModel model, String prompt)
         {
             // Validação de parâmetros
             if (guild == null)

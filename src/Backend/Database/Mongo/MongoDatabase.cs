@@ -33,7 +33,7 @@ namespace Ares.src.Backend.Database.Mongo
         {
             long start = TimeUtil.CurrentTimeMillis();
 
-            LogUtil.Log("MONGO", "Connecting...");
+            LogUtil.Log("MongoDB", "Connecting...");
 
             try
             {
@@ -44,11 +44,11 @@ namespace Ares.src.Backend.Database.Mongo
                 client = new MongoClient(settings);
                 mongoDatabase = client.GetDatabase(credentials.Database);
 
-                LogUtil.Log("MONGO", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
+                LogUtil.Log("MongoDB", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
             }
             catch (Exception e)
             {
-                LogUtil.Error("MONGO", "Unable to connect...", e.Message);
+                LogUtil.Error("MongoDB", "Unable to connect...", e.Message);
             }
         }
 

@@ -65,7 +65,7 @@ namespace Ares.src.Listener.Chat.Button
             catch (Exception e)
             {
                 await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
-                await LogUtil.ErrorAsync("EXCEPTION", "Unable to close chat.", e.Message);
+                await LogUtil.ErrorAsync("ButtonException", "Unable to close chat.", e.Message);
             }
         }
     }

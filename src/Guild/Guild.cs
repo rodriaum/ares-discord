@@ -155,13 +155,14 @@ namespace Ares.src.Guild
         {
             List<ChatHistoric>? historic = this.ChatHistorics(user);
             if (historic == null || (historic != null && historic.Count == 0)) return null;
+
             return historic.Last(historic => historic.Active == active);
         }
 
-        public async Task<bool> CreateChatData(IUser user, OpenAiModel model)
+        public async Task<bool> CreateChatData(IUser user, ChatHistoric historic)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
-            if (model == null) throw new ArgumentNullException(nameof(model));
+            if (historic.Model == null) throw new ArgumentNullException(nameof(historic.Model));
 
             if (HasActiveUserConversation(user))
             {
@@ -186,7 +187,7 @@ namespace Ares.src.Guild
                     historics = chat.Historics[user.Id];
                 }
 
-                historics.Add(new ChatHistoric());
+                historics.Add(historic);
 
                 bool success = chat.Historics.TryAdd(user.Id, historics);
 
@@ -285,7 +286,7 @@ namespace Ares.src.Guild
             return value != null && (value.Count > 0 && value[value.Count - 1].Active);
         }
 
-        public OpenAiModel? GetLastModelByUser(IUser user)
+        public ChatModel? GetLastModelByUser(IUser user)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -293,9 +294,9 @@ namespace Ares.src.Guild
             if (historic == null) return null;
 
             var model = historic.Model;
-            if (model == null) return null;
+            if (string.IsNullOrWhiteSpace(model)) return null;
 
-            return OpenAiModel.GetByModel(model);
+            return ChatModel.GetByNearestModel(model);
         }
 
         public int GetLastMessagesByRole(IUser user, ChatMessageRole role)
@@ -306,7 +307,7 @@ namespace Ares.src.Guild
 
             if (historic != null)
             {
-                return historic.Count(m => m.Role == role);
+                return historic.Count(m => m.Role == OpenAiUtil.ConvertOpenAiRole(role));
             }
 
             return 0;

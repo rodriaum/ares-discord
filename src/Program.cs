@@ -59,7 +59,7 @@ namespace Ares.src
             Client.Ready += RegisterCommands;
             Client.Ready += () =>
             {
-                LogUtil.Log("STATUS", $"Success! Logged to {Client.CurrentUser.Username}");
+                LogUtil.Log("Status", $"Success! Logged to {Client.CurrentUser.Username}");
                 return Task.CompletedTask;
             };
 
@@ -109,7 +109,7 @@ namespace Ares.src
 
                     await Client.CreateGlobalApplicationCommandAsync(build);
 
-                    LogUtil.Log("COMMAND", $"Command \"{build.Name}\" registered.");
+                    LogUtil.Log("Commands", $"Command \"{build.Name}\" registered.");
                 }
 
             }
@@ -117,7 +117,7 @@ namespace Ares.src
             {
                 string json = JsonConvert.SerializeObject(e.Errors, Formatting.Indented);
 
-                LogUtil.Log("COMMAND", "Unable to register commands.\n -> " + (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message));
+                LogUtil.Log("Commands", "Unable to register commands.\n -> " + (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message));
             }
         }
     }

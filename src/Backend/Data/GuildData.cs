@@ -72,7 +72,7 @@ internal class GuildData
     /// </summary>
     public async void CreateIndexes()
     {
-        await LogUtil.LogAsync("MONGO", "Criando índices no banco de dados...");
+        await LogUtil.LogAsync("MongoDB", "Creating indexes in the database...");
 
         // Verifica se a coleção foi inicializada antes de tentar criar os índices.
         if (this._collection == null)
@@ -94,7 +94,7 @@ internal class GuildData
 
                 await this._collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
 
-                await LogUtil.LogAsync("MONGO", "Índices criados com sucesso.");
+                await LogUtil.LogAsync("MongoDB", "Indexes created.");
 
             }
             catch (Exception ex)
@@ -175,7 +175,7 @@ internal class GuildData
                 }
                 catch (JsonReaderException ex)
                 {
-                    await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
+                    await LogUtil.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
                 }
             }
         }
@@ -283,7 +283,7 @@ internal class GuildData
             }
             catch (JsonReaderException ex)
             {
-                await LogUtil.ErrorAsync("JSON READER EXCEPTION", "Error deserializing document.", ex.Message);
+                await LogUtil.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
             }
         });
 

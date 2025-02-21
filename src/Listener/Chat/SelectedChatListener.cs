@@ -8,7 +8,6 @@ using Ares.src.Guild.Data;
 using OpenAI.Chat;
 using Ares.src.Guild.Chat.Sub;
 using Ares.src.Service.Model;
-using Ares.src.Service.Model.Category;
 
 namespace Ares.src.Listener.Chat
 {
@@ -102,7 +101,7 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                OpenAiModel? model = OpenAiModel.GetByModel(args.Data.Values.First());
+                ChatModel? model = ChatModel.GetByModel(args.Data.Values.First());
 
                 if (model == null)
                 {
@@ -112,7 +111,7 @@ namespace Ares.src.Listener.Chat
 
                 ChatHistoric historic = new ChatHistoric(model: model.Model);
 
-                if (await guild.CreateChatData(user, model))
+                if (await guild.CreateChatData(user, historic))
                 {
                     SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
                     RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
@@ -167,7 +166,7 @@ namespace Ares.src.Listener.Chat
             catch (Exception e)
             {
                 await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
-                await LogUtil.ErrorAsync("EXCEPTION", "Unable to process chat model choice.", e.Message);
+                await LogUtil.ErrorAsync("SelectException", "Unable to process chat model choice.", e.Message);
             }
         }
     }

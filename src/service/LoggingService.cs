@@ -3,7 +3,7 @@ using Discord.WebSocket;
 using Discord;
 using Ares.src.Utils.Extra;
 
-namespace Ares.src.service
+namespace Ares.src.Service
 {
     internal class LoggingService
     {
