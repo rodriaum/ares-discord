@@ -88,6 +88,9 @@ namespace Ares.src.Service
                 List<ChatHistoric>? historics = guild.ChatHistorics(user);
                 List<ChatMessage> messages = OpenAiUtil.GetChatMessages(historics);
 
+                // Como é enviado para o banco de dados depois de completar a conversa, a mensagem do usuário é adicionada antes.
+                messages.Add(userChatMessage);
+
                 ChatCompletion completion = await client.CompleteChatAsync(messages);
 
                 historic = OpenAiUtil.BuildChatHistoric(prompt, completion);
