@@ -1,14 +1,17 @@
 ﻿using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Chat.Sub;
 using Ares.src.Service.Chat;
+using DeepSeek.Core;
+using DeepSeek.Core.Models;
 using OpenAI.Chat;
+using System.Text;
 
 namespace Ares.src.Utils.Extra;
 
 public class AiUtil
 {
     /// <summary>
-    /// <b>ANTHROPIC</b> - Constrói um histórico de chat para Anthropic a partir de uma resposta de mensagem.
+    /// <b>Anthropic</b> - Constrói um histórico de chat para Anthropic a partir de uma resposta de mensagem.
     /// </summary>
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
     /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
@@ -27,17 +30,17 @@ public class AiUtil
     }
 
     /// <summary>
-    /// <b>ANTHROPIC</b> - Obtém mensagens do histórico de chat da Anthropic.
+    /// <b>Anthropic</b> - Obtém mensagens do histórico de chat da Anthropic.
     /// </summary>
     /// <param name="historics">Lista de históricos de chat armazenados.</param>
-    public static List<Message> GetChatAnthropicMessages(List<ChatHistoric>? historics)
+    public static List<Anthropic.SDK.Messaging.Message> GetChatAnthropicMessages(List<ChatHistoric>? historics)
     {
         if (historics == null || historics.Count == 0)
         {
-            return new List<Message>();
+            return new List<Anthropic.SDK.Messaging.Message>();
         }
 
-        List<Message> messages = new List<Message>();
+        List<Anthropic.SDK.Messaging.Message> messages = new List<Anthropic.SDK.Messaging.Message>();
 
         foreach (ChatHistoric historic in historics)
         {
@@ -45,12 +48,12 @@ public class AiUtil
 
             if (!string.IsNullOrWhiteSpace(historic.Prompt))
             {
-                messages.Add(new Message(RoleType.User, historic.Prompt));
+                messages.Add(new Anthropic.SDK.Messaging.Message(RoleType.User, historic.Prompt));
             }
 
             if (!string.IsNullOrWhiteSpace(historic.Response))
             {
-                messages.Add(new Message(RoleType.Assistant, historic.Response));
+                messages.Add(new Anthropic.SDK.Messaging.Message(RoleType.Assistant, historic.Response));
             }
         }
 
@@ -58,7 +61,7 @@ public class AiUtil
     }
 
     /// <summary>
-    /// <b>ANTHROPIC</b> - Converte um <see cref="RoleType"/> da Anthropic para um <see cref="ChatRole"/>.
+    /// <b>Anthropic</b> - Converte um <see cref="RoleType"/> da Anthropic para um <see cref="ChatRole"/>.
     /// </summary>
     public static ChatRole ConvertAnthropicRole(RoleType role)
     {
@@ -153,5 +156,72 @@ public class AiUtil
             ChatMessageRole.Assistant => ChatRole.Assistant,
             _ => ChatRole.None
         };
+    }
+
+    /// <summary>
+    /// <b>DeepSeek</b> - Constrói um histórico de chat para DeepSeek a partir de uma resposta de mensagem.
+    /// </summary>
+    /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
+    /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
+    /// <param name="response">Resposta gerada pela IA da DeepSeek.</param>
+    public static ChatHistoric ConvertChatResponseToChatHistoric(string prompt, ulong channel, ChatResponse response)
+    {
+        Choice? choice = response.Choices.FirstOrDefault();
+
+        if (choice == null || choice.Message == null || choice.Message.Content == null)
+        {
+            throw new InvalidOperationException($"A escolha ou o conteúdo da mensagem está ausente.\nChannel: {channel}\nPrompt: {prompt}");
+        }
+
+        DeepSeek.Core.Models.Usage? usage = response.Usage;
+
+        return new ChatHistoric
+        (
+            channel: channel,
+            model: response.Model,
+            prompt: prompt,
+            response: choice.Message.Content,
+            usage: new ChatValueUsage((usage != null ? usage.CompletionTokens : 0), (usage != null ? usage.PromptTokens : 0)),
+            role: ConvertDeepSeekRole()
+        );
+    }
+
+    /// <summary>
+    /// <b>DeepSeek</b> - Obtém mensagens do histórico de chat da DeepSeek.
+    /// </summary>
+    /// <param name="historics">Lista de históricos de chat armazenados.</param>
+    public static List<DeepSeek.Core.Models.Message> GetChatDeepSeekMessages(List<ChatHistoric>? historics)
+    {
+        if (historics == null || historics.Count == 0)
+        {
+            return new List<DeepSeek.Core.Models.Message>();
+        }
+        
+        List<DeepSeek.Core.Models.Message> messages = new List<DeepSeek.Core.Models.Message>();
+
+        foreach (ChatHistoric historic in historics)
+        {
+            if (!historic.Active) continue;
+
+            if (!string.IsNullOrWhiteSpace(historic.Prompt))
+            {
+                messages.Add(DeepSeek.Core.Models.Message.NewUserMessage(historic.Prompt));
+            }
+
+            if (!string.IsNullOrWhiteSpace(historic.Response))
+            {
+                messages.Add(DeepSeek.Core.Models.Message.NewAssistantMessage(historic.Response));
+            }
+        }
+
+        return messages;
+    }
+
+    /// <summary>
+    /// <b>DeepSeek</b> - Converte um <see cref="?"/> da DeepSeek para um <see cref="ChatRole"/>.
+    /// </summary>
+    public static ChatRole ConvertDeepSeekRole()
+    {
+        return ChatRole.None;
     }
 }

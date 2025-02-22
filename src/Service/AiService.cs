@@ -10,6 +10,8 @@ using Ares.src.Guild.Config;
 using Anthropic.SDK;
 using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Token;
+using DeepSeek.Core;
+using DeepSeek.Core.Models;
 
 
 namespace Ares.src.Service;
@@ -104,6 +106,9 @@ public class AiService
                 case ModelCategory.Anthropic:
                     return await HandleAnthropicConversation(guild, user, model, channel, prompt, tokenData, historics);
 
+                case ModelCategory.DeepSeek:
+                    return await HandleDeepSeekConversation(guild, user, model, channel, prompt, tokenData, historics);
+
                 default:
                     return "Não foi possível identificar o modelo. Tente novamente!";
             }
@@ -172,8 +177,8 @@ public class AiService
             return "Ops! Parece que o servidor atual não tem um token Anthropic pré-configurado.";
         }
 
-        Message userMessage = new Message(RoleType.User, prompt);
-        List<Message> messages = AiUtil.GetChatAnthropicMessages(historics);
+        Anthropic.SDK.Messaging.Message userMessage = new Anthropic.SDK.Messaging.Message(RoleType.User, prompt);
+        List<Anthropic.SDK.Messaging.Message> messages = AiUtil.GetChatAnthropicMessages(historics);
         messages.Add(userMessage);
 
         APIAuthentication auth = new APIAuthentication(token);
@@ -194,6 +199,59 @@ public class AiService
         await guild.SaveHistoricAsync(user, historic);
 
         return response.Message.ToString();
+    }
+
+    /// <summary>
+    /// <b>DeepSeek</b> - Conversation Generation
+    /// </summary>
+
+    private static async Task<string> HandleDeepSeekConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt, GuildTokenData tokenData, List<ChatHistoric>? historics)
+    {
+        string? token = tokenData.Deepseek;
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return "Ops! Parece que o servidor atual não tem um token DeepSeek pré-configurado.";
+        }
+
+        DeepSeek.Core.Models.Message userMessage = DeepSeek.Core.Models.Message.NewUserMessage(prompt);
+        List<DeepSeek.Core.Models.Message> messages = AiUtil.GetChatDeepSeekMessages(historics);
+        messages.Add(userMessage);
+
+        DeepSeekClient client = new DeepSeekClient(token);
+
+        var request = new ChatRequest
+        {
+            Messages = messages,
+            Model = model.Model
+        };
+
+        ChatResponse? response = await client.ChatAsync(request, new CancellationToken());
+
+        if (response == null)
+        {
+            LogUtil.Error
+                (
+                    "DeepSeek", 
+                    "Não foi possível obter a resposta.", 
+                    (client.ErrorMsg != null ? client.ErrorMsg : "Desconhecido")
+                );
+
+            return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
+        }
+
+        ChatHistoric historic = AiUtil.ConvertChatResponseToChatHistoric(prompt, channel, response);
+
+        Choice? choice = response.Choices.FirstOrDefault();
+
+        if (choice == null || choice.Message == null || choice.Message.Content == null)
+        {
+            return "Ops! Parece que não foi possível obter a única resposta, tente novamente!";
+        }
+
+        await guild.SaveHistoricAsync(user, historic);
+
+        return choice.Message.Content;
     }
 
     private static void HandleVerifyParameters(Guild.Guild guild, IGuildUser user, ChatModel model, String prompt)

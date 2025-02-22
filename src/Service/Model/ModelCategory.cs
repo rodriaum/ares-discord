@@ -3,6 +3,7 @@
     public enum ModelCategory
     {
         OpenAI,
-        Anthropic
+        Anthropic,
+        DeepSeek
     }
 }
