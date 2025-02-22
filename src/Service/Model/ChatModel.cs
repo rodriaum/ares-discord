@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver.Linq;
+﻿using Ares.src.Manager;
+using MongoDB.Driver.Linq;
 
 namespace Ares.src.Service.Model
 {
@@ -21,14 +22,14 @@ namespace Ares.src.Service.Model
 
         public static List<ChatModel> GetModelsByCategory(ModelType category)
         {
-            return Manager.OpenAiManager.OpenAiModels
+            return AiManager.Models
                 .Where(model => model.Type.Equals(category))
                 .ToList();
         }
 
         public static ChatModel? GetByDisplayName(string displayName)
         {
-            return Manager.OpenAiManager.OpenAiModels
+            return AiManager.Models
                     .Where(model => model.DisplayName.Equals(displayName))
                     .First();
         }
@@ -42,7 +43,7 @@ namespace Ares.src.Service.Model
         /// <returns>O modelo correspondente ou null caso não encontrado.</returns>
         public static ChatModel? GetByModel(string model)
         {
-            return Manager.OpenAiManager.OpenAiModels
+            return AiManager.Models
                     .Where(it => it.Model.Equals(model, StringComparison.OrdinalIgnoreCase))
                     .FirstOrDefault();
         }
@@ -58,7 +59,7 @@ namespace Ares.src.Service.Model
         /// <returns>O modelo correspondente ou null caso não encontrado.</returns>
         public static ChatModel? GetByNearestModel(string model)
         {
-            return Manager.OpenAiManager.OpenAiModels
+            return AiManager.Models
                     .Where(it => model.StartsWith(it.Model))
                     .FirstOrDefault();
         }

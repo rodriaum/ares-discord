@@ -3,7 +3,6 @@ using OpenAI.Chat;
 using Discord;
 using Ares.src.Guild.Information;
 using OpenAI.Images;
-using Ares.src.Manager;
 using Ares.src.Utils.Extra;
 using Ares.src.Guild.Chat.Sub;
 using Ares.src.Service.Model;
@@ -14,7 +13,7 @@ using Anthropic.SDK.Messaging;
 
 namespace Ares.src.Service;
 
-public class AiService : OpenAiManager
+public class AiService
 {
 
     /// <summary>
@@ -32,7 +31,14 @@ public class AiService : OpenAiManager
         }
 
         GuildInformation information = guild.Information;
-        string token = information.Config.OpenAiToken;
+        GuildConfigData? config = information.Config;
+
+        if (config == null)
+        {
+            return "Não foi possível encontrar as informações sobre os IDs.";
+        }
+
+        string? token = config.OpenAiToken;
 
         if (string.IsNullOrEmpty(token))
         {

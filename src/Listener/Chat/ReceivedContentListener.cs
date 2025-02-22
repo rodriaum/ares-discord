@@ -38,8 +38,9 @@ namespace Ares.src.Listener.Chat
 
                 EmbedBuilder embed = new EmbedBuilder()
                     .WithTitle("Inteligência Artificial")
-                    .WithDescription("A processar...")
-                    .WithColor(Color.Gold);
+                    .WithDescription("A processar... 🔃")
+                    .WithColor(Color.Gold)
+                    .WithFooter("Pode demorar até minutos");
 
                 IUser user = args.Author;
 
@@ -72,7 +73,7 @@ namespace Ares.src.Listener.Chat
 
                 if (guild == null)
                 {
-                    await channel.SendMessageAsync(embed: embed.WithDescription("Ops! Parece que o servidor atual não foi configurado no banco de dados.").Build());
+                    // await channel.SendMessageAsync(embed: embed.WithDescription("Ops! Parece que o servidor atual não foi configurado no banco de dados.").Build());
                     return;
                 }
 
@@ -121,7 +122,8 @@ namespace Ares.src.Listener.Chat
                         };
 
                         embed.WithDescription(responseText)
-                            .WithColor(color);
+                            .WithColor(color)
+                            .WithFooter("Ares");
                         break;
 
                     case ModelType.Image:

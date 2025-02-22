@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Ares.src.Service;
 using Ares.src.Service.Model;
+using Ares.src.Manager;
 
 namespace Ares.src.Commands
 {
@@ -34,7 +35,7 @@ namespace Ares.src.Commands
 
             switch (command.Data.Options.First().Value)
             {
-                case "setup-openai-menu":
+                case "setup-ai-menu":
                     embed.Title = "Inteligência Artificial";
                     embed.Description = "Inicie uma conversa com um modelo A.I";
                     embed.ThumbnailUrl = "https://imgur.com/tnh71Er.gif";
@@ -51,8 +52,16 @@ namespace Ares.src.Commands
                         .WithPlaceholder("Anthropic")
                         .WithCustomId("anthropic-chat-menu");
 
-                    foreach (ChatModel model in AiService.OpenAiModels)
+                    foreach (ChatModel model in AiManager.Models)
                     {
+                        string description = model.Type switch
+                        {
+                             ModelType.Chat => "Chat",
+                             ModelType.Question => "Questão",
+                             ModelType.Image => "Imagem",
+                             _ => "Desconhecido"
+                        };
+
                         switch (model.Category)
                         {
                             case ModelCategory.OpenAI:
@@ -60,6 +69,7 @@ namespace Ares.src.Commands
                                 {
                                     Label = model.DisplayName,
                                     Value = model.Model,
+                                    Description = description
                                 });
                             break;
 
@@ -68,6 +78,7 @@ namespace Ares.src.Commands
                                 {
                                     Label = model.DisplayName,
                                     Value = model.Model,
+                                    Description = description
                                 });
                             break;
                         }

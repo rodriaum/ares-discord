@@ -50,7 +50,7 @@ namespace Ares.src
             new ConfigCommand(Client);
 
             // Managers
-            new OpenAiManager().Init();
+            new AiManager();
 
             // Options
             await Client.SetStatusAsync(UserStatus.DoNotDisturb);
@@ -59,7 +59,7 @@ namespace Ares.src
             Client.Ready += RegisterCommands;
             Client.Ready += () =>
             {
-                LogUtil.Log("Status", $"Success! Logged to {Client.CurrentUser.Username}");
+                LogUtil.Log("Status", $"Success! Logged \"{Client.CurrentUser.Username}\"");
                 return Task.CompletedTask;
             };
 
@@ -92,7 +92,7 @@ namespace Ares.src
                     IsRequired = true,
                     Choices = new List<ApplicationCommandOptionChoiceProperties>
                     {
-                        new ApplicationCommandOptionChoiceProperties { Name = "OpenAI", Value = "setup-openai-menu" }
+                        new ApplicationCommandOptionChoiceProperties { Name = "Geração AI", Value = "setup-ai-menu" }
                     }
                 })
             };
