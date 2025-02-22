@@ -3,5 +3,6 @@
     public enum ModelCategory
     {
         OpenAI,
+        Anthropic
     }
 }

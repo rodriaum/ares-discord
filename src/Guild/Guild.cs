@@ -307,7 +307,7 @@ namespace Ares.src.Guild
 
             if (historic != null)
             {
-                return historic.Count(m => m.Role == OpenAiUtil.ConvertOpenAiRole(role));
+                return historic.Count(m => m.Role == AiUtil.ConvertOpenAiRole(role));
             }
 
             return 0;

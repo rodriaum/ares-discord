@@ -111,10 +111,17 @@ namespace Ares.src.Listener.Chat
                 switch (model.Type)
                 {
                     case ModelType.Chat:
-                        string responseText = await OpenAiService.GenerateConversationAsync(guild, guildUser, model, prompt);
+                        string responseText = await AiService.GenerateConversationAsync(guild, guildUser, model, channel.Id, prompt);
+
+                        Color color = model.Category switch
+                        {
+                            ModelCategory.OpenAI => Color.Green,
+                            ModelCategory.Anthropic => Color.Orange,
+                            _ => Color.Default
+                        };
 
                         embed.WithDescription(responseText)
-                            .WithColor(Color.Green);
+                            .WithColor(color);
                         break;
 
                     case ModelType.Image:
@@ -128,7 +135,7 @@ namespace Ares.src.Listener.Chat
                             ResponseFormat = GeneratedImageFormat.Uri
                         };
 
-                        string responseImageUrl = await OpenAiService.GenerateImageUrlAsync(guild, guildUser, model, options, prompt);
+                        string responseImageUrl = await AiService.GenerateImageUrlAsync(guild, guildUser, model, options, prompt);
 
                         // Como pode retornar um url ou mensagem de erro, fazemos essa verificação.
                         if (Util.IsValidUrl(responseImageUrl))

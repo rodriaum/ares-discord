@@ -43,21 +43,39 @@ namespace Ares.src.Commands
                     embed.AddField("⚙️ Capacidade", "Atualmente o sistema é capaz de gerar conversas e imagens.");
                     embed.AddField("♾️ Versão", "Projeto em fase beta! apresentou alguns erros e bugs? Por favor, reporte-os!");
 
-                    SelectMenuBuilder menu = new SelectMenuBuilder()
-                        .WithPlaceholder("Escolha um modelo")
+                    SelectMenuBuilder openAiMenu = new SelectMenuBuilder()
+                        .WithPlaceholder("OpenAI")
                         .WithCustomId("openai-chat-menu");
 
-                    foreach (ChatModel model in OpenAiService.OpenAiModels)
+                    SelectMenuBuilder anthropicMenu = new SelectMenuBuilder()
+                        .WithPlaceholder("Anthropic")
+                        .WithCustomId("anthropic-chat-menu");
+
+                    foreach (ChatModel model in AiService.OpenAiModels)
                     {
-                        menu.AddOption(new SelectMenuOptionBuilder
+                        switch (model.Category)
                         {
-                            Label = model.DisplayName,
-                            Value = model.Model,
-                        });
+                            case ModelCategory.OpenAI:
+                                openAiMenu.AddOption(new SelectMenuOptionBuilder
+                                {
+                                    Label = model.DisplayName,
+                                    Value = model.Model,
+                                });
+                            break;
+
+                            case ModelCategory.Anthropic:
+                                anthropicMenu.AddOption(new SelectMenuOptionBuilder
+                                {
+                                    Label = model.DisplayName,
+                                    Value = model.Model,
+                                });
+                            break;
+                        }
                     }
 
                     ComponentBuilder builder = new ComponentBuilder()
-                        .WithSelectMenu(menu);
+                        .WithSelectMenu(openAiMenu)
+                        .WithSelectMenu(anthropicMenu);
 
                     await command.FollowupAsync(embed: embed.Build(), components: builder.Build());
                     break;

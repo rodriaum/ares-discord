@@ -49,7 +49,7 @@ namespace Ares.src.Service.Model
 
         /// <summary>
         /// Retorna o modelo mais próximo baseado no nome fornecido. 
-        /// Apenas funcionará se o <paramref name="model"/> for da categoria OpenAI. 
+        /// É recomendado usar para se o <paramref name="model"/> for OpenAI. 
         /// O sistema pode retornar uma versão mais recente do modelo, como 'gpt-4-turbo-2024-04-09', 
         /// uma vez que a OpenAI utiliza sempre a versão mais recente do modelo disponível, 
         /// sem forçar ou especificar uma versão exata.
@@ -59,7 +59,7 @@ namespace Ares.src.Service.Model
         public static ChatModel? GetByNearestModel(string model)
         {
             return Manager.OpenAiManager.OpenAiModels
-                    .Where(it => it.Category.Equals(ModelCategory.OpenAI) && model.StartsWith(it.Model))
+                    .Where(it => model.StartsWith(it.Model))
                     .FirstOrDefault();
         }
     }

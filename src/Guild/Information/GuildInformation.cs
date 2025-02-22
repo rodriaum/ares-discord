@@ -5,8 +5,6 @@ namespace Ares.src.Guild.Information
 {
     public class GuildInformation
     {
-        public string OpenAiToken;
-
         public GuildConfigData? Config { get; set; }
         public GuildChatData Chat { get; set; }
 
@@ -15,8 +13,6 @@ namespace Ares.src.Guild.Information
         /// </summary>
         public GuildInformation()
         {
-            this.OpenAiToken = "";
-
             this.Config = new GuildConfigData();
             this.Chat = new GuildChatData();
         }

@@ -23,7 +23,7 @@ namespace Ares.src.Listener.Chat
 
         private async Task SelectMenuHandler(SocketMessageComponent args)
         {
-            if (!args.Data.CustomId.Equals("openai-chat-menu")) return;
+            if (!args.Data.CustomId.EndsWith("-chat-menu")) return;
 
             await args.DeferLoadingAsync(true);
 
@@ -109,58 +109,67 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                ChatHistoric historic = new ChatHistoric(model: model.Model);
+                SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
+                RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
 
-                if (await guild.CreateChatData(user, historic))
-                {
-                    SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
-                    RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
-
-                    EmbedBuilder embed = new EmbedBuilder()
-                        .WithTitle($"Olá, {user.GlobalName}")
-                        .WithColor(Color.Green)
-                        .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} | {socketGuild.Name}"));
-
-                    switch (model.Type)
-                    {
-                        case ModelType.Chat:
-                            embed.WithDescription("Insira a sua pergunta para iniciar a conversa.");
-                            break;
-
-                        case ModelType.Image:
-                            embed.WithDescription("Insira a sua frase para gerar a imagem.");
-                            break;
-
-                        default:
-                            embed.WithDescription("Insira o parâmetro para iniciar o seu pedido.");
-                            break;
-                    }
-
-                    embed.AddField("Modelo", model.DisplayName);
-                    embed.AddField("Regras", "Tenha respeito no canal atual.");
-                    embed.AddField("Tempo", "Pode demorar até minuto(s) para processar o seu pedido.");
-
-                    ButtonBuilder button = new ButtonBuilder()
-                       .WithLabel("Terminar Conversa")
-                       .WithStyle(ButtonStyle.Danger)
-                       .WithCustomId("close-chat");
-
-                    MessageComponent component = new ComponentBuilder()
-                        .WithButton(button)
-                        .Build();
-
-                    await channel.SendMessageAsync(embed: embed.Build(), components: component);
-
-                    OverwritePermissions permissions = new OverwritePermissions(
-                        viewChannel: PermValue.Allow,
-                        readMessageHistory: PermValue.Allow,
-                        sendMessages: PermValue.Allow
+                ChatHistoric historic = new ChatHistoric
+                    (
+                        channel: channel.Id,
+                        model: model.Model
                     );
 
-                    await channel.AddPermissionOverwriteAsync(user, permissions);
-
-                    await args.FollowupAsync($"**Sucesso!** Acesse a sua nova conversa em {channel.Mention}");
+                if (!await guild.CreateChatData(user, historic))
+                {
+                    // Pode ser melhorado depois porque não é o indicado.
+                    await channel.DeleteAsync();
+                    await Task.Delay(500);
+                    return;
                 }
+
+                EmbedBuilder embed = new EmbedBuilder()
+                    .WithTitle($"Olá, {user.GlobalName}")
+                    .WithColor(Color.Green)
+                    .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} | {socketGuild.Name}"));
+
+                switch (model.Type)
+                {
+                    case ModelType.Chat:
+                        embed.WithDescription("Insira a sua pergunta para iniciar a conversa.");
+                        break;
+
+                    case ModelType.Image:
+                        embed.WithDescription("Insira a sua frase para gerar a imagem.");
+                        break;
+
+                    default:
+                        embed.WithDescription("Insira o parâmetro para iniciar o seu pedido.");
+                        break;
+                }
+
+                embed.AddField("Modelo", model.DisplayName);
+                embed.AddField("Regras", "Tenha respeito no canal atual.");
+                embed.AddField("Tempo", "Pode demorar até minuto(s) para processar o seu pedido.");
+
+                ButtonBuilder button = new ButtonBuilder()
+                   .WithLabel("Terminar Conversa")
+                   .WithStyle(ButtonStyle.Danger)
+                   .WithCustomId("close-chat");
+
+                MessageComponent component = new ComponentBuilder()
+                    .WithButton(button)
+                    .Build();
+
+                await channel.SendMessageAsync(embed: embed.Build(), components: component);
+
+                OverwritePermissions permissions = new OverwritePermissions(
+                    viewChannel: PermValue.Allow,
+                    readMessageHistory: PermValue.Allow,
+                    sendMessages: PermValue.Allow
+                );
+
+                await channel.AddPermissionOverwriteAsync(user, permissions);
+
+                await args.FollowupAsync($"**Sucesso!** Acesse a sua nova conversa em {channel.Mention}");
 
             }
             catch (Exception e)

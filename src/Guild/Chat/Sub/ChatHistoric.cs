@@ -9,9 +9,19 @@ namespace Ares.src.Guild.Chat.Sub;
 public class ChatHistoric
 {
     /// <summary>
+    /// Aplica um ID Unico.
+    /// </summary>
+    public string Id { get; set; }
+
+    /// <summary>
     /// Indica se o histórico está ativo.
     /// </summary>
     public bool Active { get; set; }
+
+    /// <summary>
+    /// Indica o canal de texto.
+    /// </summary>
+    public ulong Channel { get; set; }
 
     /// <summary>
     /// Modelo da AI utilizado na conversa.
@@ -56,9 +66,11 @@ public class ChatHistoric
     /// <param name="role">Papel do Participante</param>
     /// <param name="usage">Uso de Tokens</param>
     /// <param name="timestamp">Timestamp da Conversa</param>
-    public ChatHistoric(string model = "", string prompt = "", string? response = "", string? imageUrl = "", ChatRole role = ChatRole.None, ChatValueUsage? usage = null, long timestamp = -1)
+    public ChatHistoric(ulong channel, string model = "", string prompt = "", string? response = "", string? imageUrl = "", ChatRole role = ChatRole.None, ChatValueUsage? usage = null, long timestamp = -1)
     {
+        this.Id = Guid.NewGuid().ToString();
         this.Active = true;
+        this.Channel = channel;
         this.Model = model;
         this.Prompt = prompt;
         this.Response = response;
