@@ -123,7 +123,7 @@ public class AiService
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            return "Ops! Parece que o servidor atual não tem um token pré-configurado.";
+            return "Ops! Parece que o servidor atual não tem um token OpenAI pré-configurado.";
         }
 
         UserChatMessage userMessage = new UserChatMessage(prompt)
@@ -137,7 +137,7 @@ public class AiService
         ChatClient client = new ChatClient(model.Model, token);
         ChatCompletion completion = await client.CompleteChatAsync(messages);
 
-        ChatHistoric historic = AiUtil.BuildOpenAiChatHistoric(prompt, channel, completion);
+        ChatHistoric historic = AiUtil.ConvertChatCompletionToChatHistoric(prompt, channel, completion);
         await guild.SaveHistoricAsync(user, historic);
 
         return ProcessOpenAiResponse(completion);
@@ -160,7 +160,7 @@ public class AiService
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            return "Ops! Parece que o servidor atual não tem um token pré-configurado.";
+            return "Ops! Parece que o servidor atual não tem um token Anthropic pré-configurado.";
         }
 
         Message userMessage = new Message(RoleType.User, prompt);
@@ -181,7 +181,7 @@ public class AiService
 
         MessageResponse response = await client.Messages.GetClaudeMessageAsync(parameters);
        
-        ChatHistoric historic = AiUtil.BuildAnthropicChatHistoric(prompt, channel, response);
+        ChatHistoric historic = AiUtil.ConvertMessageResponseToChatHistoric(prompt, channel, response);
         await guild.SaveHistoricAsync(user, historic);
 
         return response.Message.ToString();
