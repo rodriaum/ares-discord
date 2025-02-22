@@ -44,49 +44,38 @@ namespace Ares.src.Commands
                     embed.AddField("⚙️ Capacidade", "Atualmente o sistema é capaz de gerar conversas e imagens.");
                     embed.AddField("♾️ Versão", "Projeto em fase beta! apresentou alguns erros e bugs? Por favor, reporte-os!");
 
-                    SelectMenuBuilder openAiMenu = new SelectMenuBuilder()
-                        .WithPlaceholder("OpenAI")
-                        .WithCustomId("openai-chat-menu");
+                    ComponentBuilder builder = new ComponentBuilder();
 
-                    SelectMenuBuilder anthropicMenu = new SelectMenuBuilder()
-                        .WithPlaceholder("Anthropic")
-                        .WithCustomId("anthropic-chat-menu");
-
-                    foreach (ChatModel model in AiManager.Models)
+                    foreach (ModelCategory category in Enum.GetValues(typeof(ModelCategory)))
                     {
-                        string description = model.Type switch
-                        {
-                             ModelType.Chat => "Chat",
-                             ModelType.Question => "Questão",
-                             ModelType.Image => "Imagem",
-                             _ => "Desconhecido"
-                        };
+                        string name = category.ToString().ToLower();
 
-                        switch (model.Category)
-                        {
-                            case ModelCategory.OpenAI:
-                                openAiMenu.AddOption(new SelectMenuOptionBuilder
-                                {
-                                    Label = model.DisplayName,
-                                    Value = model.Model,
-                                    Description = description
-                                });
-                            break;
+                        SelectMenuBuilder menu = new SelectMenuBuilder()
+                        .WithPlaceholder(name)
+                        .WithCustomId($"{name}-chat-menu");
 
-                            case ModelCategory.Anthropic:
-                                anthropicMenu.AddOption(new SelectMenuOptionBuilder
-                                {
-                                    Label = model.DisplayName,
-                                    Value = model.Model,
-                                    Description = description
-                                });
-                            break;
+                        foreach (ChatModel model in AiManager.Models)
+                        {
+                            if (model.Category != category) continue;
+
+                            string description = model.Type switch
+                            {
+                                ModelType.Chat => "Chat",
+                                ModelType.Question => "Questão",
+                                ModelType.Image => "Imagem",
+                                _ => "Desconhecido"
+                            };
+
+                            menu.AddOption(new SelectMenuOptionBuilder
+                            {
+                                Label = model.DisplayName,
+                                Value = model.Model,
+                                Description = description
+                            });
                         }
-                    }
 
-                    ComponentBuilder builder = new ComponentBuilder()
-                        .WithSelectMenu(openAiMenu)
-                        .WithSelectMenu(anthropicMenu);
+                        builder.WithSelectMenu(menu);
+                    }
 
                     await command.FollowupAsync(embed: embed.Build(), components: builder.Build());
                     break;

@@ -118,6 +118,7 @@ namespace Ares.src.Listener.Chat
                         {
                             ModelCategory.OpenAI => Color.Green,
                             ModelCategory.Anthropic => Color.Orange,
+                            ModelCategory.DeepSeek => Color.Blue,
                             _ => Color.Default
                         };
 
