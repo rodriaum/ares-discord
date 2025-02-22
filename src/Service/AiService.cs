@@ -153,15 +153,22 @@ public class AiService
         return ProcessOpenAiResponse(completion);
     }
 
-    private static string ProcessOpenAiResponse(ChatCompletion openAiResponse)
+    private static string ProcessOpenAiResponse(ChatCompletion response)
     {
-        return openAiResponse.FinishReason switch
+        ChatMessageContentPart? content = response.Content.FirstOrDefault();
+
+        if (response == null || response.Content == null || content == null)
         {
-            ChatFinishReason.Stop => openAiResponse.ToString(),
+            return "Ops! Parece que não foi possível obter a única resposta, tente novamente!";
+        }
+
+        return response.FinishReason switch
+        {
+            ChatFinishReason.Stop => content.Text,
             ChatFinishReason.Length => "Não será possível prosseguir porque o limite de token estabelecido pelo servidor atual foi excedido.",
             ChatFinishReason.ContentFilter => "Não foi possível gerar porque o sistema identificou palavras ofensivas no canal atual.",
             ChatFinishReason.FunctionCall => "Não foi possível gerar porque o sistema está lento. (FunctionCall)",
-            _ => $"Não foi possível gerar a resposta. Motivo: {openAiResponse.FinishReason}"
+            _ => $"Não foi possível gerar a resposta. Motivo: {response.FinishReason}"
         };
     }
 
