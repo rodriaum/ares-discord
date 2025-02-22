@@ -9,6 +9,7 @@ using Ares.src.Service.Model;
 using Ares.src.Guild.Config;
 using Anthropic.SDK;
 using Anthropic.SDK.Messaging;
+using Ares.src.Guild.Token;
 
 
 namespace Ares.src.Service;
@@ -122,8 +123,8 @@ public class AiService
     /// <b>OpenAI</b> - Conversation Generation
     /// </summary>
 
-    private static async Task<string> HandleOpenAIConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt,GuildConfigData config, List<ChatHistoric>? historics) {
-        string? token = config.OpenAiToken;
+    private static async Task<string> HandleOpenAIConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt, GuildTokenData tokenData, List<ChatHistoric>? historics) {
+        string? token = tokenData.OpenAi;
 
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -163,8 +164,8 @@ public class AiService
     /// <b>Anthropic</b> - Conversation Generation
     /// </summary>
 
-    private static async Task<string> HandleAnthropicConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt,GuildConfigData config, List<ChatHistoric>? historics) {
-        string? token = config.AnthropicToken;
+    private static async Task<string> HandleAnthropicConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt, GuildTokenData tokenData, List<ChatHistoric>? historics) {
+        string? token = tokenData.Anthropic;
 
         if (string.IsNullOrWhiteSpace(token))
         {

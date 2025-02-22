@@ -5,9 +5,6 @@ namespace Ares.src.Guild.Config
     [AllArgsConstructor]
     public partial class GuildConfigData
     {
-        public string? OpenAiToken { get; set; }
-        public string? AnthropicToken { get; set; }
-
         public ulong MemberRoleId { get; set; }
         public ulong UsageRoleId { get; set; }
         public ulong ExclusiveRoleId { get; set; }
