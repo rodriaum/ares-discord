@@ -32,14 +32,14 @@ public class AiService
         }
 
         GuildInformation information = guild.Information;
-        GuildConfigData? config = information.Config;
+        GuildTokenData? tokenData = information.Token;
 
-        if (config == null)
+        if (tokenData == null)
         {
-            return "Não foi possível encontrar as informações sobre os IDs.";
+            return "Não foi possível encontrar as informações sobre os tokens.";
         }
 
-        string? token = config.OpenAiToken;
+        string? token = tokenData.OpenAi;
 
         if (string.IsNullOrEmpty(token))
         {
@@ -83,11 +83,11 @@ public class AiService
         }
 
         GuildInformation information = guild.Information;
-        GuildConfigData? config = information.Config;
+        GuildTokenData? tokenData = information.Token;
 
-        if (config == null)
+        if (tokenData == null)
         {
-            return "Não foi possível encontrar as informações sobre os IDs.";
+            return "Não foi possível encontrar as informações sobre os tokens.";
         }
 
         ChatHistoric? historic = null;
@@ -99,10 +99,10 @@ public class AiService
             switch (model.Category)
             {
                 case ModelCategory.OpenAI:
-                    return await HandleOpenAIConversation(guild, user, model, channel, prompt, config, historics);
+                    return await HandleOpenAIConversation(guild, user, model, channel, prompt, tokenData, historics);
 
                 case ModelCategory.Anthropic:
-                    return await HandleAnthropicConversation(guild, user, model, channel, prompt, config, historics);
+                    return await HandleAnthropicConversation(guild, user, model, channel, prompt, tokenData, historics);
 
                 default:
                     return "Não foi possível identificar o modelo. Tente novamente!";
