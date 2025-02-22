@@ -4,8 +4,6 @@ using Discord.WebSocket;
 using Ares.src.Utils.Extra;
 using Ares.src.Guild.Information;
 using Ares.src.Guild.Config;
-using Ares.src.Guild.Data;
-using OpenAI.Chat;
 using Ares.src.Guild.Chat.Sub;
 using Ares.src.Service.Model;
 
@@ -23,7 +21,7 @@ namespace Ares.src.Listener.Chat
 
         private async Task SelectMenuHandler(SocketMessageComponent args)
         {
-            if (!args.Data.CustomId.EndsWith("-chat-menu")) return;
+            if (!args.Data.CustomId.StartsWith("chat-menu-")) return;
 
             await args.DeferLoadingAsync(true);
 

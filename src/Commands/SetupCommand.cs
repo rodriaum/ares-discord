@@ -1,85 +1,99 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Ares.src.Service;
 using Ares.src.Service.Model;
 using Ares.src.Manager;
+using Ares.src.Utils;
 
-namespace Ares.src.Commands
+namespace Ares.src.Commands;
+
+internal class SetupCommand
 {
-    internal class SetupCommand
-    {
-        private static DiscordSocketClient? Client;
+    private static DiscordSocketClient? Client;
 
-        public SetupCommand(DiscordSocketClient client)
+    public SetupCommand(DiscordSocketClient client)
+    {
+        client.SlashCommandExecuted += SlashCommandHandler;
+        Client = client;
+    }
+
+    private async Task SlashCommandHandler(SocketSlashCommand command)
+    {
+        if (Client == null || !command.Data.Name.Equals("setup")) return;
+
+        await command.DeferAsync();
+
+        ulong? guildId = command.GuildId;
+
+        EmbedBuilder embed = new EmbedBuilder()
+            .WithCurrentTimestamp();
+
+        if (guildId is null)
         {
-            client.SlashCommandExecuted += SlashCommandHandler;
-            Client = client;
+            await command.RespondAsync(embed: embed.WithColor(Color.Red).Build());
+            return;
         }
 
-        private async Task SlashCommandHandler(SocketSlashCommand command)
+        if (command.Data.Options.Count == 0)
         {
-            if (Client == null || !command.Data.Name.Equals("setup")) return;
+            await command.RespondAsync("Nenhuma opção fornecida.", ephemeral: true);
+            return;
+        }
 
-            await command.DeferAsync();
+        switch (command.Data.Options.First().Value)
+        {
+            case "setup-ai-menu":
+                embed.Title = "Inteligência Artificial";
+                embed.Description = "Inicie uma conversa com um modelo A.I";
+                embed.ThumbnailUrl = "https://imgur.com/tnh71Er.gif";
 
-            ulong? guildId = command.GuildId;
+                embed.AddField("🤔 Como Funciona", "Escolha um modelo e um canal privado será criado.");
+                embed.AddField("⚙️ Capacidade", "Atualmente o sistema é capaz de gerar conversas e imagens.");
+                embed.AddField("♾️ Versão", "Projeto em fase beta! apresentou alguns erros e bugs? Por favor, reporte-os!");
 
-            EmbedBuilder embed = new EmbedBuilder()
-                .WithCurrentTimestamp();
+                ComponentBuilder builder = new ComponentBuilder();
 
-            if (Client == null || guildId == null)
-            {
-                await command.RespondAsync(embed: embed.WithColor(Color.Red).Build());
-                return;
-            }
+                if (AiManager.Models == null || !AiManager.Models.Any())
+                {
+                    await command.RespondAsync("Nenhum modelo de IA disponível.", ephemeral: true);
+                    return;
+                }
 
-            switch (command.Data.Options.First().Value)
-            {
-                case "setup-ai-menu":
-                    embed.Title = "Inteligência Artificial";
-                    embed.Description = "Inicie uma conversa com um modelo A.I";
-                    embed.ThumbnailUrl = "https://imgur.com/tnh71Er.gif";
+                foreach (ModelCategory category in Enum.GetValues(typeof(ModelCategory)))
+                {
+                    string name = category.ToString();
 
-                    embed.AddField("🤔 Como Funciona", "Escolha um modelo e um canal privado será criado.");
-                    embed.AddField("⚙️ Capacidade", "Atualmente o sistema é capaz de gerar conversas e imagens.");
-                    embed.AddField("♾️ Versão", "Projeto em fase beta! apresentou alguns erros e bugs? Por favor, reporte-os!");
+                    SelectMenuBuilder menu = new SelectMenuBuilder()
+                        .WithPlaceholder(Util.CapitalizeFirstLetter(name))
+                        .WithCustomId($"chat-menu-{name}");
 
-                    ComponentBuilder builder = new ComponentBuilder();
-
-                    foreach (ModelCategory category in Enum.GetValues(typeof(ModelCategory)))
+                    foreach (ChatModel model in AiManager.Models)
                     {
-                        string name = category.ToString().ToLower();
+                        if (model.Category != category) continue;
 
-                        SelectMenuBuilder menu = new SelectMenuBuilder()
-                        .WithPlaceholder(name)
-                        .WithCustomId($"{name}-chat-menu");
-
-                        foreach (ChatModel model in AiManager.Models)
+                        string description = model.Type switch
                         {
-                            if (model.Category != category) continue;
+                            ModelType.Chat => "Chat",
+                            ModelType.Question => "Questão",
+                            ModelType.Image => "Imagem",
+                            _ => "Desconhecido"
+                        };
 
-                            string description = model.Type switch
-                            {
-                                ModelType.Chat => "Chat",
-                                ModelType.Question => "Questão",
-                                ModelType.Image => "Imagem",
-                                _ => "Desconhecido"
-                            };
-
-                            menu.AddOption(new SelectMenuOptionBuilder
-                            {
-                                Label = model.DisplayName,
-                                Value = model.Model,
-                                Description = description
-                            });
-                        }
-
-                        builder.WithSelectMenu(menu);
+                        menu.AddOption(new SelectMenuOptionBuilder
+                        {
+                            Label = model.DisplayName,
+                            Value = model.Model,
+                            Description = description
+                        });
                     }
 
-                    await command.FollowupAsync(embed: embed.Build(), components: builder.Build());
-                    break;
-            }
+                    if (menu.Options.Count > 1)
+                    {
+                        builder.WithSelectMenu(menu);
+                    }
+                }
+
+                await command.FollowupAsync(embed: embed.Build(), components: builder.Build());
+                break;
         }
     }
 }
