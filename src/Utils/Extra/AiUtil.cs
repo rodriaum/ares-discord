@@ -89,7 +89,7 @@ public class AiUtil
             response: content.Text,
             imageUrl: imageUrl,
             role: ConvertOpenAiRole(completion.Role),
-            usage: new ChatValueUsage(completion.Usage.OutputTokens, completion.Usage.InputTokens),
+            usage: new ChatValueUsage(completion.Usage.OutputTokenCount, completion.Usage.InputTokenCount),
             timestamp: completion.CreatedAt.Ticks
         );
     }
