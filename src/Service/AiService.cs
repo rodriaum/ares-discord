@@ -17,7 +17,7 @@ public class AiService
 {
 
     /// <summary>
-    /// Image Generation
+    /// <b>General</b> - Image Generation
     /// </summary>
     /// 
 
@@ -68,7 +68,7 @@ public class AiService
 
 
     /// <summary>
-    /// Conversation Generation
+    /// <b>General</b> - Conversation Generation
     /// </summary>
 
 
@@ -118,6 +118,10 @@ public class AiService
         }
     }
 
+    /// <summary>
+    /// <b>OpenAI</b> - Conversation Generation
+    /// </summary>
+
     private static async Task<string> HandleOpenAIConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt,GuildConfigData config, List<ChatHistoric>? historics) {
         string? token = config.OpenAiToken;
 
@@ -154,6 +158,10 @@ public class AiService
             _ => $"Não foi possível gerar a resposta. Motivo: {openAiResponse.FinishReason}"
         };
     }
+
+    /// <summary>
+    /// <b>Anthropic</b> - Conversation Generation
+    /// </summary>
 
     private static async Task<string> HandleAnthropicConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt,GuildConfigData config, List<ChatHistoric>? historics) {
         string? token = config.AnthropicToken;
