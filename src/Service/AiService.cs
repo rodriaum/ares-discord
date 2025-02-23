@@ -96,7 +96,7 @@ public class AiService
 
         try
         {
-            List<ChatHistoric>? historics = guild.ChatHistorics(user);
+            List<ChatHistoric>? historics = guild.ChatHistorics(user, channel: channel);
 
             switch (model.Category)
             {

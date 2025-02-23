@@ -50,7 +50,11 @@ namespace Ares.src.Listener.Chat.Button
 
                 if (channel != null)
                 {
-                    //await guild.DeleteChatDataAsync(user);
+                    if (!await guild.ToggleChatInfo(user, channel.Id, false))
+                    {
+                        await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
+                        return;
+                    }
 
                     await args.FollowupAsync("Obrigado por usar **Ares**! A fechar a conversa...");
 

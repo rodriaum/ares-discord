@@ -116,13 +116,13 @@ namespace Ares.src.Listener.Chat
                 SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
                 RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
 
-                ChatHistoric historic = new ChatHistoric
+                ChatInfo info = new ChatInfo
                     (
-                        channel: channel.Id,
-                        model: model.Model
+                        active: true,
+                        channel: channel.Id
                     );
 
-                if (!await guild.CreateChatData(user, historic))
+                if (!await guild.CreateChatData(user, info))
                 {
                     // Pode ser melhorado depois porque não é o indicado.
                     await channel.DeleteAsync();

@@ -6,6 +6,8 @@ using Ares.src.Service.Model;
 using Ares.src.Utils.Extra;
 using Discord;
 using OpenAI.Chat;
+using System.ComponentModel.Design;
+using System.Threading.Tasks;
 
 namespace Ares.src.Guild
 {
@@ -19,7 +21,6 @@ namespace Ares.src.Guild
         /// Construtor da classe Guild.
         /// </summary>
         /// <param name="id">Identificador da guilda.</param>
-
         public Guild(string id)
         {
             this.Id = id;
@@ -31,7 +32,6 @@ namespace Ares.src.Guild
         /// </summary>
         /// <param name="fields">Lista de campos a serem salvos.</param>
         /// <returns>Retorna true se os campos foram salvos com sucesso, false caso contrário.</returns>
-
         public async Task<bool> SaveAsync(List<string> fields)
         {
             if (fields == null || fields.Count == 0)
@@ -67,7 +67,6 @@ namespace Ares.src.Guild
         /// </summary>
         /// <param name="field">Campo a ser salvo.</param>
         /// <returns>Retorna true se o campo foi salvo com sucesso, false caso contrário.</returns>
-
         public async Task<bool> SaveAsync(string field)
         {
             return await SaveAsync(new List<string> { field });
@@ -78,7 +77,6 @@ namespace Ares.src.Guild
         /// </summary>
         /// <param name="information">Objeto com as informações da guilda.</param>
         /// <returns>Retorna true se as informações foram salvas com sucesso, false caso contrário.</returns>
-
         public async Task<bool> SaveInformation(GuildInformation information)
         {
             if (information == null)
@@ -97,7 +95,6 @@ namespace Ares.src.Guild
         /// </summary>
         /// <param name="data">Objeto contendo os dados de chat da guilda.</param>
         /// <returns>Retorna true se os dados foram atualizados com sucesso, false caso contrário.</returns>
-
         public async Task<bool> SaveChatDataAsync(GuildChatData chatData)
         {
             this.Information.Chat = chatData;
@@ -112,12 +109,31 @@ namespace Ares.src.Guild
 
         public async Task<bool> SaveHistoricAsync(IUser user, ChatHistoric historic)
         {
-            var list = this.ChatHistorics(user);
+            List<ChatHistoric>? list = this.ChatHistorics(user);
+
+            if (list == null) return await Task.FromResult(false);
 
             list.Add(historic);
 
             await SaveHistoricAsync(user, list);
+            return await SaveInformation(this.Information);
+        }
 
+        public async Task<bool> SaveInfoAsync(IUser user, List<ChatInfo> infos)
+        {
+            this.Information.Chat.Infos[user.Id] = infos;
+            return await SaveInformation(this.Information);
+        }
+
+        public async Task<bool> SaveHistoricAsync(IUser user, ChatInfo info)
+        {
+            List<ChatInfo>? list = this.ChatInfos(user);
+
+            if (list == null) return await Task.FromResult(false);
+
+            list.Add(info);
+
+            await SaveInfoAsync(user, list);
             return await SaveInformation(this.Information);
         }
 
@@ -126,7 +142,6 @@ namespace Ares.src.Guild
         /// </summary>
         /// <param name="data">Objeto contendo os dados de ID da guilda.</param>
         /// <returns>Retorna true se os dados foram atualizados com sucesso, false caso contrário.</returns>
-
         public async Task<bool> SaveGuildIdDataAsync(GuildConfigData configData)
         {
             this.Information.Config = configData;
@@ -140,70 +155,99 @@ namespace Ares.src.Guild
         /// Retorna o histórico de conversas da guilda.
         /// </summary>
         /// <returns>Dicionário contendo os históricos de conversas ou null caso não existam.</returns>
-
         public Dictionary<ulong, List<ChatHistoric>>? Historics()
         {
             return Information.Chat.Historics;
         }
 
-        public List<ChatHistoric>? ChatHistorics(IUser user)
+        public Dictionary<ulong, List<ChatInfo>>? Infos()
         {
+            return Information.Chat.Infos;
+        }
+
+        public List<ChatHistoric>? ChatHistorics(IUser user, ulong channel = 0)
+        {
+           if (channel != 0)
+            {
+                return Historics()?[user.Id].FindAll(historic => historic.Channel == channel);
+            }
+
             return Historics()?[user.Id];
         }
 
-        public ChatHistoric? LastChatHistoric(IUser user, bool active = true)
+        public List<ChatInfo>? ChatInfos(IUser user)
         {
-            List<ChatHistoric>? historic = this.ChatHistorics(user);
-            if (historic == null || (historic != null && historic.Count == 0)) return null;
-
-            return historic.Last(historic => historic.Active == active);
+            return Infos()?[user.Id];
         }
 
-        public async Task<bool> CreateChatData(IUser user, ChatHistoric historic)
+        public List<ChatHistoric>? ChatHistoricsByChannel(IUser user, ulong channel)
+        {
+            return Historics()?[user.Id].FindAll(historic => historic.Channel == channel);
+        }
+
+        public ChatInfo? ChatInfoByChannel(IUser user, ulong channel)
+        {
+            return Infos()?[user.Id].FindLast(historic => historic.Channel == channel);
+        }
+
+        public Task<bool> ToggleChatInfo(IUser user, ulong channel, bool active)
+        {
+            var infos = this.ChatInfos(user);
+            if (infos == null)
+            {
+                LogUtil.Error(nameof(ToggleChatInfo), "Não foi possível alterar o status de uma informação de um chat.");
+                return Task.FromResult(false);
+            }
+
+            ChatInfo? info = infos.LastOrDefault(i => i.Channel == channel);
+
+            if (info != null)
+            {
+                info.Active = active;
+            }
+
+            return this.SaveInfoAsync(user, infos);
+        }
+
+        public Task<bool> CreateChatData(IUser user, ChatInfo info)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
-            if (historic.Model == null) throw new ArgumentNullException(nameof(historic.Model));
 
             if (HasActiveUserConversation(user))
             {
                 LogUtil.Log(nameof(CreateChatData), "O usuário já possui uma conversa ou modelo. Nenhuma ação necessária.");
-                return false;
+                return Task.FromResult(false);
             }
 
-            var chat = Information.Chat;
+            GuildChatData chat = Information.Chat;
 
             if (chat == null)
             {
                 LogUtil.Error(nameof(CreateChatData), "GuildChatData está nulo. Não foi possível criar dados de chat para o usuário.");
-                return false;
+                return Task.FromResult(false);
             }
 
             try
             {
-                var historics = new List<ChatHistoric>();
-
-                if (chat.Historics.ContainsKey(user.Id))
+                if (!chat.Historics.ContainsKey(user.Id))
                 {
-                    historics = chat.Historics[user.Id];
+                    chat.Historics[user.Id] = new List<ChatHistoric>();
                 }
 
-                historics.Add(historic);
-
-                bool success = chat.Historics.TryAdd(user.Id, historics);
-
-                if (!success)
+                if (!chat.Infos.TryGetValue(user.Id, out var infos))
                 {
-                    LogUtil.Error(nameof(CreateChatData), "Falha ao adicionar o usuário nos dados de chat.");
-                    return false;
+                    infos = new List<ChatInfo>();
+                    chat.Infos[user.Id] = infos;
                 }
 
-                return await this.SaveChatDataAsync(chat);
+                infos.Add(info);
 
+                return this.SaveChatDataAsync(chat);
             }
             catch (Exception ex)
             {
-                LogUtil.Error(nameof(CreateChatData), "Erro ao tentar criar dados de chat para o usuário.", ex.Message);
-                return false;
+                LogUtil.Error(nameof(CreateChatData), "Erro ao tentar criar um histórico de chat para o usuário.", ex.Message);
+                return Task.FromResult(false);
             }
         }
 
@@ -268,29 +312,28 @@ namespace Ares.src.Guild
         /// </summary>
         /// <param name="user">Usuário alvo.</param>
         /// <returns>Retorna true se a conversa existe, caso contrário, false.</returns>
-
         public bool HasActiveUserConversation(IUser user)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
 
-            var historics = this.Historics();
+            var infos = this.Infos();
 
-            if (historics == null)
+            if (infos == null)
             {
-                LogUtil.Error(nameof(HasActiveUserConversation), "Não foi possível obter o histórico de conversas.");
+                LogUtil.Error(nameof(HasActiveUserConversation), "Não foi possível obter o histórico de informações.");
                 return false;
             }
 
-            var historic = historics.TryGetValue(user.Id, out var value);
+            var info = infos.TryGetValue(user.Id, out var value);
 
             return value != null && (value.Count > 0 && value[value.Count - 1].Active);
         }
 
-        public ChatModel? GetLastModelByUser(IUser user)
+        public ChatModel? GetLastModelByUser(IUser user, ulong channel = 0)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
 
-            var historic = this.LastChatHistoric(user);
+            var historic = this.LastChatHistoric(user, channel: channel);
             if (historic == null) return null;
 
             var model = historic.Model;

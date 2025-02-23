@@ -41,8 +41,6 @@ public class AiUtil
 
         foreach (ChatHistoric historic in historics)
         {
-            if (!historic.Active) continue;
-
             if (!string.IsNullOrWhiteSpace(historic.Prompt))
             {
                 messages.Add(new Anthropic.SDK.Messaging.Message(RoleType.User, historic.Prompt));
@@ -124,8 +122,6 @@ public class AiUtil
 
         foreach (ChatHistoric historic in historics)
         {
-            if (!historic.Active) continue;
-
             if (!string.IsNullOrWhiteSpace(historic.Prompt))
             {
                 messages.Add(new UserChatMessage(historic.Prompt));
@@ -196,8 +192,6 @@ public class AiUtil
 
         foreach (ChatHistoric historic in historics)
         {
-            if (!historic.Active) continue;
-
             if (!string.IsNullOrWhiteSpace(historic.Prompt))
             {
                 messages.Add(DeepSeek.Core.Models.Message.NewUserMessage(historic.Prompt));

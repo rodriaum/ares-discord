@@ -105,7 +105,7 @@ namespace Ares.src.Listener.Chat
 
                 IRole exclusiveRole = socketGuild.GetRole(gcd.ExclusiveRoleId);
 
-                ChatModel? model = guild.GetLastModelByUser(user);
+                ChatModel? model = guild.GetLastModelByUser(user, channel: channel.Id);
                 if (model == null) return;
 
                 SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
@@ -130,7 +130,8 @@ namespace Ares.src.Listener.Chat
                             .WithColor(color)
                             .WithFooter($"Ares - {model.DisplayName}");
 
-                        ChatHistoric? historic = guild.LastChatHistoric(user);
+                        // Uma vez que o texto foi gerado, ele já fica registrado como o ultimo histórico de chat.
+                        ChatHistoric? historic = guild.LastChatHistoric(user, channel: channel.Id);
 
                         if (historic != null)
                         {

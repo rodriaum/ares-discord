@@ -9,16 +9,6 @@ namespace Ares.src.Guild.Chat.Sub;
 public class ChatHistoric
 {
     /// <summary>
-    /// Aplica um ID Unico.
-    /// </summary>
-    public string Id { get; set; }
-
-    /// <summary>
-    /// Indica se o histórico está ativo.
-    /// </summary>
-    public bool Active { get; set; }
-
-    /// <summary>
     /// Indica o canal de texto.
     /// </summary>
     public ulong Channel { get; set; }
@@ -62,8 +52,6 @@ public class ChatHistoric
     /// <param name="timestamp">Timestamp da Conversa</param>
     public ChatHistoric(ulong channel, string model = "", string prompt = "", string? response = "", string? imageUrl = "", ChatValueUsage? usage = null, long timestamp = -1)
     {
-        this.Id = Guid.NewGuid().ToString();
-        this.Active = true;
         this.Channel = channel;
         this.Model = model;
         this.Prompt = prompt;
