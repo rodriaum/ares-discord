@@ -49,10 +49,10 @@ class GuildListener
 
     private Task GuildUnavailable(SocketGuild guild)
     {
-        if (guild == null) return Task.CompletedTask;
+        if (guild == null) return Task.FromResult(false);
 
         GuildData? data = Core.GuildData;
-        if (data == null) return Task.CompletedTask;
+        if (data == null) return Task.FromResult(false);
 
         data.DeleteCache(guild.Id);
         return Task.CompletedTask;

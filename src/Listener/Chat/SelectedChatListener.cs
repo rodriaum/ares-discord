@@ -146,13 +146,19 @@ namespace Ares.src.Listener.Chat
                     .WithColor(Color.Green)
                     .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} | {socketGuild.Name}"));
 
+                embed.AddField("Modelo", model.DisplayName);
+                embed.AddField("Regras", "Tenha respeito no canal atual.");
+                embed.AddField("Tempo", "Pode demorar até minuto(s) para processar o seu pedido.");
+
                 switch (model.Type)
                 {
                     case ModelType.Chat:
+                        embed.AddField("Histórico", "Guardará o histórico de mensagens, permitindo correções.");
                         embed.WithDescription("Insira a sua pergunta para iniciar a conversa.");
                         break;
 
                     case ModelType.Image:
+                        embed.AddField("Histórico", "Não guardará o histórico de mensagens, impedindo correções.");
                         embed.WithDescription("Insira a sua frase para gerar a imagem.");
                         break;
 
@@ -160,10 +166,6 @@ namespace Ares.src.Listener.Chat
                         embed.WithDescription("Insira o parâmetro para iniciar o seu pedido.");
                         break;
                 }
-
-                embed.AddField("Modelo", model.DisplayName);
-                embed.AddField("Regras", "Tenha respeito no canal atual.");
-                embed.AddField("Tempo", "Pode demorar até minuto(s) para processar o seu pedido.");
 
                 ButtonBuilder button = new ButtonBuilder()
                    .WithLabel("Terminar Conversa")

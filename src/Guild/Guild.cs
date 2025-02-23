@@ -229,14 +229,14 @@ namespace Ares.src.Guild
             return (channel != 0 ? infos.FindAll(it => it.Channel == channel).LastOrDefault() : infos.LastOrDefault());
         }
 
-        public Task<bool> CreateChatData(IUser user, ChatInfo info)
+        public async Task<bool> CreateChatData(IUser user, ChatInfo info)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
 
             if (HasActiveUserConversation(user))
             {
                 LogUtil.Log(nameof(CreateChatData), "O usuário já possui uma conversa ou modelo. Nenhuma ação necessária.");
-                return Task.FromResult(false);
+                return await Task.FromResult(false);
             }
 
             GuildChatData chat = Information.Chat;
@@ -244,7 +244,7 @@ namespace Ares.src.Guild
             if (chat == null)
             {
                 LogUtil.Error(nameof(CreateChatData), "GuildChatData está nulo. Não foi possível criar dados de chat para o usuário.");
-                return Task.FromResult(false);
+                return await Task.FromResult(false);
             }
 
             try
@@ -262,12 +262,19 @@ namespace Ares.src.Guild
 
                 infos.Add(info);
 
-                return this.SaveChatDataAsync(chat);
+                bool success = await this.SaveChatDataAsync(chat);
+
+                if (success)
+                {
+                    LogUtil.Log("Chat", $"Chat ID \"{info.Channel}\" successfully created by \"{user.Username}#{user.Discriminator}\"");
+                }
+
+                return success;
             }
             catch (Exception ex)
             {
                 LogUtil.Error(nameof(CreateChatData), "Erro ao tentar criar um histórico de chat para o usuário.", ex.Message);
-                return Task.FromResult(false);
+                return await Task.FromResult(false);
             }
         }
 
