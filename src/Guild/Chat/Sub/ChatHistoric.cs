@@ -44,11 +44,6 @@ public class ChatHistoric
     public string? ImageUrl { get; set; }
 
     /// <summary>
-    /// Papel do participante no chat.
-    /// </summary>
-    public ChatRole Role { get; set; }
-
-    /// <summary>
     /// Informações sobre o uso de tokens na conversa.
     /// </summary>
     public ChatValueUsage? Usage { get; set; }
@@ -63,10 +58,9 @@ public class ChatHistoric
     /// </summary>
     /// <param name="model">Modelo da AI</param>
     /// <param name="prompt">Pergunta</param>
-    /// <param name="role">Papel do Participante</param>
     /// <param name="usage">Uso de Tokens</param>
     /// <param name="timestamp">Timestamp da Conversa</param>
-    public ChatHistoric(ulong channel, string model = "", string prompt = "", string? response = "", string? imageUrl = "", ChatRole role = ChatRole.None, ChatValueUsage? usage = null, long timestamp = -1)
+    public ChatHistoric(ulong channel, string model = "", string prompt = "", string? response = "", string? imageUrl = "", ChatValueUsage? usage = null, long timestamp = -1)
     {
         this.Id = Guid.NewGuid().ToString();
         this.Active = true;
@@ -75,7 +69,6 @@ public class ChatHistoric
         this.Prompt = prompt;
         this.Response = response;
         this.ImageUrl = imageUrl;
-        this.Role = role;
         this.Usage = usage;
         this.Timestamp = timestamp;
 

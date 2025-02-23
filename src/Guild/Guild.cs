@@ -298,19 +298,5 @@ namespace Ares.src.Guild
 
             return ChatModel.GetByNearestModel(model);
         }
-
-        public int GetLastMessagesByRole(IUser user, ChatMessageRole role)
-        {
-            if (user == null) throw new ArgumentNullException(nameof(user));
-
-            var historic = this.ChatHistorics(user);
-
-            if (historic != null)
-            {
-                return historic.Count(m => m.Role == AiUtil.ConvertOpenAiRole(role));
-            }
-
-            return 0;
-        }
     }
 }

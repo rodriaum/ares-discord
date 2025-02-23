@@ -1,10 +1,8 @@
 ﻿using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Chat.Sub;
 using Ares.src.Service.Chat;
-using DeepSeek.Core;
 using DeepSeek.Core.Models;
 using OpenAI.Chat;
-using System.Text;
 
 namespace Ares.src.Utils.Extra;
 
@@ -24,8 +22,7 @@ public class AiUtil
             model: response.Model,
             prompt: prompt,
             response: response.Message.ToString(),
-            usage: new ChatValueUsage(response.Usage.OutputTokens, response.Usage.InputTokens),
-            role: ConvertAnthropicRole(response.Role)
+            usage: new ChatValueUsage(response.Usage.OutputTokens, response.Usage.InputTokens)
         );
     }
 
@@ -91,7 +88,6 @@ public class AiUtil
             prompt: prompt,
             response: content.Text,
             imageUrl: imageUrl,
-            role: ConvertOpenAiRole(completion.Role),
             usage: new ChatValueUsage(completion.Usage.OutputTokenCount, completion.Usage.InputTokenCount),
             timestamp: completion.CreatedAt.Ticks
         );
@@ -181,8 +177,7 @@ public class AiUtil
             model: response.Model,
             prompt: prompt,
             response: choice.Message.Content,
-            usage: new ChatValueUsage((usage != null ? usage.CompletionTokens : 0), (usage != null ? usage.PromptTokens : 0)),
-            role: ConvertDeepSeekRole()
+            usage: new ChatValueUsage((usage != null ? usage.CompletionTokens : 0), (usage != null ? usage.PromptTokens : 0))
         );
     }
 

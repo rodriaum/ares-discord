@@ -142,12 +142,12 @@ namespace Ares.src.Listener.Chat
                                 double inputPrice = usage.InputTokens * price.InputPricePerToken;
                                 double outputPrice = usage.OutputTokens * price.OutputPricePerToken;
 
-                                double totalPrice = Math.Round((inputPrice + outputPrice), 2);
+                                string formattedPrice = Util.FormatPrice(inputPrice + outputPrice);
 
                                 priceEmbed = new EmbedBuilder()
                                     .AddField("Tokens", usage.TotalTokens())
-                                    .AddField("Total", $"$ {totalPrice}")
-                                    .WithFooter($"Não inclui mensagens guardadas");
+                                    .AddField("Total", $"$ {formattedPrice}")
+                                    .WithFooter($"Pode ser menor caso seja repetido");
                             }
                         }
                         break;
