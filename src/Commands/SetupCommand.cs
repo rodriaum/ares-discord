@@ -70,7 +70,7 @@ internal class SetupCommand
                     {
                         if (model.Category != category) continue;
 
-                        string description = model.Type switch
+                        string modelText = model.Type switch
                         {
                             ModelType.Chat => "Chat",
                             ModelType.Question => "Questão",
@@ -78,11 +78,13 @@ internal class SetupCommand
                             _ => "Desconhecido"
                         };
 
+                        string availableText = (model.Available ? "Disponível" : "Indisponível");
+
                         menu.AddOption(new SelectMenuOptionBuilder
                         {
                             Label = model.DisplayName,
                             Value = model.Model,
-                            Description = description
+                            Description = $"{modelText}: {availableText}"
                         });
                     }
 

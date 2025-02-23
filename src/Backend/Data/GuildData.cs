@@ -151,6 +151,16 @@ internal class GuildData
     }
 
     /// <summary>
+    /// Salva ou atualiza uma guilda no banco de dados, retornando o objeto atualizado.
+    /// </summary>
+    /// <param name="id">Ulong da guilda.</param>
+    /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda salva ou atualizada.</returns>
+    public async Task<Guild?> Save(ulong id)
+    {
+        return await this.Save(id.ToString());
+    }
+
+    /// <summary>
     /// Recupera uma guilda do cache ou do banco de dados usando o ID.
     /// </summary>
     /// <param name="id">ID único da guilda.</param>
@@ -247,6 +257,15 @@ internal class GuildData
     public void DeleteCache(string id)
     {
         _manager?.Delete(id);
+    }
+
+    /// <summary>
+    /// Remove uma guilda do cache local.
+    /// </summary>
+    /// <param name="id">Ulong da guilda a ser removida do cache.</param>
+    public void DeleteCache(ulong id)
+    {
+        this.DeleteCache(id.ToString());
     }
 
     /// <summary>

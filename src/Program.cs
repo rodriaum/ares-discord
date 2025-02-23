@@ -10,6 +10,7 @@ using DotNetEnv;
 using Ares.src.Utils.Extra;
 using Ares.src.Commands.System;
 using Ares.src.Commands.Data;
+using Ares.src.Listener;
 namespace Ares.src
 {
     internal class Program
@@ -17,7 +18,7 @@ namespace Ares.src
 
         /* Discord Variables */
 
-        public static DiscordSocketClient? Client { get; private set; }
+        private static DiscordSocketClient? _client { get; set; }
 
         /* Main Procedures */
 
@@ -34,32 +35,33 @@ namespace Ares.src
                 GatewayIntents = GatewayIntents.All
             };
 
-            Client = new DiscordSocketClient(config);
+            _client = new DiscordSocketClient(config);
 
-            await Client.LoginAsync(TokenType.Bot, Env.GetString("DISCORD_TOKEN", token));
-            await Client.StartAsync();
+            await _client.LoginAsync(TokenType.Bot, Env.GetString("DISCORD_TOKEN", token));
+            await _client.StartAsync();
 
             // Listeners
-            new SelectedChatListener(Client);
-            new ButtonChatListener(Client);
-            new ReceivedContentListener(Client);
+            new SelectedChatListener(_client);
+            new ButtonChatListener(_client);
+            new ReceivedContentListener(_client);
+            new GuildListener(_client);
 
             // Commands
-            new PingCommand(Client);
-            new SetupCommand(Client);
-            new ConfigCommand(Client);
+            new PingCommand(_client);
+            new SetupCommand(_client);
+            new ConfigCommand(_client);
 
             // Managers
             new AiManager();
 
             // Options
-            await Client.SetStatusAsync(UserStatus.DoNotDisturb);
-            await Client.SetGameAsync("Feito com ❤️ pelo Rodrigo!", type: ActivityType.CustomStatus);
+            await _client.SetStatusAsync(UserStatus.DoNotDisturb);
+            await _client.SetGameAsync("Feito com ❤️ pelo Rodrigo!", type: ActivityType.CustomStatus);
 
-            Client.Ready += RegisterCommands;
-            Client.Ready += () =>
+            _client.Ready += RegisterCommands;
+            _client.Ready += () =>
             {
-                LogUtil.Log("Status", $"Success! Logged \"{Client.CurrentUser.Username}\"");
+                LogUtil.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"");
                 return Task.CompletedTask;
             };
 
@@ -100,14 +102,14 @@ namespace Ares.src
             try
             {
                 // Function executed only after successful connection. But avoid alerts.
-                if (Client == null)
+                if (_client == null)
                     return;
 
                 foreach (SlashCommandBuilder command in commands)
                 {
                     var build = command.Build();
 
-                    await Client.CreateGlobalApplicationCommandAsync(build);
+                    await _client.CreateGlobalApplicationCommandAsync(build);
 
                     LogUtil.Log("Commands", $"Command \"{build.Name}\" registered.");
                 }

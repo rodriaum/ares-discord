@@ -20,4 +20,9 @@ public class ChatValueUsage
         this.OutputTokens = outputTokens;
         this.InputTokens = inputTokens;
     }
+
+    public int TotalTokens()
+    {
+        return this.OutputTokens + this.InputTokens;
+    }
 }

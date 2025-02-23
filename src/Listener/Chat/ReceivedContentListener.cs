@@ -8,12 +8,14 @@ using OpenAI.Images;
 using Ares.src.Guild.Config;
 using Ares.src.Service;
 using Ares.src.Service.Model;
+using Ares.src.Guild.Chat.Sub;
+using Ares.src.Service.Chat;
 
 namespace Ares.src.Listener.Chat
 {
     internal class ReceivedContentListener
     {
-        private static DiscordSocketClient? Client { get; set; }
+        private static DiscordSocketClient? _client { get; set; }
 
         /// <summary>
         /// Construtor que inicializa o ReceivedContentListener com um cliente Discord.
@@ -22,7 +24,7 @@ namespace Ares.src.Listener.Chat
         public ReceivedContentListener(DiscordSocketClient client)
         {
             client.MessageReceived += MessageReceivedHandler;
-            Client = client;
+            _client = client;
         }
 
         /// <summary>
@@ -44,13 +46,13 @@ namespace Ares.src.Listener.Chat
 
                 IUser user = args.Author;
 
-                if (Client == null || user == null)
+                if (_client == null || user == null)
                 {
                     await channel.SendMessageAsync(embed: embed.WithDescription(Constant.UNABLE_GET_MEMBER).Build());
                     return;
                 }
 
-                if (user.Id.Equals(Client.CurrentUser.Id)) return;
+                if (user.Id.Equals(_client.CurrentUser.Id)) return;
                 if (args is not SocketUserMessage message) return;
 
                 GuildData? data = Core.GuildData;
@@ -109,6 +111,8 @@ namespace Ares.src.Listener.Chat
                 SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
                 string prompt = message.Content;
 
+                EmbedBuilder? priceEmbed = null;
+
                 switch (model.Type)
                 {
                     case ModelType.Chat:
@@ -124,7 +128,28 @@ namespace Ares.src.Listener.Chat
 
                         embed.WithDescription(responseText)
                             .WithColor(color)
-                            .WithFooter("Ares");
+                            .WithFooter($"Ares - {model.DisplayName}");
+
+                        ChatHistoric? historic = guild.LastChatHistoric(user);
+
+                        if (historic != null)
+                        {
+                            ChatValueUsage? usage = historic.Usage;
+                            ChatPriceUsage? price = model.Price;
+
+                            if (usage != null && price != null)
+                            {
+                                double inputPrice = usage.InputTokens * price.InputPricePerToken;
+                                double outputPrice = usage.OutputTokens * price.OutputPricePerToken;
+
+                                double totalPrice = Math.Round((inputPrice + outputPrice), 2);
+
+                                priceEmbed = new EmbedBuilder()
+                                    .AddField("Tokens", usage.TotalTokens())
+                                    .AddField("Total", $"$ {totalPrice}")
+                                    .WithFooter($"Não inclui mensagens guardadas");
+                            }
+                        }
                         break;
 
                     case ModelType.Image:
@@ -156,7 +181,17 @@ namespace Ares.src.Listener.Chat
                         break;
                 }
 
-                await botMessage.ModifyAsync(message => message.Embed = embed.Build());
+                List<Embed> embeds = new List<Embed>();
+
+                if (priceEmbed != null)
+                {
+                    embeds.Add(priceEmbed.Build());
+                }
+
+                // É adicionado o embed principal no final para que ele seja o último a ser exibido.
+                embeds.Add(embed.Build());
+
+                await botMessage.ModifyAsync(message => message.Embeds = embeds.ToArray());
             }
             catch (Exception e)
             {

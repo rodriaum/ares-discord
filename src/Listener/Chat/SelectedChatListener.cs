@@ -11,12 +11,12 @@ namespace Ares.src.Listener.Chat
 {
     internal class SelectedChatListener
     {
-        private static DiscordSocketClient? Client { get; set; }
+        private static DiscordSocketClient? _client { get; set; }
 
         public SelectedChatListener(DiscordSocketClient client)
         {
             client.SelectMenuExecuted += SelectMenuHandler;
-            Client = client;
+            _client = client;
         }
 
         private async Task SelectMenuHandler(SocketMessageComponent args)
@@ -30,7 +30,7 @@ namespace Ares.src.Listener.Chat
                 SocketUser user = args.User;
                 ulong guildId = args.GuildId.GetValueOrDefault();
 
-                if (Client == null || user == null)
+                if (_client == null || user == null)
                 {
                     await args.FollowupAsync(Constant.UNABLE_GET_MEMBER);
                     return;
@@ -52,7 +52,7 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
-                SocketGuild socketGuild = Client.GetGuild(guildId);
+                SocketGuild socketGuild = _client.GetGuild(guildId);
 
                 if (socketGuild == null)
                 {
@@ -129,6 +129,16 @@ namespace Ares.src.Listener.Chat
                     await Task.Delay(500);
                     return;
                 }
+
+                /*
+                SocketUserMessage message = args.Message;
+                IReadOnlyCollection<IMessageComponent> components = message.Components.First().Components;
+                
+                if (components != null)
+                {
+                    
+                }
+                */
 
                 EmbedBuilder embed = new EmbedBuilder()
                     .WithTitle($"Olá, {user.GlobalName}")
