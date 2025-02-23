@@ -1,5 +1,6 @@
 ﻿using Ares.src.Manager;
 using MongoDB.Driver.Linq;
+using System.Runtime.ConstrainedExecution;
 
 namespace Ares.src.Service.Model
 {
@@ -9,17 +10,19 @@ namespace Ares.src.Service.Model
         public ModelType Type;
         public string DisplayName;
         public string Model;
+        public double PricePerToken;
         public bool Exclusive;
         public bool Available;
 
-        public ChatModel(ModelCategory category, ModelType type, string display, string model, bool exclusive = false, bool available = false)
+        public ChatModel(ModelCategory category, ModelType type, string display, string model, double price = 0.0, bool exclusive = false, bool available = false)
         {
-            Category = category;
-            Type = type;
-            DisplayName = display;
-            Model = model;
-            Exclusive = exclusive;
-            Available = available;
+            this.Category = category;
+            this.Type = type;
+            this.DisplayName = display;
+            this.Model = model;
+            this.PricePerToken = price;
+            this.Exclusive = exclusive;
+            this.Available = available;
         }
 
         public static List<ChatModel> GetModelsByCategory(ModelType category)
