@@ -12,6 +12,8 @@ using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Token;
 using DeepSeek.Core;
 using DeepSeek.Core.Models;
+using Ares.src.Guild;
+using System.Threading.Channels;
 
 
 namespace Ares.src.Service;
@@ -25,7 +27,7 @@ public class AiService
     /// 
 
     // Futuro: Fazer retornar o url e um bool de sucesso.
-    public async static Task<string> GenerateImageUrlAsync(Guild.Guild guild, SocketGuildUser user, ChatModel model, ImageGenerationOptions options, string prompt) {
+    public async static Task<string> GenerateImageUrlAsync(Guild.Guild guild, SocketGuildUser user, ChatModel model, ImageGenerationOptions options, ulong channel, string prompt) {
         HandleVerifyParameters(guild, user, model, prompt);
 
         if (model.Type != ModelType.Image)
@@ -50,7 +52,12 @@ public class AiService
 
         try
         {
-            return await GenerateImageAsync(model, token, prompt, options);
+            GeneratedImage image = await GenerateImageAsync(model, token, prompt, options);
+
+            ChatHistoric historic = AiUtil.ConvertGeneratedImageToChatHistoric(prompt, model.Model, channel, image);
+            await guild.SaveHistoricAsync(user, historic);
+
+            return image.ImageUri.OriginalString;
         }
         catch (Exception)
         {
@@ -58,15 +65,15 @@ public class AiService
         }
     }
 
-    private static async Task<string> GenerateImageAsync(
+    private static async Task<GeneratedImage> GenerateImageAsync(
         ChatModel model,
         string token,
         string prompt,
         ImageGenerationOptions options)
     {
         ImageClient client = new ImageClient(model.Model, token);
-        GeneratedImage image = await client.GenerateImageAsync(prompt, options);
-        return image.ImageUri.OriginalString;
+
+        return await client.GenerateImageAsync(prompt, options);
     }
 
 

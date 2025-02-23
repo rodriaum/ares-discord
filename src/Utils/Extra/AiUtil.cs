@@ -3,6 +3,7 @@ using Ares.src.Guild.Chat.Sub;
 using Ares.src.Service.Chat;
 using DeepSeek.Core.Models;
 using OpenAI.Chat;
+using OpenAI.Images;
 
 namespace Ares.src.Utils.Extra;
 
@@ -69,6 +70,26 @@ public class AiUtil
     }
 
     /// <summary>
+    /// <b>OpenAI</b> - Constrói um histórico de imagens para OpenAI a partir de um GeneratedImage.
+    /// </summary>
+    /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
+    /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
+    /// <param name="image">Resposta com a imagem gerada pela IA da OpenAI.</param>
+    public static ChatHistoric ConvertGeneratedImageToChatHistoric(string prompt, string model, ulong channel, GeneratedImage image)
+    {
+        
+        return new ChatHistoric
+        (
+            channel: channel,
+            model: model,
+            prompt: prompt,
+            response: image.RevisedPrompt,
+            imageUrl: image.ImageUri.OriginalString,
+            usage: new ChatValueUsage(outputTokens: 1) // A geração de imagens tem um preço fixo por imagem, deixei 1 token para simplificar.
+        );
+    }
+
+    /// <summary>
     /// <b>OpenAI</b> - Constrói um histórico de chat para OpenAI a partir de um ChatCompletion.
     /// </summary>
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
@@ -77,7 +98,7 @@ public class AiUtil
     public static ChatHistoric ConvertChatCompletionToChatHistoric(string prompt, ulong channel, ChatCompletion completion)
     {
         var content = completion.Content[0];
-        string? imageUrl = content.ImageUri?.AbsoluteUri;
+        string? imageUrl = content.ImageUri?.OriginalString;
 
         return new ChatHistoric
         (

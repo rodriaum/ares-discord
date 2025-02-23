@@ -169,7 +169,7 @@ namespace Ares.src.Listener.Chat
                             ResponseFormat = GeneratedImageFormat.Uri
                         };
 
-                        string responseImageUrl = await AiService.GenerateImageUrlAsync(guild, guildUser, model, options, prompt);
+                        string responseImageUrl = await AiService.GenerateImageUrlAsync(guild, guildUser, model, options, channel.Id, prompt);
 
                         // Como pode retornar um url ou mensagem de erro, fazemos essa verificação.
                         if (Util.IsValidUrl(responseImageUrl))
