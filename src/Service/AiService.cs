@@ -147,6 +147,18 @@ public class AiService
         ChatClient client = new ChatClient(model.Model, token);
         ChatCompletion completion = await client.CompleteChatAsync(messages);
 
+        if (completion == null)
+        {
+            LogUtil.Error
+                (
+                    "OpenAI",
+                    "Não foi possível obter a resposta.",
+                    ""
+                );
+
+            return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
+        }
+
         ChatHistoric historic = AiUtil.ConvertChatCompletionToChatHistoric(prompt, channel, completion);
         await guild.SaveHistoricAsync(user, historic);
 
@@ -200,8 +212,20 @@ public class AiService
             Temperature = 1.0m
         };
 
-        MessageResponse response = await client.Messages.GetClaudeMessageAsync(parameters);
-       
+        MessageResponse? response = await client.Messages.GetClaudeMessageAsync(parameters);
+
+        if (response == null)
+        {
+            LogUtil.Error
+                (
+                    "Anthropic",
+                    "Não foi possível obter a resposta.",
+                    ""
+                );
+
+            return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
+        }
+
         ChatHistoric historic = AiUtil.ConvertMessageResponseToChatHistoric(prompt, channel, response);
         await guild.SaveHistoricAsync(user, historic);
 

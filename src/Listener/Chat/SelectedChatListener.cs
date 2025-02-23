@@ -107,6 +107,12 @@ namespace Ares.src.Listener.Chat
                     return;
                 }
 
+                if (!model.Available)
+                {
+                    await args.FollowupAsync("Ops! O modelo escolhido não está disponível atualmente.");
+                    return;
+                }
+
                 SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
                 RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
 

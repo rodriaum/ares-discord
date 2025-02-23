@@ -10,14 +10,16 @@ namespace Ares.src.Service.Model
         public string DisplayName;
         public string Model;
         public bool Exclusive;
+        public bool Available;
 
-        public ChatModel(ModelCategory category, ModelType type, string displayName, string model, bool exclusive = false)
+        public ChatModel(ModelCategory category, ModelType type, string display, string model, bool exclusive = false, bool available = false)
         {
             Category = category;
             Type = type;
-            DisplayName = displayName;
+            DisplayName = display;
             Model = model;
             Exclusive = exclusive;
+            Available = available;
         }
 
         public static List<ChatModel> GetModelsByCategory(ModelType category)
