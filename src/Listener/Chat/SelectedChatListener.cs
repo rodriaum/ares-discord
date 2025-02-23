@@ -119,7 +119,8 @@ namespace Ares.src.Listener.Chat
                 ChatInfo info = new ChatInfo
                     (
                         active: true,
-                        channel: channel.Id
+                        channel: channel.Id,
+                        model: model.Model
                     );
 
                 if (!await guild.CreateChatData(user, info))

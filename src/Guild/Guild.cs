@@ -209,6 +209,26 @@ namespace Ares.src.Guild
             return this.SaveInfoAsync(user, infos);
         }
 
+        public ChatHistoric? LastChatHistoric(IUser user, ulong channel = 0)
+        {
+            List<ChatHistoric>? historics = this.ChatHistorics(user);
+
+            if (historics == null || historics.Count == 0)
+                return null;
+
+            return (channel != 0 ? historics.FindAll(it => it.Channel == channel).LastOrDefault() : historics.LastOrDefault());
+        }
+
+        public ChatInfo? LastChatInfo(IUser user, ulong channel = 0)
+        {
+            List<ChatInfo>? infos = this.ChatInfos(user);
+
+            if (infos == null || infos.Count == 0)
+                return null;
+
+            return (channel != 0 ? infos.FindAll(it => it.Channel == channel).LastOrDefault() : infos.LastOrDefault());
+        }
+
         public Task<bool> CreateChatData(IUser user, ChatInfo info)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
@@ -333,10 +353,10 @@ namespace Ares.src.Guild
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
 
-            var historic = this.LastChatHistoric(user, channel: channel);
-            if (historic == null) return null;
+            var info = this.LastChatInfo(user, channel: channel);
+            if (info == null) return null;
 
-            var model = historic.Model;
+            var model = info.Model;
             if (string.IsNullOrWhiteSpace(model)) return null;
 
             return ChatModel.GetByNearestModel(model);

@@ -106,7 +106,12 @@ namespace Ares.src.Listener.Chat
                 IRole exclusiveRole = socketGuild.GetRole(gcd.ExclusiveRoleId);
 
                 ChatModel? model = guild.GetLastModelByUser(user, channel: channel.Id);
-                if (model == null) return;
+
+                if (model == null)
+                {
+                    await channel.SendMessageAsync(embed: embed.WithDescription("Não foi possível encontrar o último modelo usado.").Build());
+                    return;
+                }
 
                 SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
                 string prompt = message.Content;
