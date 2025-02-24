@@ -1,4 +1,5 @@
-﻿using Ares.src.Utils.Extra;
+﻿using Ares.src.Guild.Chat.Sub;
+using Ares.src.Utils.Extra;
 using Discord;
 using Discord.WebSocket;
 
@@ -54,6 +55,17 @@ namespace Ares.src.Listener.Chat.Button
                     {
                         await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
                         return;
+                    }
+
+                    ChatInfo? info = guild.ChatInfoByChannel(user, channel.Id);
+
+                    if (info != null)
+                    {
+                        LogUtil.Log("Chat", $"Chat ID \"{info.Id}\" has been disabled by \"{user.Username}#{user.Discriminator}\"");
+                    }
+                    else
+                    {
+                        LogUtil.Log("Chat", $"A chat has been disabled by \"{user.Username}#{user.Discriminator}\"");
                     }
 
                     await args.FollowupAsync("Obrigado por usar **Ares**! A fechar a conversa...");

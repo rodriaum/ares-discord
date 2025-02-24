@@ -276,7 +276,7 @@ namespace Ares.src.Guild
 
                 if (success)
                 {
-                    LogUtil.Log("Chat", $"Chat ID \"{info.Channel}\" successfully created by \"{user.Username}#{user.Discriminator}\"");
+                    LogUtil.Log("Chat", $"Chat ID \"{info.Id}\" successfully created by \"{user.Username}#{user.Discriminator}\"");
                 }
 
                 return success;
