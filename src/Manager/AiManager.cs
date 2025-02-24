@@ -142,8 +142,8 @@ public class AiManager
             type: ModelType.Chat,
             display: "Claude 3 Opus",
             model: "claude-3-opus-20240229",
-            price: new ChatPriceUsage(output: 0.0375, input: 0.0075),
-            available: true
+            price: new ChatPriceUsage(output: 0.000075, input: 0.000015),
+            available: false
         ),
 
         new(
@@ -160,7 +160,7 @@ public class AiManager
             type: ModelType.Chat,
             display: "Claude 3.5 Sonnet",
             model: "claude-3-5-sonnet-20241022",
-            price: new ChatPriceUsage(output: 0.0075, input:0.0015),
+            price: new ChatPriceUsage(output: 0.000015, input: 0.000003),
             available: true
         ),
 
@@ -169,8 +169,8 @@ public class AiManager
             type: ModelType.Chat,
             display: "Claude 3.5 Haiku",
             model: "claude-3-5-haiku-20241022",
-            price: new ChatPriceUsage(output: 0.0, input: 0.0),
-            available: false
+            price: new ChatPriceUsage(output: 0.000004, input: 0.0000008),
+            available: true
         ),
 
         new(
@@ -178,7 +178,7 @@ public class AiManager
             type: ModelType.Chat,
             display: "Claude 3 Haiku",
             model: "claude-3-haiku-20240307",
-            price: new ChatPriceUsage(output: 0.000625, input: 0.000125),
+            price: new ChatPriceUsage(output: 0.00000125, input: 0.00000025),
             available: true
         ),
 

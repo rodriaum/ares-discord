@@ -6,20 +6,48 @@ using OpenAI.Images;
 using Ares.src.Utils.Extra;
 using Ares.src.Guild.Chat.Sub;
 using Ares.src.Service.Model;
-using Ares.src.Guild.Config;
 using Anthropic.SDK;
 using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Token;
 using DeepSeek.Core;
 using DeepSeek.Core.Models;
-using Ares.src.Guild;
-using System.Threading.Channels;
 
 
 namespace Ares.src.Service;
 
 public class AiService
 {
+    private static string GetMessageByErrorKey(string key)
+    {
+        if (key.Contains("content_policy_violation"))
+        {
+            return "Sua solicitação foi rejeitada como resultado do nosso sistema de segurança. Seu prompt pode conter texto que não é permitido pelo nosso sistema de segurança.";
+        }
+        else if (key.Contains("rate_limit_exceeded"))
+        {
+            return "Você excedeu o limite de solicitações permitidas em um determinado período. Por favor, aguarde um momento antes de tentar novamente.";
+        }
+        else if (key.Contains("invalid_request"))
+        {
+            return "Houve um problema com sua solicitação. Verifique se todos os parâmetros estão corretos e tente novamente.";
+        }
+        else if (key.Contains("authentication_error"))
+        {
+            return "Erro de autenticação. Certifique-se de que suas credenciais estão corretas e válidas.";
+        }
+        else if (key.Contains("server_error"))
+        {
+            return "Ocorreu um erro interno no servidor. Tente novamente mais tarde.";
+        }
+        else if (key.Contains("timeout"))
+        {
+            return "A solicitação demorou muito para ser processada e foi interrompida. Tente novamente.";
+        }
+        else
+        {
+            return Constant.UNABLE_PERFORM_TASK;
+        }
+    }
 
     /// <summary>
     /// <b>General</b> - Image Generation
@@ -43,24 +71,43 @@ public class AiService
             return "Não foi possível encontrar as informações sobre os tokens.";
         }
 
-        string? token = tokenData.OpenAi;
+        string? openAiToken = tokenData.OpenAi;
+        string? imgurToken = tokenData.Imgur;
 
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrEmpty(openAiToken))
         {
-            return "Ops! Parece que o servidor atual não tem um token pré-configurado.";
+            return "Ops! Parece que o servidor atual não tem um token OpenAI pré-configurado.";
+        }
+
+        if (string.IsNullOrEmpty(imgurToken))
+        {
+            return "Ops! Parece que o servidor atual não tem um token Imgur pré-configurado.";
         }
 
         try
         {
-            GeneratedImage image = await GenerateImageAsync(model, token, prompt, options);
+            GeneratedImage? image = await GenerateImageAsync(model, openAiToken, prompt, options);
 
-            ChatHistoric historic = AiUtil.ConvertGeneratedImageToChatHistoric(prompt, model.Model, channel, image);
+            if (image == null)
+            {
+                return "Ops! Parece que não foi possível gerar a imagem, tente novamente!";
+            }
+
+            string imageUrl = await RequestUtil.UploadMediaFromUrl(imgurToken, image.ImageUri.OriginalString);
+
+            if (string.IsNullOrWhiteSpace(imageUrl))
+            {
+                imageUrl = image.ImageUri.OriginalString;
+            }
+
+            ChatHistoric historic = AiUtil.ConvertGeneratedImageToChatHistoric(prompt, model.Model, channel, image, imageUrl: imageUrl);
             await guild.SaveHistoricAsync(user, historic);
 
-            return image.ImageUri.OriginalString;
+            return imageUrl;
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            LogUtil.Error("Generation", "Unable to generate an image.", e.Message);
             return Constant.UNABLE_PERFORM_TASK;
         }
     }
@@ -124,10 +171,13 @@ public class AiService
         {
             if (historic != null && !await guild.RemoveConversationAsync(user, historic))
             {
-                throw new Exception("Não foi possível remover a conversa do usuário após um problema interno.", e);
+                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue", "");
             }
 
-            return Constant.UNABLE_PERFORM_TASK;
+            string message = e.Message;
+
+            LogUtil.Error("Generation", "Unable to generate an conversation.", message);
+            return GetMessageByErrorKey(message);
         }
     }
 

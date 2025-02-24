@@ -148,12 +148,26 @@ namespace Ares.src.Listener.Chat
                                 double inputPrice = usage.InputTokens * price.InputPricePerToken;
                                 double outputPrice = usage.OutputTokens * price.OutputPricePerToken;
 
-                                string formattedPrice = Util.FormatPrice(inputPrice + outputPrice);
+                                string formattedInputPrice = Util.FormatPrice(inputPrice);
+                                string formattedOutputPrice = Util.FormatPrice(outputPrice);
+                                string formattedTotalPrice = Util.FormatPrice(inputPrice + outputPrice);
 
                                 priceEmbed = new EmbedBuilder()
-                                    .AddField("Tokens", usage.TotalTokens())
-                                    .AddField("Total", $"$ {formattedPrice}")
-                                    .WithFooter($"Pode ser menor caso seja repetido");
+                                    // Input Field
+                                    .AddField("Tokens", usage.InputTokens, true)
+                                    .AddField("Pedido", $"$ {formattedInputPrice}", true)
+                                    // Broke Line
+                                    .AddField("\u200B", "\u200B", false)
+                                    // Output Field
+                                    .AddField("Tokens", usage.OutputTokens, true)
+                                    .AddField("Resposta", $"$ {formattedOutputPrice}", true)
+                                    // Broke Line
+                                    .AddField("\u200B", "\u200B", false)
+                                    // Total Field
+                                    .AddField("Tokens", usage.TotalTokens(), true)
+                                    .AddField("Total", $"$ {formattedTotalPrice}", true)
+                                    // Footer
+                                    .WithFooter($"Preço pode ser menor com resposta em cache");
                             }
                         }
                         break;
@@ -174,7 +188,7 @@ namespace Ares.src.Listener.Chat
                         // Como pode retornar um url ou mensagem de erro, fazemos essa verificação.
                         if (Util.IsValidUrl(responseImageUrl))
                         {
-                            embed.WithDescription("Aqui esta a imagem solicitada:")
+                            embed.WithDescription("Sucesso!")
                                 .WithColor(Color.Green);
 
                             embed.WithImageUrl(responseImageUrl);

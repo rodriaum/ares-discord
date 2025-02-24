@@ -75,7 +75,8 @@ public class AiUtil
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
     /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
     /// <param name="image">Resposta com a imagem gerada pela IA da OpenAI.</param>
-    public static ChatHistoric ConvertGeneratedImageToChatHistoric(string prompt, string model, ulong channel, GeneratedImage image)
+    /// <param name="imageUrl">Caso exista uma URL de mídia customizada.</param>
+    public static ChatHistoric ConvertGeneratedImageToChatHistoric(string prompt, string model, ulong channel, GeneratedImage image, string imageUrl = "")
     {
         
         return new ChatHistoric
@@ -84,7 +85,7 @@ public class AiUtil
             model: model,
             prompt: prompt,
             response: image.RevisedPrompt,
-            imageUrl: image.ImageUri.OriginalString,
+            imageUrl: (!string.IsNullOrWhiteSpace(imageUrl) ? image.ImageUri.OriginalString : imageUrl),
             usage: new ChatValueUsage(outputTokens: 1) // A geração de imagens tem um preço fixo por imagem, deixei 1 token para simplificar.
         );
     }
