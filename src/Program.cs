@@ -28,8 +28,6 @@ namespace Ares.src
 
             Core.Init();
 
-            string token = "MTI3ODQ0NzI3NzkwNzY0NDU3OA.G3M0OQ.g-cEiALVtPO4trpE6r2u2XjpmMR8LMGlkWD01o";
-
             var config = new DiscordSocketConfig()
             {
                 GatewayIntents = GatewayIntents.All
@@ -37,7 +35,7 @@ namespace Ares.src
 
             _client = new DiscordSocketClient(config);
 
-            await _client.LoginAsync(TokenType.Bot, Env.GetString("DISCORD_TOKEN", token));
+            await _client.LoginAsync(TokenType.Bot, Env.GetString("DISCORD_TOKEN"));
             await _client.StartAsync();
 
             // Listeners
