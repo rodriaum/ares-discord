@@ -5,12 +5,10 @@ namespace Ares.src.Guild.Data
     public class GuildChatData
     {
         public Dictionary<ulong, List<ChatInfo>> Infos { get; set; }
-        public Dictionary<ulong, List<ChatHistoric>> Historics { get; set; }
 
         public GuildChatData()
         {
             this.Infos = new Dictionary<ulong, List<ChatInfo>>();
-            this.Historics = new Dictionary<ulong, List<ChatHistoric>>();
         }
     }
 }

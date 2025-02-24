@@ -13,14 +13,11 @@ public class AiUtil
     /// <b>Anthropic</b> - Constrói um histórico de chat para Anthropic a partir de uma resposta de mensagem.
     /// </summary>
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
-    /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
     /// <param name="response">Resposta gerada pela IA da Anthropic.</param>
-    public static ChatHistoric ConvertMessageResponseToChatHistoric(string prompt, ulong channel, MessageResponse response)
+    public static ChatHistoric ConvertMessageResponseToChatHistoric(string prompt, MessageResponse response)
     {
         return new ChatHistoric
         (
-            channel: channel,
-            model: response.Model,
             prompt: prompt,
             response: response.Message.ToString(),
             usage: new ChatValueUsage(response.Usage.OutputTokens, response.Usage.InputTokens)
@@ -76,13 +73,11 @@ public class AiUtil
     /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
     /// <param name="image">Resposta com a imagem gerada pela IA da OpenAI.</param>
     /// <param name="imageUrl">Caso exista uma URL de mídia customizada.</param>
-    public static ChatHistoric ConvertGeneratedImageToChatHistoric(string prompt, string model, ulong channel, GeneratedImage image, string imageUrl = "")
+    public static ChatHistoric ConvertGeneratedImageToChatHistoric(string prompt, GeneratedImage image, string imageUrl = "")
     {
         
         return new ChatHistoric
         (
-            channel: channel,
-            model: model,
             prompt: prompt,
             response: image.RevisedPrompt,
             imageUrl: (!string.IsNullOrWhiteSpace(imageUrl) ? image.ImageUri.OriginalString : imageUrl),
@@ -96,15 +91,13 @@ public class AiUtil
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
     /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
     /// <param name="completion">Resposta gerada pela IA da OpenAI.</param>
-    public static ChatHistoric ConvertChatCompletionToChatHistoric(string prompt, ulong channel, ChatCompletion completion)
+    public static ChatHistoric ConvertChatCompletionToChatHistoric(string prompt, ChatCompletion completion)
     {
         var content = completion.Content[0];
         string? imageUrl = content.ImageUri?.OriginalString;
 
         return new ChatHistoric
         (
-            channel: channel,
-            model: completion.Model,
             prompt: prompt,
             response: content.Text,
             imageUrl: imageUrl,
@@ -178,21 +171,20 @@ public class AiUtil
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
     /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
     /// <param name="response">Resposta gerada pela IA da DeepSeek.</param>
-    public static ChatHistoric ConvertChatResponseToChatHistoric(string prompt, ulong channel, ChatResponse response)
+    public static ChatHistoric? ConvertChatResponseToChatHistoric(string prompt, string guid, ChatResponse response)
     {
         Choice? choice = response.Choices.FirstOrDefault();
-
+        
         if (choice == null || choice.Message == null || choice.Message.Content == null)
         {
-            throw new InvalidOperationException($"A escolha ou o conteúdo da mensagem está ausente.\nChannel: {channel}\nPrompt: {prompt}");
+            LogUtil.Error(nameof(ConvertChatResponseToChatHistoric), $"A escolha ou o conteúdo da mensagem está ausente.\nChannel: {guid}\nPrompt: {prompt}");
+            return null;
         }
 
         DeepSeek.Core.Models.Usage? usage = response.Usage;
 
         return new ChatHistoric
         (
-            channel: channel,
-            model: response.Model,
             prompt: prompt,
             response: choice.Message.Content,
             usage: new ChatValueUsage((usage != null ? usage.CompletionTokens : 0), (usage != null ? usage.PromptTokens : 0))

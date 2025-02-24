@@ -9,16 +9,6 @@ namespace Ares.src.Guild.Chat.Sub;
 public class ChatHistoric
 {
     /// <summary>
-    /// Indica o canal de texto.
-    /// </summary>
-    public ulong Channel { get; set; }
-
-    /// <summary>
-    /// Modelo da AI utilizado na conversa.
-    /// </summary>
-    public string Model { get; set; }
-
-    /// <summary>
     /// Pergunta ou comando enviado pelo usuário.
     /// </summary>
     public string Prompt { get; set; }
@@ -46,14 +36,13 @@ public class ChatHistoric
     /// <summary>
     /// Inicializa uma nova instância da classe <see cref="ChatHistoric"/>.
     /// </summary>
-    /// <param name="model">Modelo da AI</param>
     /// <param name="prompt">Pergunta</param>
+    /// <param name="response">Resposta ou Prompt Revisado</param>
+    /// <param name="imageUrl">Opcional: Url da Image</param>
     /// <param name="usage">Uso de Tokens</param>
     /// <param name="timestamp">Timestamp da Conversa</param>
-    public ChatHistoric(ulong channel, string model = "", string prompt = "", string? response = "", string? imageUrl = "", ChatValueUsage? usage = null, long timestamp = -1)
+    public ChatHistoric(string prompt = "", string? response = "", string? imageUrl = "", ChatValueUsage? usage = null, long timestamp = -1)
     {
-        this.Channel = channel;
-        this.Model = model;
         this.Prompt = prompt;
         this.Response = response;
         this.ImageUrl = imageUrl;

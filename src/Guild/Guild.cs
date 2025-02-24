@@ -5,9 +5,6 @@ using Ares.src.Guild.Information;
 using Ares.src.Service.Model;
 using Ares.src.Utils.Extra;
 using Discord;
-using OpenAI.Chat;
-using System.ComponentModel.Design;
-using System.Threading.Tasks;
 
 namespace Ares.src.Guild
 {
@@ -101,28 +98,16 @@ namespace Ares.src.Guild
             return await SaveInformation(this.Information);
         }
 
-        public async Task<bool> SaveHistoricAsync(IUser user, List<ChatHistoric> historics)
-        {
-            this.Information.Chat.Historics[user.Id] = historics;
-            return await SaveInformation(this.Information);
-        }
-
-        public async Task<bool> SaveHistoricAsync(IUser user, ChatHistoric historic)
-        {
-            List<ChatHistoric>? list = this.ChatHistorics(user);
-
-            if (list == null) return await Task.FromResult(false);
-
-            list.Add(historic);
-
-            await SaveHistoricAsync(user, list);
-            return await SaveInformation(this.Information);
-        }
-
-        public async Task<bool> SaveInfoAsync(IUser user, List<ChatInfo> infos)
+        /// <summary>
+        /// Adiciona novas informações no banco de dados.
+        /// </summary>
+        /// <param name="user">Usuário a atualizar no banco de dados.</param>
+        /// <param name="infos">Lista de informações a serem adicionadas.</param>
+        /// <param name="onlyCached">Opcional: Caso precise ser guardado localmente em vez de no banco de dados.</param>
+        public async Task<bool> SaveInfoAsync(IUser user, List<ChatInfo> infos, bool onlyCached = false)
         {
             this.Information.Chat.Infos[user.Id] = infos;
-            return await SaveInformation(this.Information);
+            return (!onlyCached ? await SaveInformation(this.Information) : true);
         }
 
         public async Task<bool> SaveHistoricAsync(IUser user, ChatInfo info)
@@ -134,6 +119,27 @@ namespace Ares.src.Guild
             list.Add(info);
 
             await SaveInfoAsync(user, list);
+            return await SaveInformation(this.Information);
+        }
+
+        public async Task<bool> UpdateChatInfoAsync(IUser user, ChatInfo info)
+        {
+            List<ChatInfo>? infos = this.ChatInfos(user);
+
+            if (infos == null)
+            {
+                infos = new List<ChatInfo>();
+                await this.SaveInfoAsync(user, infos, onlyCached: true);
+            }
+
+            var existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
+
+            if (existingInfo != null)
+            {
+                this.Information.Chat.Infos[user.Id].Remove(existingInfo);
+            }
+
+            this.Information.Chat.Infos[user.Id].Add(info);
             return await SaveInformation(this.Information);
         }
 
@@ -155,11 +161,6 @@ namespace Ares.src.Guild
         /// Retorna o histórico de conversas da guilda.
         /// </summary>
         /// <returns>Dicionário contendo os históricos de conversas ou null caso não existam.</returns>
-        public Dictionary<ulong, List<ChatHistoric>>? Historics()
-        {
-            return Information.Chat.Historics;
-        }
-
         public Dictionary<ulong, List<ChatInfo>>? Infos()
         {
             return Information.Chat.Infos;
@@ -167,12 +168,18 @@ namespace Ares.src.Guild
 
         public List<ChatHistoric>? ChatHistorics(IUser user, ulong channel = 0)
         {
-           if (channel != 0)
+            List<ChatInfo>? infos = Infos()?[user.Id];
+
+            if (infos == null) return null;
+
+            if (channel != 0)
             {
-                return Historics()?[user.Id].FindAll(historic => historic.Channel == channel);
+                infos = infos.FindAll(historic => historic.Channel == channel);
             }
 
-            return Historics()?[user.Id];
+            List<ChatHistoric> historics = infos.SelectMany(info => info.Historics).ToList();
+
+            return historics;
         }
 
         public List<ChatInfo>? ChatInfos(IUser user)
@@ -182,7 +189,10 @@ namespace Ares.src.Guild
 
         public List<ChatHistoric>? ChatHistoricsByChannel(IUser user, ulong channel)
         {
-            return Historics()?[user.Id].FindAll(historic => historic.Channel == channel);
+            List<ChatHistoric>? historics = this.ChatHistorics(user, channel: channel);
+            if (historics == null) return null;
+
+            return historics;
         }
 
         public ChatInfo? ChatInfoByChannel(IUser user, ulong channel)
@@ -211,12 +221,12 @@ namespace Ares.src.Guild
 
         public ChatHistoric? LastChatHistoric(IUser user, ulong channel = 0)
         {
-            List<ChatHistoric>? historics = this.ChatHistorics(user);
+            if (channel != 0)
+            {
+                return this.ChatInfoByChannel(user, channel)?.Historics.LastOrDefault();
+            }
 
-            if (historics == null || historics.Count == 0)
-                return null;
-
-            return (channel != 0 ? historics.FindAll(it => it.Channel == channel).LastOrDefault() : historics.LastOrDefault());
+            return this.ChatHistorics(user)?.LastOrDefault();
         }
 
         public ChatInfo? LastChatInfo(IUser user, ulong channel = 0)
@@ -249,15 +259,15 @@ namespace Ares.src.Guild
 
             try
             {
-                if (!chat.Historics.ContainsKey(user.Id))
-                {
-                    chat.Historics[user.Id] = new List<ChatHistoric>();
-                }
-
                 if (!chat.Infos.TryGetValue(user.Id, out var infos))
                 {
                     infos = new List<ChatInfo>();
                     chat.Infos[user.Id] = infos;
+                }
+
+                if (info.Historics == null)
+                {
+                    info.Historics = new List<ChatHistoric>();
                 }
 
                 infos.Add(info);
@@ -278,7 +288,7 @@ namespace Ares.src.Guild
             }
         }
 
-        public async Task<bool> UpdateChatHistoricsAsync(IUser user, List<ChatHistoric> historics)
+        public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, List<ChatHistoric> historics)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
             if (historics == null) throw new ArgumentNullException(nameof(historics));
@@ -286,15 +296,31 @@ namespace Ares.src.Guild
             if (Information.Chat is not { } chat)
                 return false;
 
-            chat.Historics[user.Id] = historics;
+            ChatInfo? info = this.ChatInfoByChannel(user, channel);
+
+            if (info == null)
+            {
+                LogUtil.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
+                return false;
+            }
+
+            info.Historics = historics;
 
             Information.Chat = chat;
             return await SaveInformation(Information);
         }
 
-        public async Task<bool> UpdateChatHistoricsAsync(IUser user, ChatHistoric historic)
+        public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, ChatHistoric historic)
         {
-            var historics = this.Historics();
+            ChatInfo? info = this.ChatInfoByChannel(user, channel);
+
+            if (info == null)
+            {
+                LogUtil.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
+                return false;
+            }
+
+            List<ChatHistoric> historics = info.Historics;
 
             if (historics == null)
             {
@@ -302,20 +328,22 @@ namespace Ares.src.Guild
                 return false;
             }
 
-            if (!historics.TryGetValue(user.Id, out var userHistorics) || userHistorics == null)
+            historics.Add(historic);
+
+            return await this.UpdateChatHistoricsAsync(user, channel, historics);
+        }
+
+        public async Task<bool> RemoveConversationAsync(IUser user, ulong channel, ChatHistoric historic)
+        {
+            ChatInfo? info = this.ChatInfoByChannel(user, channel);
+
+            if (info == null)
             {
-                LogUtil.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat messages for user ID {user.Id}.");
+                LogUtil.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
                 return false;
             }
 
-            userHistorics.Add(historic);
-
-            return await this.UpdateChatHistoricsAsync(user, userHistorics);
-        }
-
-        public async Task<bool> RemoveConversationAsync(IUser user, ChatHistoric historic)
-        {
-            var historics = this.Historics();
+            List<ChatHistoric> historics = info.Historics;
 
             if (historics == null)
             {
@@ -323,15 +351,9 @@ namespace Ares.src.Guild
                 return false;
             }
 
-            if (!historics.TryGetValue(user.Id, out var userHistorics) || userHistorics == null)
-            {
-                LogUtil.Error(nameof(this.RemoveConversationAsync), $"Cannot retrieve chat messages for user ID {user.Id}.");
-                return false;
-            }
+            historics.Remove(historic);
 
-            userHistorics.Remove(historic);
-
-            return await this.UpdateChatHistoricsAsync(user, userHistorics);
+            return await this.UpdateChatHistoricsAsync(user, channel, historics);
         }
 
         /// <summary>

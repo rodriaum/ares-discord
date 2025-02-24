@@ -11,6 +11,7 @@ using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Token;
 using DeepSeek.Core;
 using DeepSeek.Core.Models;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace Ares.src.Service;
@@ -100,8 +101,18 @@ public class AiService
                 imageUrl = image.ImageUri.OriginalString;
             }
 
-            ChatHistoric historic = AiUtil.ConvertGeneratedImageToChatHistoric(prompt, model.Model, channel, image, imageUrl: imageUrl);
-            await guild.SaveHistoricAsync(user, historic);
+            ChatInfo? info = guild.ChatInfoByChannel(user, channel);
+
+            if (info == null)
+            {
+                LogUtil.Error(nameof(GenerateImageUrlAsync), "It looks like the information could not be accessed.");
+                return "Ops! Parece que não foi possível acessar as informações do canal, tente novamente!";
+            }
+
+            ChatHistoric historic = AiUtil.ConvertGeneratedImageToChatHistoric(prompt, image, imageUrl: imageUrl);
+            info.Historics.Add(historic);
+
+            await guild.UpdateChatInfoAsync(user, info);
 
             return imageUrl;
         }
@@ -171,9 +182,9 @@ public class AiService
         }
         catch (Exception e)
         {
-            if (historic != null && !await guild.RemoveConversationAsync(user, historic))
+            if (user != null && channel != 0 && historic != null && !await guild.RemoveConversationAsync(user, channel, historic))
             {
-                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue", "");
+                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue");
             }
 
             string message = e.Message;
@@ -218,8 +229,18 @@ public class AiService
             return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
         }
 
-        ChatHistoric historic = AiUtil.ConvertChatCompletionToChatHistoric(prompt, channel, completion);
-        await guild.SaveHistoricAsync(user, historic);
+        ChatInfo? info = guild.ChatInfoByChannel(user, channel);
+
+        if (info == null)
+        {
+            LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
+            return "Ops! Parece que não foi possível acessar as informações do canal, tente novamente!";
+        }
+
+        ChatHistoric historic = AiUtil.ConvertChatCompletionToChatHistoric(prompt, completion);
+        info.Historics.Add(historic);
+
+        await guild.UpdateChatInfoAsync(user, info);
 
         return ProcessOpenAiResponse(completion);
     }
@@ -285,8 +306,18 @@ public class AiService
             return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
         }
 
-        ChatHistoric historic = AiUtil.ConvertMessageResponseToChatHistoric(prompt, channel, response);
-        await guild.SaveHistoricAsync(user, historic);
+        ChatInfo? info = guild.ChatInfoByChannel(user, channel);
+
+        if (info == null)
+        {
+            LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
+            return "Ops! Parece que não foi possível acessar as informações do canal, tente novamente!";
+        }
+
+        ChatHistoric historic = AiUtil.ConvertMessageResponseToChatHistoric(prompt, response);
+        info.Historics.Add(historic);
+
+        await guild.UpdateChatInfoAsync(user, info);
 
         return response.Message.ToString();
     }
@@ -330,8 +361,6 @@ public class AiService
             return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
         }
 
-        ChatHistoric historic = AiUtil.ConvertChatResponseToChatHistoric(prompt, channel, response);
-
         Choice? choice = response.Choices.FirstOrDefault();
 
         if (choice == null || choice.Message == null || choice.Message.Content == null)
@@ -339,7 +368,21 @@ public class AiService
             return "Ops! Parece que não foi possível obter a única resposta, tente novamente!";
         }
 
-        await guild.SaveHistoricAsync(user, historic);
+        ChatInfo? info = guild.ChatInfoByChannel(user, channel);
+
+        if (info == null)
+        {
+            LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
+            return "Ops! Parece que não foi possível acessar as informações do canal, tente novamente!";
+        }
+
+        ChatHistoric? historic = AiUtil.ConvertChatResponseToChatHistoric(prompt, info.Id, response);
+
+        if (historic != null)
+        {
+            info.Historics.Add(historic);
+            await guild.UpdateChatInfoAsync(user, info);
+        }
 
         return choice.Message.Content;
     }
