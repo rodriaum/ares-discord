@@ -107,8 +107,10 @@ public class AiService
         }
         catch (Exception e)
         {
-            LogUtil.Error("Generation", "Unable to generate an image.", e.Message);
-            return Constant.UNABLE_PERFORM_TASK;
+            string message = e.Message;
+
+            LogUtil.Error("Generation", "Unable to generate an image.", message);
+            return GetMessageByErrorKey(message);
         }
     }
 
