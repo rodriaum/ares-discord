@@ -2,6 +2,7 @@
 using Ares.src.Guild.Config;
 using Ares.src.Guild.Data;
 using Ares.src.Guild.Information;
+using Ares.src.Guild.Token;
 using Ares.src.Service.Model;
 using Ares.src.Utils.Extra;
 using Discord;
@@ -146,11 +147,23 @@ namespace Ares.src.Guild
         /// <summary>
         /// Atualiza os dados de ID da guilda no banco de dados.
         /// </summary>
-        /// <param name="data">Objeto contendo os dados de ID da guilda.</param>
+        /// <param name="configData">Objeto contendo os dados de ID da guilda.</param>
         /// <returns>Retorna true se os dados foram atualizados com sucesso, false caso contrário.</returns>
-        public async Task<bool> SaveGuildIdDataAsync(GuildConfigData configData)
+        public async Task<bool> SaveGuildConfigDataAsync(GuildConfigData configData)
         {
             this.Information.Config = configData;
+
+            return await SaveInformation(this.Information);
+        }
+
+        /// <summary>
+        /// Atualiza os dados dos Tokens da guilda no banco de dados.
+        /// </summary>
+        /// <param name="tokenData">Objeto contendo os dados dos tokens da guilda.</param>
+        /// <returns>Retorna true se os dados foram atualizados com sucesso, false caso contrário.</returns>
+        public async Task<bool> SaveGuildTokenDataAsync(GuildTokenData tokenData)
+        {
+            this.Information.Token = tokenData;
 
             return await SaveInformation(this.Information);
         }
