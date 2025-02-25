@@ -47,6 +47,7 @@ namespace Ares.src
             // Commands
             new PingCommand(_client);
             new SetupCommand(_client);
+            new TokenConfigCommand(_client);
             new ConfigCommand(_client);
 
             // Managers
@@ -77,9 +78,76 @@ namespace Ares.src
                .WithName("ping")
                .WithDescription("Ping do gateway atual"),
 
-               new SlashCommandBuilder()
-               .WithName("config")
-               .WithDescription("Configure o bot atual."),
+                new SlashCommandBuilder()
+                .WithName("config-token")
+                .WithDescription("Configure os tokens do servidor atual.")
+                .AddOptions(new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.String,
+                    Name = "openai",
+                    Description = "Acesse: https://platform.openai.com/settings/organization/api-keys",
+                    IsRequired = true
+                },
+                new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.String,
+                    Name = "anthropic",
+                    Description = "Acesse: https://console.anthropic.com/settings/keys",
+                    IsRequired = true
+                },
+                new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.String,
+                    Name = "deepseek",
+                    Description = "Acesse: https://platform.deepseek.com/api_keys",
+                    IsRequired = true
+                },
+                new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.String,
+                    Name = "imgur",
+                    Description = "Acesse: https://api.imgur.com/oauth2/addclient",
+                    IsRequired = true
+                }),
+
+                new SlashCommandBuilder()
+                .WithName("config-id")
+                .WithDescription("Configure os canais do servidor atual.")
+                .AddOptions(new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.Number,
+                    Name = "role-member",
+                    Description = "Insira o ID do cargo de membro.",
+                    IsRequired = true
+                },
+                new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.Number,
+                    Name = "role-usage",
+                    Description = "Insira o ID do cargo que pode usar os chats.",
+                    IsRequired = true
+                },
+                new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.Number,
+                    Name = "channel-setup",
+                    Description = "Insira o ID do canal a onde vai ficar a embed de chats.",
+                    IsRequired = true
+                },
+                new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.Number,
+                    Name = "channel-log",
+                    Description = "Insira o ID do canal a onde vai ficar as logs do bot.",
+                    IsRequired = true
+                },
+                new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.Number,
+                    Name = "category-chats",
+                    Description = "Insira o ID da categoria a onde vai ficar os canais dos chats gerados.",
+                    IsRequired = true
+                }),
 
                 new SlashCommandBuilder()
                 .WithName("setup")
