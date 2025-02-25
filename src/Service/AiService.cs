@@ -80,11 +80,6 @@ public class AiService
             return "Ops! Parece que o servidor atual não tem um token OpenAI pré-configurado.";
         }
 
-        if (string.IsNullOrEmpty(imgurToken))
-        {
-            return "Ops! Parece que o servidor atual não tem um token Imgur pré-configurado.";
-        }
-
         try
         {
             GeneratedImage? image = await GenerateImageAsync(model, openAiToken, prompt, options);
@@ -94,12 +89,10 @@ public class AiService
                 return "Ops! Parece que não foi possível gerar a imagem, tente novamente!";
             }
 
-            string imageUrl = await RequestUtil.UploadMediaFromUrl(imgurToken, image.ImageUri.OriginalString);
-
-            if (string.IsNullOrWhiteSpace(imageUrl))
-            {
-                imageUrl = image.ImageUri.OriginalString;
-            }
+            // Usa a URL original se não houver um token Imgur.
+            string imageUrl = string.IsNullOrWhiteSpace(imgurToken)
+                ? image.ImageUri.OriginalString
+                : await RequestUtil.UploadMediaFromUrl(imgurToken, image.ImageUri.OriginalString) ?? image.ImageUri.OriginalString;
 
             ChatInfo? info = guild.ChatInfoByChannel(user, channel);
 
