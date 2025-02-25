@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Service.Chat;
+﻿namespace Ares.src.Objects.Chat;
 
 /// <summary>
 /// Representa estatísticas computadas de consumo de tokens para uma solicitação de conclusão de chat.
@@ -17,12 +17,12 @@ public class ChatValueUsage
 
     public ChatValueUsage(int outputTokens = 0, int inputTokens = 0)
     {
-        this.OutputTokens = outputTokens;
-        this.InputTokens = inputTokens;
+        OutputTokens = outputTokens;
+        InputTokens = inputTokens;
     }
 
     public int TotalTokens()
     {
-        return this.OutputTokens + this.InputTokens;
+        return OutputTokens + InputTokens;
     }
 }

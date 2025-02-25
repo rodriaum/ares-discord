@@ -1,4 +1,4 @@
-﻿using Ares.src.Service.Chat;
+﻿using Ares.src.Objects.Chat;
 using Ares.src.Utils.Extra;
 
 namespace Ares.src.Guild.Chat.Sub;

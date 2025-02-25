@@ -1,32 +1,34 @@
-﻿using Ares.src.Backend.Database;
+﻿using Ares.src.Backend.Data;
+using Ares.src.Backend.Database;
 using Ares.src.Backend.Database.Mongo;
 using Ares.src.Manager;
 
-namespace Ares.src
+namespace Ares.src;
+
+internal class Core
 {
-    internal class Core
+    // Databases
+    public static MongoDatabase? Database { get; set; }
+
+    public static GuildData? GuildData { get; set; }
+    public static GuildManager GuildManager = new GuildManager();
+
+    // General Managers
+    public static LanguageManager LanguageManager = new LanguageManager();
+
+    public static void Init()
     {
-        // Databases
-        public static MongoDatabase? Database { get; set; }
-
-        public static GuildData? GuildData { get; set; }
-        public static GuildManager GuildManager = new GuildManager();
-
-        public static void Init()
+        MongoDatabase database = new MongoDatabase(new DatabaseCredentials
         {
-            MongoDatabase database = new MongoDatabase(new DatabaseCredentials
-            {
-                Host = "127.0.0.1",
-                Database = "ares",
-                Port = 27017
-            });
+            Host = "127.0.0.1",
+            Database = "ares",
+            Port = 27017
+        });
 
-            database.Connect();
+        database.Connect();
 
-            Database = database;
+        Database = database;
 
-            GuildData = new GuildData(database);
-            GuildManager = new GuildManager();
-        }
+        GuildData = new GuildData(database);
     }
 }

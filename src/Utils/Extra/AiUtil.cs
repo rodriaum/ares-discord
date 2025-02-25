@@ -1,6 +1,6 @@
 ﻿using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Chat.Sub;
-using Ares.src.Service.Chat;
+using Ares.src.Objects.Chat;
 using DeepSeek.Core.Models;
 using OpenAI.Chat;
 using OpenAI.Images;

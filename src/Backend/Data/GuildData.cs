@@ -1,15 +1,13 @@
 ﻿using Ares.src.Backend.Database.Mongo;
-using Ares.src.Guild;
 using Ares.src.Manager;
 using Ares.src.Utils.Extra;
-using Ares.src;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 
-
 using System.Collections.Concurrent;
 
+namespace Ares.src.Backend.Data;
 
 /// <summary>
 /// Classe responsável por gerenciar dados de guildas no banco de dados MongoDB.
@@ -110,7 +108,7 @@ internal class GuildData
     /// </summary>
     /// <param name="id">ID único da guilda.</param>
     /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda salva ou atualizada.</returns>
-    public async Task<Guild?> Save(string id)
+    public async Task<Guild.Guild?> Save(string id)
     {
         if (this._collection == null)
         {
@@ -121,7 +119,7 @@ internal class GuildData
         var filter = Builders<BsonDocument>.Filter.Eq("Id", id);
         var element = await this._collection.Find(filter).FirstOrDefaultAsync();
 
-        Guild? guild = new Guild(id);
+        Guild.Guild? guild = new Guild.Guild(id);
 
         if (element != null)
         {
@@ -131,7 +129,7 @@ internal class GuildData
                 var document = BsonTypeMapper.MapToDotNetValue(element);
                 var json = JsonConvert.SerializeObject(document);
 
-                guild = JsonConvert.DeserializeObject<Guild>(json);
+                guild = JsonConvert.DeserializeObject<Guild.Guild>(json);
             }
             catch (JsonReaderException ex)
             {
@@ -155,7 +153,7 @@ internal class GuildData
     /// </summary>
     /// <param name="id">Ulong da guilda.</param>
     /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda salva ou atualizada.</returns>
-    public async Task<Guild?> Save(ulong id)
+    public async Task<Guild.Guild?> Save(ulong id)
     {
         return await this.Save(id.ToString());
     }
@@ -165,9 +163,9 @@ internal class GuildData
     /// </summary>
     /// <param name="id">ID único da guilda.</param>
     /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
-    public async Task<Guild?> Fetch(string id)
+    public async Task<Guild.Guild?> Fetch(string id)
     {
-        Guild? guild = _manager.Fetch(id);
+        Guild.Guild? guild = _manager.Fetch(id);
 
         if (guild == null)
         {
@@ -181,7 +179,7 @@ internal class GuildData
                     var document = BsonTypeMapper.MapToDotNetValue(element);
                     var json = JsonConvert.SerializeObject(document);
 
-                    guild = JsonConvert.DeserializeObject<Guild>(json);
+                    guild = JsonConvert.DeserializeObject<Guild.Guild>(json);
                 }
                 catch (JsonReaderException ex)
                 {
@@ -198,7 +196,7 @@ internal class GuildData
     /// </summary>
     /// <param name="id">ID numérico da guilda.</param>
     /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
-    public async Task<Guild?> Fetch(ulong id)
+    public async Task<Guild.Guild?> Fetch(ulong id)
     {
         return await this.Fetch(id.ToString());
     }
@@ -208,7 +206,7 @@ internal class GuildData
     /// </summary>
     /// <param name="guild">Objeto <see cref="Guild.Guild"/> representando a guilda a ser atualizada.</param>
     /// <param name="field">Nome do campo a ser atualizado.</param>
-    public async Task<bool> Update(Guild guild, string field)
+    public async Task<bool> Update(Guild.Guild guild, string field)
     {
         if (this._collection == null)
         {
@@ -273,9 +271,9 @@ internal class GuildData
     /// </summary>
     /// <param name="limit">Número máximo de guildas a serem recuperadas (0 para sem limite).</param>
     /// <returns>Uma <see cref="ConcurrentBag{T}"/> contendo as guildas recuperadas.</returns>
-    public async Task<ConcurrentBag<Guild>> GetGuilds(int limit = 0)
+    public async Task<ConcurrentBag<Guild.Guild>> GetGuilds(int limit = 0)
     {
-        var accounts = new ConcurrentBag<Guild>();
+        var accounts = new ConcurrentBag<Guild.Guild>();
 
         if (this._collection == null)
         {
@@ -295,7 +293,7 @@ internal class GuildData
                 var json = document.ToJson();
                 var bsonDocument = BsonTypeMapper.MapToDotNetValue(document);
                 var jsonString = JsonConvert.SerializeObject(bsonDocument);
-                var guild = JsonConvert.DeserializeObject<Guild>(jsonString);
+                var guild = JsonConvert.DeserializeObject<Guild.Guild>(jsonString);
 
                 if (guild != null)
                     accounts.Add(guild);

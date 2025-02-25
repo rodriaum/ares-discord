@@ -1,6 +1,4 @@
-﻿using OpenAI.Chat;
-
-namespace Ares.src.Service.Chat;
+﻿namespace Ares.src.Objects.Chat;
 
 /// <summary>
 /// Representa os diferentes papéis das mensagens no chat.

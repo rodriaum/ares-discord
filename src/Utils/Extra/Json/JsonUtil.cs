@@ -3,111 +3,110 @@ using MongoDB.Bson;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace Ares.src.Utils.Extra.Json
+namespace Ares.src.Utils.Extra.Json;
+
+internal class JsonUtil
 {
-    internal class JsonUtil
+    public static JObject JsonTree(object src)
     {
-        public static JObject JsonTree(object src)
+        return JObject.FromObject(src);
+    }
+
+    public static object ElementToBson(JToken element)
+    {
+
+        switch (element.Type)
         {
-            return JObject.FromObject(src);
+            case JTokenType.String:
+                return element.ToString();
+
+            case JTokenType.Integer:
+                return element.ToObject<int>();
+
+            case JTokenType.Float:
+                return element.ToObject<double>();
+
+            case JTokenType.Boolean:
+                return element.ToObject<bool>();
         }
 
-        public static object ElementToBson(JToken element)
+        try
         {
+            return BsonSerializer.Deserialize<BsonDocument>(element.ToString());
+        }
+        catch (Exception)
+        {
+            return BsonDocument.Parse(element.ToString());
+        }
+    }
 
-            switch (element.Type)
-            {
-                case JTokenType.String:
-                    return element.ToString();
+    public static string ElementToString(JToken element)
+    {
+        if (element.Type == JTokenType.String)
+        {
+            return element.ToString();
+        }
 
-                case JTokenType.Integer:
-                    return element.ToObject<int>();
+        return element.ToString(Newtonsoft.Json.Formatting.None);
+    }
 
-                case JTokenType.Float:
-                    return element.ToObject<double>();
+    public static T MapToObject<T>(Dictionary<string, string> map)
+    {
+        var obj = new JObject();
 
-                case JTokenType.Boolean:
-                    return element.ToObject<bool>();
-            }
-
+        foreach (var kvp in map)
+        {
             try
             {
-                return BsonSerializer.Deserialize<BsonDocument>(element.ToString());
+                obj.Add(kvp.Key, JToken.Parse(kvp.Value));
             }
             catch (Exception)
             {
-                return BsonDocument.Parse(element.ToString());
+                obj.Add(kvp.Key, new JValue(kvp.Value));
             }
         }
 
-        public static string ElementToString(JToken element)
+        return obj.ToObject<T>();
+    }
+
+    public static Dictionary<string, string> ObjectToMap(object src)
+    {
+        var map = new Dictionary<string, string>();
+
+        try
         {
-            if (element.Type == JTokenType.String)
+            var obj = JObject.FromObject(src);
+
+            foreach (var kvp in obj)
             {
-                return element.ToString();
-            }
-
-            return element.ToString(Newtonsoft.Json.Formatting.None);
-        }
-
-        public static T MapToObject<T>(Dictionary<string, string> map)
-        {
-            var obj = new JObject();
-
-            foreach (var kvp in map)
-            {
-                try
+                if (kvp.Value != null)
                 {
-                    obj.Add(kvp.Key, JToken.Parse(kvp.Value));
-                }
-                catch (Exception)
-                {
-                    obj.Add(kvp.Key, new JValue(kvp.Value));
+                    map.Add(kvp.Key, kvp.Value.ToString(Formatting.None));
                 }
             }
-
-            return obj.ToObject<T>();
         }
+        catch (Exception) { }
 
-        public static Dictionary<string, string> ObjectToMap(object src)
+        return map;
+    }
+
+    public static Dictionary<string, List<string>> ObjectToMapList(object src)
+    {
+        var map = new Dictionary<string, List<string>>();
+
+        try
         {
-            var map = new Dictionary<string, string>();
-
-            try
+            var obj = JObject.FromObject(src);
+            foreach (var kvp in obj)
             {
-                var obj = JObject.FromObject(src);
-
-                foreach (var kvp in obj)
+                if (kvp.Value != null)
                 {
-                    if (kvp.Value != null)
-                    {
-                        map.Add(kvp.Key, kvp.Value.ToString(Formatting.None));
-                    }
+                    map.Add(kvp.Key, new List<string> { kvp.Value.ToString(Formatting.None) });
                 }
             }
-            catch (Exception) { }
-
-            return map;
         }
+        catch (Exception) { }
 
-        public static Dictionary<string, List<string>> ObjectToMapList(object src)
-        {
-            var map = new Dictionary<string, List<string>>();
-
-            try
-            {
-                var obj = JObject.FromObject(src);
-                foreach (var kvp in obj)
-                {
-                    if (kvp.Value != null)
-                    {
-                        map.Add(kvp.Key, new List<string> { kvp.Value.ToString(Formatting.None) });
-                    }
-                }
-            }
-            catch (Exception) { }
-
-            return map;
-        }
+        return map;
     }
 }

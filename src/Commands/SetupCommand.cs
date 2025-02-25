@@ -1,8 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Ares.src.Service.Model;
 using Ares.src.Manager;
 using Ares.src.Utils;
+using Ares.src.Objects.Model;
 
 namespace Ares.src.Commands;
 

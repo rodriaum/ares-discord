@@ -1,10 +1,9 @@
-﻿namespace Ares.src.Utils.Extra
+﻿namespace Ares.src.Utils.Extra;
+
+internal class TimeUtil
 {
-    internal class TimeUtil
+    public static long CurrentTimeMillis()
     {
-        public static long CurrentTimeMillis()
-        {
-            return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        }
+        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 }

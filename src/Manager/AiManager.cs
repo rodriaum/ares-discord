@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
-using Ares.src.Service.Chat;
-using Ares.src.Service.Model;
+using Ares.src.Objects.Chat;
+using Ares.src.Objects.Model;
 using Ares.src.Utils;
 using Ares.src.Utils.Extra;
 

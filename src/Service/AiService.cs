@@ -5,13 +5,13 @@ using Ares.src.Guild.Information;
 using OpenAI.Images;
 using Ares.src.Utils.Extra;
 using Ares.src.Guild.Chat.Sub;
-using Ares.src.Service.Model;
 using Anthropic.SDK;
 using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Token;
 using DeepSeek.Core;
 using DeepSeek.Core.Models;
 using static System.Net.Mime.MediaTypeNames;
+using Ares.src.Objects.Model;
 
 
 namespace Ares.src.Service;
@@ -208,7 +208,13 @@ public class AiService
         messages.Add(userMessage);
 
         ChatClient client = new ChatClient(model.Model, token);
-        ChatCompletion completion = await client.CompleteChatAsync(messages);
+
+        ChatCompletionOptions options = new ChatCompletionOptions
+        {
+            MaxOutputTokenCount = 4096 // Discord embed limit description is 4096 characters.
+        };
+
+        ChatCompletion completion = await client.CompleteChatAsync(messages, options: options);
 
         if (completion == null)
         {
@@ -279,7 +285,7 @@ public class AiService
         MessageParameters parameters = new MessageParameters()
         {
             Messages = messages,
-            MaxTokens = 1024,
+            MaxTokens = 4096, // Discord embed limit description is 4096 characters.
             Model = model.Model,
             Stream = false,
             Temperature = 1.0m
@@ -337,7 +343,8 @@ public class AiService
         var request = new ChatRequest
         {
             Messages = messages,
-            Model = model.Model
+            Model = model.Model,
+            MaxTokens = 4096 // Discord embed limit description is 4096 characters.
         };
 
         ChatResponse? response = await client.ChatAsync(request, new CancellationToken());

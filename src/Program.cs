@@ -11,182 +11,182 @@ using Ares.src.Utils.Extra;
 using Ares.src.Commands.System;
 using Ares.src.Commands.Data;
 using Ares.src.Listener;
-namespace Ares.src
+
+namespace Ares.src;
+
+internal class Program
 {
-    internal class Program
+
+    /* Discord Variables */
+
+    private static DiscordSocketClient? _client { get; set; }
+
+    /* Main Procedures */
+
+    static async Task Main()
     {
+        Env.Load();
 
-        /* Discord Variables */
+        Core.Init();
 
-        private static DiscordSocketClient? _client { get; set; }
-
-        /* Main Procedures */
-
-        static async Task Main()
+        var config = new DiscordSocketConfig()
         {
-            Env.Load();
+            GatewayIntents = GatewayIntents.All
+        };
 
-            Core.Init();
+        _client = new DiscordSocketClient(config);
 
-            var config = new DiscordSocketConfig()
-            {
-                GatewayIntents = GatewayIntents.All
-            };
+        await _client.LoginAsync(TokenType.Bot, Env.GetString("DISCORD_TOKEN"));
+        await _client.StartAsync();
 
-            _client = new DiscordSocketClient(config);
+        // Listeners
+        new SelectedChatListener(_client);
+        new ButtonChatListener(_client);
+        new ReceivedContentListener(_client);
+        new GuildListener(_client);
 
-            await _client.LoginAsync(TokenType.Bot, Env.GetString("DISCORD_TOKEN"));
-            await _client.StartAsync();
+        // Commands
+        new PingCommand(_client);
+        new SetupCommand(_client);
+        new ConfigCommand(_client);
+        new ConfigCommand(_client);
 
-            // Listeners
-            new SelectedChatListener(_client);
-            new ButtonChatListener(_client);
-            new ReceivedContentListener(_client);
-            new GuildListener(_client);
+        // Managers
+        new AiManager();
 
-            // Commands
-            new PingCommand(_client);
-            new SetupCommand(_client);
-            new ConfigCommand(_client);
-            new ConfigCommand(_client);
+        // Options
+        await _client.SetStatusAsync(UserStatus.DoNotDisturb);
+        await _client.SetGameAsync("Feito com ❤️ pelo Rodrigo!", type: ActivityType.CustomStatus);
 
-            // Managers
-            new AiManager();
-
-            // Options
-            await _client.SetStatusAsync(UserStatus.DoNotDisturb);
-            await _client.SetGameAsync("Feito com ❤️ pelo Rodrigo!", type: ActivityType.CustomStatus);
-
-            _client.Ready += RegisterCommands;
-            _client.Ready += () =>
-            {
-                LogUtil.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"");
-                return Task.CompletedTask;
-            };
-
-
-            await Task.Delay(Timeout.Infinite);
-        }
-
-        /* Methods Async */
-
-        public static async Task RegisterCommands()
+        _client.Ready += RegisterCommands;
+        _client.Ready += () =>
         {
-            List<SlashCommandBuilder> commands = new List<SlashCommandBuilder>
+            LogUtil.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"");
+            return Task.CompletedTask;
+        };
+
+
+        await Task.Delay(Timeout.Infinite);
+    }
+
+    /* Methods Async */
+
+    public static async Task RegisterCommands()
+    {
+        List<SlashCommandBuilder> commands = new List<SlashCommandBuilder>
+        {
+            new SlashCommandBuilder()
+           .WithName("ping")
+           .WithDescription("Ping do gateway atual"),
+
+            new SlashCommandBuilder()
+            .WithName("config-token")
+            .WithDescription("Configure os tokens do servidor atual.")
+            .AddOptions(new SlashCommandOptionBuilder
             {
-                new SlashCommandBuilder()
-               .WithName("ping")
-               .WithDescription("Ping do gateway atual"),
-
-                new SlashCommandBuilder()
-                .WithName("config-token")
-                .WithDescription("Configure os tokens do servidor atual.")
-                .AddOptions(new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "openai",
-                    Description = "Acesse: https://platform.openai.com/settings/organization/api-keys",
-                    IsRequired = false
-                },
-                new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "anthropic",
-                    Description = "Acesse: https://console.anthropic.com/settings/keys",
-                    IsRequired = false
-                },
-                new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "deepseek",
-                    Description = "Acesse: https://platform.deepseek.com/api_keys",
-                    IsRequired = false
-                },
-                new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "imgur",
-                    Description = "Acesse: https://api.imgur.com/oauth2/addclient",
-                    IsRequired = false
-                }),
-
-                new SlashCommandBuilder()
-                .WithName("config-id")
-                .WithDescription("Configure os canais do servidor atual.")
-                .AddOptions(new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "role-member",
-                    Description = "Insira o ID do cargo de membro.",
-                    IsRequired = false
-                },
-                new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "role-usage",
-                    Description = "Insira o ID do cargo que pode usar os chats.",
-                    IsRequired = false
-                },
-                new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "channel-setup",
-                    Description = "Insira o ID do canal a onde vai ficar a embed de chats.",
-                    IsRequired = false
-                },
-                new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "channel-log",
-                    Description = "Insira o ID do canal a onde vai ficar as logs do bot.",
-                    IsRequired = false
-                },
-                new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "category-chats",
-                    Description = "Insira o ID da categoria a onde vai ficar os canais dos chats gerados.",
-                    IsRequired = false
-                }),
-
-                new SlashCommandBuilder()
-                .WithName("setup")
-                .WithDescription("Escolha o tipo de setup que deseja realizar no canal atual.")
-                .AddOptions(new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "option",
-                    Description = "Escolha o tipo de setup que deseja realizar no canal atual.",
-                    IsRequired = true,
-                    Choices = new List<ApplicationCommandOptionChoiceProperties>
-                    {
-                        new ApplicationCommandOptionChoiceProperties { Name = "Geração AI", Value = "setup-ai-menu" }
-                    }
-                })
-            };
-
-            try
+                Type = ApplicationCommandOptionType.String,
+                Name = "openai",
+                Description = "Acesse: https://platform.openai.com/settings/organization/api-keys",
+                IsRequired = false
+            },
+            new SlashCommandOptionBuilder
             {
-                // Function executed only after successful connection. But avoid alerts.
-                if (_client == null)
-                    return;
+                Type = ApplicationCommandOptionType.String,
+                Name = "anthropic",
+                Description = "Acesse: https://console.anthropic.com/settings/keys",
+                IsRequired = false
+            },
+            new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "deepseek",
+                Description = "Acesse: https://platform.deepseek.com/api_keys",
+                IsRequired = false
+            },
+            new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "imgur",
+                Description = "Acesse: https://api.imgur.com/oauth2/addclient",
+                IsRequired = false
+            }),
 
-                foreach (SlashCommandBuilder command in commands)
+            new SlashCommandBuilder()
+            .WithName("config-id")
+            .WithDescription("Configure os canais do servidor atual.")
+            .AddOptions(new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "role-member",
+                Description = "Insira o ID do cargo de membro.",
+                IsRequired = false
+            },
+            new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "role-usage",
+                Description = "Insira o ID do cargo que pode usar os chats.",
+                IsRequired = false
+            },
+            new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "channel-setup",
+                Description = "Insira o ID do canal a onde vai ficar a embed de chats.",
+                IsRequired = false
+            },
+            new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "channel-log",
+                Description = "Insira o ID do canal a onde vai ficar as logs do bot.",
+                IsRequired = false
+            },
+            new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "category-chats",
+                Description = "Insira o ID da categoria a onde vai ficar os canais dos chats gerados.",
+                IsRequired = false
+            }),
+
+            new SlashCommandBuilder()
+            .WithName("setup")
+            .WithDescription("Escolha o tipo de setup que deseja realizar no canal atual.")
+            .AddOptions(new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "option",
+                Description = "Escolha o tipo de setup que deseja realizar no canal atual.",
+                IsRequired = true,
+                Choices = new List<ApplicationCommandOptionChoiceProperties>
                 {
-                    var build = command.Build();
-
-                    await _client.CreateGlobalApplicationCommandAsync(build);
-
-                    LogUtil.Log("Commands", $"Command \"{build.Name}\" registered.");
+                    new ApplicationCommandOptionChoiceProperties { Name = "Geração AI", Value = "setup-ai-menu" }
                 }
+            })
+        };
 
-            }
-            catch (HttpException e)
+        try
+        {
+            // Function executed only after successful connection. But avoid alerts.
+            if (_client == null)
+                return;
+
+            foreach (SlashCommandBuilder command in commands)
             {
-                string json = JsonConvert.SerializeObject(e.Errors, Formatting.Indented);
+                var build = command.Build();
 
-                LogUtil.Log("Commands", "Unable to register commands.\n -> " + (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message));
+                await _client.CreateGlobalApplicationCommandAsync(build);
+
+                LogUtil.Log("Commands", $"Command \"{build.Name}\" registered.");
             }
+
+        }
+        catch (HttpException e)
+        {
+            string json = JsonConvert.SerializeObject(e.Errors, Formatting.Indented);
+
+            LogUtil.Log("Commands", "Unable to register commands.\n -> " + (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message));
         }
     }
 }
