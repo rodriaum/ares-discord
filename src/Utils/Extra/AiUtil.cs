@@ -80,8 +80,7 @@ public class AiUtil
         (
             prompt: prompt,
             response: image.RevisedPrompt,
-            imageUrl: (!string.IsNullOrWhiteSpace(imageUrl) ? image.ImageUri.OriginalString : imageUrl),
-            usage: new ChatValueUsage(outputTokens: 1) // A geração de imagens tem um preço fixo por imagem, deixei 1 token para simplificar.
+            imageUrl: (!string.IsNullOrWhiteSpace(imageUrl) ? image.ImageUri.OriginalString : imageUrl)
         );
     }
 

@@ -46,7 +46,6 @@ public class LangKeys
     public static readonly string AuthenticationError = "authentication-error";
     public static readonly string ServerError = "server-error";
     public static readonly string Timeout = "timeout";
-
     public static readonly string FunctionCall = "function-call";
     public static readonly string UnableGenerateOrder = "unable-generate-order";
     public static readonly string ModelNotFound = "model-not-found";
