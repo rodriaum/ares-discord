@@ -11,6 +11,7 @@ using Ares.src.Utils.Extra;
 using Ares.src.Commands.System;
 using Ares.src.Commands.Data;
 using Ares.src.Listener;
+using Ares.src.Objects.Language;
 
 namespace Ares.src;
 
@@ -73,6 +74,14 @@ internal class Program
 
     public static async Task RegisterCommands()
     {
+        var langOptionChoices = Core.LangManager.GetLanguages()
+            .Select(langCategory => new ApplicationCommandOptionChoiceProperties
+            {
+                Name = langCategory.Name,
+                Value = langCategory.Code
+            })
+            .ToList();
+
         List<SlashCommandBuilder> commands = new List<SlashCommandBuilder>
         {
             new SlashCommandBuilder()
@@ -148,6 +157,18 @@ internal class Program
                 Name = "category-chats",
                 Description = "Insira o ID da categoria a onde vai ficar os canais dos chats gerados.",
                 IsRequired = false
+            }),
+
+            new SlashCommandBuilder()
+            .WithName("config-lang")
+            .WithDescription("Escolha a linguagem da aplicação para esse servidor.")
+            .AddOptions(new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "lang",
+                Description = "Escolha a linguagem.",
+                IsRequired = true,
+                Choices = langOptionChoices
             }),
 
             new SlashCommandBuilder()

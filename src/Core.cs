@@ -14,7 +14,7 @@ internal class Core
     public static GuildManager GuildManager = new GuildManager();
 
     // General Managers
-    public static LanguageManager LanguageManager = new LanguageManager();
+    public static LangManager LangManager = new LangManager();
 
     public static void Init()
     {

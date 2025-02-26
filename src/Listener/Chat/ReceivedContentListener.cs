@@ -11,6 +11,7 @@ using Ares.src.Guild.Chat.Sub;
 using Ares.src.Objects.Chat;
 using Ares.src.Objects.Model;
 using Ares.src.Backend.Data;
+using Ares.src.Objects.Language;
 
 namespace Ares.src.Listener.Chat;
 
@@ -39,17 +40,11 @@ internal class ReceivedContentListener
             SocketTextChannel? channel = args.Channel as SocketTextChannel;
             if (channel == null) return;
 
-            EmbedBuilder embed = new EmbedBuilder()
-                .WithTitle("Inteligência Artificial")
-                .WithDescription("A processar... 🔃")
-                .WithColor(Color.Gold)
-                .WithFooter("Pode demorar até minutos");
-
             IUser user = args.Author;
 
             if (_client == null || user == null)
             {
-                await channel.SendMessageAsync(embed: embed.WithDescription(Constant.UNABLE_GET_MEMBER).Build());
+                await channel.SendMessageAsync(Constant.UNABLE_GET_MEMBER);
                 return;
             }
 
@@ -60,7 +55,7 @@ internal class ReceivedContentListener
 
             if (data == null)
             {
-                await channel.SendMessageAsync(embed: embed.WithDescription(Constant.UNABLE_PERFORM_TASK).Build());
+                await channel.SendMessageAsync(Constant.UNABLE_PERFORM_TASK);
                 return;
             }
 
@@ -68,23 +63,24 @@ internal class ReceivedContentListener
 
             if (socketGuild == null)
             {
-                await channel.SendMessageAsync(embed: embed.WithDescription(Constant.UNABLE_GET_MEMBER).Build());
+                await channel.SendMessageAsync(Constant.UNABLE_GET_MEMBER);
                 return;
             }
 
             Guild.Guild? guild = await data.Fetch(socketGuild.Id);
+            if (guild == null) return;
 
-            if (guild == null)
-            {
-                // await channel.SendMessageAsync(embed: embed.WithDescription("Ops! Parece que o servidor atual não foi configurado no banco de dados.").Build());
-                return;
-            }
+            EmbedBuilder embed = new EmbedBuilder()
+                .WithTitle(guild.GetTranslation(LangKeys.AI))
+                .WithDescription(guild.GetTranslation(LangKeys.ToProcess))
+                .WithColor(Color.Gold)
+                .WithFooter(guild.GetTranslation(LangKeys.TakeUpMinutes));
 
             GuildInformation information = guild.Information;
 
             if (information == null)
             {
-                await channel.SendMessageAsync(embed: embed.WithDescription("Não foi possível encontrar as informações da guilda atual no banco de dados.").Build());
+                await channel.SendMessageAsync(embed: embed.WithDescription(guild.GetTranslation(LangKeys.CouldNotFindInfo)).Build());
                 return;
             }
 
@@ -92,7 +88,7 @@ internal class ReceivedContentListener
 
             if (gcd == null)
             {
-                await channel.SendMessageAsync(embed: embed.WithDescription("Não foi possível encontrar as informações sobre os IDs.").Build());
+                await channel.SendMessageAsync(embed: embed.WithDescription(guild.GetTranslation(LangKeys.CouldNotFindInfoID)).Build());
                 return;
             }
 
@@ -110,7 +106,7 @@ internal class ReceivedContentListener
 
             if (model == null)
             {
-                await channel.SendMessageAsync(embed: embed.WithDescription("Não foi possível encontrar o último modelo usado.").Build());
+                await channel.SendMessageAsync(embed: embed.WithDescription(guild.GetTranslation(LangKeys.CouldNotFindLastModel)).Build());
                 return;
             }
 
@@ -156,19 +152,19 @@ internal class ReceivedContentListener
                             priceEmbed = new EmbedBuilder()
                                 // Input Field
                                 .AddField("Tokens", usage.InputTokens, true)
-                                .AddField("Pedido", $"$ {formattedInputPrice}", true)
+                                .AddField(guild.GetTranslation(LangKeys.Request), $"$ {formattedInputPrice}", true)
                                 // Broke Line
                                 .AddField("\u200B", "\u200B", false)
                                 // Output Field
                                 .AddField("Tokens", usage.OutputTokens, true)
-                                .AddField("Resposta", $"$ {formattedOutputPrice}", true)
+                                .AddField(guild.GetTranslation(LangKeys.Response), $"$ {formattedOutputPrice}", true)
                                 // Broke Line
                                 .AddField("\u200B", "\u200B", false)
                                 // Total Field
                                 .AddField("Tokens", usage.TotalTokens(), true)
                                 .AddField("Total", $"$ {formattedTotalPrice}", true)
                                 // Footer
-                                .WithFooter($"Preço pode ser menor com resposta em cache");
+                                .WithFooter(guild.GetTranslation(LangKeys.PriceLowerCache));
                         }
                     }
                     break;
@@ -189,7 +185,7 @@ internal class ReceivedContentListener
                     // Como pode retornar um url ou mensagem de erro, fazemos essa verificação.
                     if (Util.IsValidUrl(responseImageUrl))
                     {
-                        embed.WithDescription("Sucesso!")
+                        embed.WithDescription(guild.GetTranslation(LangKeys.Success))
                             .WithColor(Color.Green);
 
                         embed.WithImageUrl(responseImageUrl);
@@ -216,7 +212,7 @@ internal class ReceivedContentListener
         }
         catch (Exception e)
         {
-            await LogUtil.ErrorAsync("RecContException", "Can't proccess the content receiver.", e.Message);
+            await LogUtil.ErrorAsync(nameof(MessageReceivedHandler), "Can't proccess the content receiver.", e.Message);
         }
     }
 }

@@ -7,6 +7,8 @@ using Ares.src.Guild.Config;
 using Ares.src.Guild.Chat.Sub;
 using Ares.src.Objects.Model;
 using Ares.src.Backend.Data;
+using MongoDB.Driver;
+using Ares.src.Objects.Language;
 
 namespace Ares.src.Listener.Chat;
 
@@ -46,10 +48,18 @@ internal class SelectedChatListener
             }
 
             Guild.Guild? guild = await data.Fetch(guildId);
+            const int maxAttempts = 3;
+
+            for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
+            {
+                await args.FollowupAsync($"Tentando criar servidor no banco de dados... {attempts}/{maxAttempts}");
+                await Task.Delay(1500);
+                guild = await data.Save(guildId);
+            }
 
             if (guild == null)
             {
-                await args.FollowupAsync("Ops! Parece que o servidor atual não foi configurado no banco de dados.");
+                await args.FollowupAsync("Ops! Não foi possível criar o servidor no banco de dados.");
                 return;
             }
 
@@ -65,7 +75,7 @@ internal class SelectedChatListener
 
             if (information == null)
             {
-                await args.FollowupAsync("Não foi possível encontrar as informações da guilda atual no banco de dados.");
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.ServerNotFoundDatabase));
                 return;
             }
 
@@ -73,7 +83,7 @@ internal class SelectedChatListener
 
             if (gid == null)
             {
-                await args.FollowupAsync("Não foi possível encontrar as informações sobre os IDs.");
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.CouldNotFindInfoID));
                 return;
             }
 
@@ -81,7 +91,7 @@ internal class SelectedChatListener
 
             if (usageRole == null)
             {
-                await args.FollowupAsync("Ops! Parece que o cargo de acesso a esse comando foi eliminado.");
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.RoleEliminated));
                 return;
             }
 
@@ -89,14 +99,13 @@ internal class SelectedChatListener
 
             if (!member.Roles.Contains(usageRole))
             {
-                await args.FollowupAsync($"Ops! Você precisa possuir o cargo {usageRole.Mention} para executar essa tarefa.");
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.RoleMissing).Replace("{0}", usageRole.Mention));
                 return;
             }
 
-
             if (guild.HasActiveUserConversation(user))
             {
-                await args.FollowupAsync("Ops! Detectei uma conversa ativa! Para criar uma nova, termine a conversa antiga.");
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.ActiveConversation));
                 return;
             }
 
@@ -110,7 +119,7 @@ internal class SelectedChatListener
 
             if (!model.Available)
             {
-                await args.FollowupAsync("Ops! O modelo escolhido não está disponível atualmente.");
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.ModelUnavailable));
                 return;
             }
 
@@ -126,50 +135,39 @@ internal class SelectedChatListener
 
             if (!await guild.CreateChatData(user, info))
             {
-                // Pode ser melhorado depois porque não é o indicado.
                 await channel.DeleteAsync();
                 await Task.Delay(500);
                 return;
             }
-
-            /*
-            SocketUserMessage message = args.Message;
-            IReadOnlyCollection<IMessageComponent> components = message.Components.First().Components;
-            
-            if (components != null)
-            {
-                
-            }
-            */
 
             EmbedBuilder embed = new EmbedBuilder()
                 .WithTitle($"Olá, {user.GlobalName}")
                 .WithColor(Color.Green)
                 .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} | {socketGuild.Name}"));
 
-            embed.AddField("Modelo", model.DisplayName);
-            embed.AddField("Regras", "Tenha respeito no canal atual.");
-            embed.AddField("Tempo", "Pode demorar até minuto(s) para processar o seu pedido.");
+            embed.AddField(guild.GetTranslation(LangKeys.FieldModel), model.DisplayName);
+            embed.AddField(guild.GetTranslation(LangKeys.FieldRules), guild.GetTranslation(LangKeys.ChatDescriptionRules));
+            embed.AddField(guild.GetTranslation(LangKeys.FieldTime), guild.GetTranslation(LangKeys.ChatDescriptionTime));
 
             switch (model.Type)
             {
                 case ModelType.Chat:
-                    embed.AddField("Histórico", "Guardará o histórico de mensagens, permitindo correções.");
-                    embed.WithDescription("Insira a sua pergunta para iniciar a conversa.");
+                    embed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryChatDesc));
+                    embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionDefault));
                     break;
 
                 case ModelType.Image:
-                    embed.AddField("Histórico", "Não guardará o histórico de mensagens, impedindo correções.");
-                    embed.WithDescription("Insira a sua frase para gerar a imagem.");
+                    embed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryImageDesc));
+                    embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionImage));
                     break;
 
                 default:
-                    embed.WithDescription("Insira o parâmetro para iniciar o seu pedido.");
+                    embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionDefault));
                     break;
             }
 
             ButtonBuilder button = new ButtonBuilder()
-               .WithLabel("Terminar Conversa")
+               .WithLabel(guild.GetTranslation(LangKeys.ButtonEndChat))
                .WithStyle(ButtonStyle.Danger)
                .WithCustomId("close-chat");
 
@@ -187,8 +185,7 @@ internal class SelectedChatListener
 
             await channel.AddPermissionOverwriteAsync(user, permissions);
 
-            await args.FollowupAsync($"**Sucesso!** Acesse a sua nova conversa em {channel.Mention}");
-
+            await args.FollowupAsync(guild.GetTranslation(LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
         }
         catch (Exception e)
         {

@@ -1,5 +1,6 @@
 ﻿using Ares.src.Backend.Data;
 using Ares.src.Guild.Config;
+using Ares.src.Guild.Information;
 using Ares.src.Guild.Token;
 using Discord;
 using Discord.WebSocket;
@@ -18,7 +19,7 @@ internal class ConfigCommand
 
     private async Task SlashCommandHandler(SocketSlashCommand command)
     {
-        if (this._client == null || !(command.Data.Name.Equals("config-token") || command.Data.Name.Equals("config-id"))) return;
+        if (this._client == null || !(command.Data.Name.Equals("config-token") || command.Data.Name.Equals("config-id") || command.Data.Name.Equals("config-lang"))) return;
 
         EmbedBuilder embed = new EmbedBuilder()
             .WithTitle("Configuração")
@@ -106,8 +107,10 @@ internal class ConfigCommand
             return;
         }
 
-        GuildTokenData tokenData = guild.Information.Token;
-        GuildConfigData configData = guild.Information.Config;
+        GuildInformation information = guild.Information;
+
+        GuildTokenData tokenData = information.Token;
+        GuildConfigData configData = information.Config;
 
         bool tokenChange = false, configChange = false;
 
@@ -168,6 +171,15 @@ internal class ConfigCommand
 
             case "category-chats":
                 configData.ChatsCategoryId = ulong.Parse(optionValue);
+                configChange = true;
+                break;
+
+            /*
+             * Lang Configuration
+             */
+
+            case "lang":
+                configData.Lang = optionValue;
                 configChange = true;
                 break;
 

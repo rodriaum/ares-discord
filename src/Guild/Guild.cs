@@ -3,6 +3,8 @@ using Ares.src.Guild.Config;
 using Ares.src.Guild.Data;
 using Ares.src.Guild.Information;
 using Ares.src.Guild.Token;
+using Ares.src.Manager;
+using Ares.src.Objects.Language;
 using Ares.src.Objects.Model;
 using Ares.src.Utils.Extra;
 using Discord;
@@ -402,5 +404,23 @@ public class Guild
         if (string.IsNullOrWhiteSpace(model)) return null;
 
         return ChatModel.GetByNearestModel(model);
+    }
+
+    /// <summary>
+    /// Languages
+    /// </summary>
+    public string Language()
+    {
+        return Information.Config.Lang;
+    }
+
+    public LangCategory LanguageCategory()
+    {
+        return Core.LangManager.GetCategoryByCode(this.Language());
+    }
+
+    public string GetTranslation(string code)
+    {
+        return Core.LangManager.GetTranslation(this.LanguageCategory(), code);
     }
 }
