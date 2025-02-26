@@ -75,7 +75,7 @@ internal class SelectedChatListener
 
             if (information == null)
             {
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.ServerNotFoundDatabase));
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.CouldNotFindInfo));
                 return;
             }
 
@@ -143,7 +143,7 @@ internal class SelectedChatListener
             EmbedBuilder embed = new EmbedBuilder()
                 .WithTitle($"Olá, {user.GlobalName}")
                 .WithColor(Color.Green)
-                .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} | {socketGuild.Name}"));
+                .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} - Ares"));
 
             embed.AddField(guild.GetTranslation(LangKeys.FieldModel), model.DisplayName);
             embed.AddField(guild.GetTranslation(LangKeys.FieldRules), guild.GetTranslation(LangKeys.ChatDescriptionRules));

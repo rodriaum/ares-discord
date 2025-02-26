@@ -2,6 +2,7 @@
 using Ares.src.Guild.Config;
 using Ares.src.Guild.Information;
 using Ares.src.Guild.Token;
+using Ares.src.Objects.Language;
 using Discord;
 using Discord.WebSocket;
 
@@ -22,10 +23,10 @@ internal class ConfigCommand
         if (this._client == null || !(command.Data.Name.Equals("config-token") || command.Data.Name.Equals("config-id") || command.Data.Name.Equals("config-lang"))) return;
 
         EmbedBuilder embed = new EmbedBuilder()
-            .WithTitle("Configuração")
+            .WithTitle("Config")
             .WithDescription("Aguarde...")
             .WithColor(Color.Gold)
-            .WithFooter($"{DateTime.Now.Year} | Ares");
+            .WithFooter($"{DateTime.Now.Year} - Ares");
 
         await command.RespondAsync(ephemeral: true, embed: embed.Build());
         Discord.Rest.RestInteractionMessage message = await command.GetOriginalResponseAsync();
@@ -86,7 +87,7 @@ internal class ConfigCommand
         {
             await message.ModifyAsync(msg =>
                 msg.Embed = embed
-                    .WithDescription("Não foi possível encontrar as opções. Tente novamente!")
+                    .WithDescription(guild.GetTranslation(LangKeys.InvalidOptions))
                     .WithColor(Color.Red)
                     .Build()
             );
@@ -100,7 +101,7 @@ internal class ConfigCommand
         {
             await message.ModifyAsync(msg =>
                 msg.Embed = embed
-                    .WithDescription("Não foi possível encontrar o valor na opção. Tente novamente!")
+                    .WithDescription(guild.GetTranslation(LangKeys.InvalidOptionValue))
                     .WithColor(Color.Red)
                     .Build()
             );
@@ -190,7 +191,7 @@ internal class ConfigCommand
             default:
                 await message.ModifyAsync(msg =>
                     msg.Embed = embed
-                        .WithDescription("Não foi possível achar uma opção válida. Tente novamente!")
+                        .WithDescription(guild.GetTranslation(LangKeys.InvalidOption))
                         .WithColor(Color.Red)
                         .Build()
                 );
@@ -214,7 +215,10 @@ internal class ConfigCommand
         {
             await message.ModifyAsync(msg =>
                 msg.Embed = embed
-                    .WithDescription($"Sucesso! Opção **{optionName}** alterado para ||{optionValue}||")
+                    .WithDescription(guild.GetTranslation(LangKeys.ConfigUpdateSuccess)
+                        .Replace("{0}", optionName)
+                        .Replace("{1}", optionValue)
+                        )
                     .WithColor(Color.Green)
                     .Build()
             );
@@ -223,7 +227,10 @@ internal class ConfigCommand
         {
             await message.ModifyAsync(msg =>
                 msg.Embed = embed
-                    .WithDescription($"Não foi possível alterar a opção **{optionName}** para ||{optionValue}||. Tente novamente!")
+                    .WithDescription(guild.GetTranslation(LangKeys.ConfigUpdateUnSuccess)
+                        .Replace("{0}", optionName)
+                        .Replace("{1}", optionValue)
+                        )
                     .WithColor(Color.Red)
                     .Build()
                 );

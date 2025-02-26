@@ -10,22 +10,22 @@
 public class ChatPriceUsage
 {
     /// <summary> Preço por token na conclusão gerada. </summary>
-    public double OutputPricePerToken { get; }
+    public decimal OutputPricePerToken { get; }
 
     /// <summary> Preço de token no prompt. </summary>
-    public double InputPricePerToken { get; }
+    public decimal InputPricePerToken { get; }
 
     /// <summary> Preço de forma detalhista. (Opcional) </summary>
     public ChatPriceUsageDetail? ChatPriceUsageDetail { get; set; }
 
-    public ChatPriceUsage(double output = 0, double input = 0, ChatPriceUsageDetail? detail = null)
+    public ChatPriceUsage(decimal output = 0, decimal input = 0, ChatPriceUsageDetail? detail = null)
     {
         OutputPricePerToken = output;
         InputPricePerToken = input;
         ChatPriceUsageDetail = detail;
     }
 
-    public double TotalPrice()
+    public decimal TotalPrice()
     {
         return OutputPricePerToken + InputPricePerToken;
     }

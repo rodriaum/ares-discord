@@ -128,9 +128,21 @@ internal class ReceivedContentListener
                         _ => Color.Default
                     };
 
-                    embed.WithDescription(responseText)
-                        .WithColor(color)
-                        .WithFooter($"Ares - {model.DisplayName}");
+                    DateTime date = DateTime.Now;
+
+                    // Discord embed limit description is 4096 characters.
+                    if (responseText.Length > 4096)
+                    {
+                        embed.WithDescription(responseText.Substring(0, 4096))
+                            .WithColor(color)
+                            .WithFooter($"{date.Year} - Ares | {model.DisplayName} (Limite de caracteres alcançado)");
+                    }
+                    else
+                    {
+                        embed.WithDescription(responseText)
+                            .WithColor(color)
+                            .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
+                    }
 
                     // Uma vez que o texto foi gerado, ele já fica registrado como o ultimo histórico de chat.
                     ChatHistoric? historic = guild.LastChatHistoric(user, channel: channel.Id);
@@ -142,27 +154,23 @@ internal class ReceivedContentListener
 
                         if (usage != null && price != null)
                         {
-                            double inputPrice = usage.InputTokens * price.InputPricePerToken;
-                            double outputPrice = usage.OutputTokens * price.OutputPricePerToken;
-
-                            string formattedInputPrice = Util.FormatPrice(inputPrice);
-                            string formattedOutputPrice = Util.FormatPrice(outputPrice);
-                            string formattedTotalPrice = Util.FormatPrice(inputPrice + outputPrice);
+                            decimal inputPrice = usage.InputTokens * price.InputPricePerToken;
+                            decimal outputPrice = usage.OutputTokens * price.OutputPricePerToken;
 
                             priceEmbed = new EmbedBuilder()
                                 // Input Field
                                 .AddField("Tokens", usage.InputTokens, true)
-                                .AddField(guild.GetTranslation(LangKeys.Request), $"$ {formattedInputPrice}", true)
+                                .AddField(guild.GetTranslation(LangKeys.Request), $"$ {Util.FormatPrice(inputPrice)}", true)
                                 // Broke Line
                                 .AddField("\u200B", "\u200B", false)
                                 // Output Field
                                 .AddField("Tokens", usage.OutputTokens, true)
-                                .AddField(guild.GetTranslation(LangKeys.Response), $"$ {formattedOutputPrice}", true)
+                                .AddField(guild.GetTranslation(LangKeys.Response), $"$ {Util.FormatPrice(outputPrice)}", true)
                                 // Broke Line
                                 .AddField("\u200B", "\u200B", false)
                                 // Total Field
                                 .AddField("Tokens", usage.TotalTokens(), true)
-                                .AddField("Total", $"$ {formattedTotalPrice}", true)
+                                .AddField(guild.GetTranslation(LangKeys.Total), $"$ {Util.FormatPrice(inputPrice + outputPrice)}", true)
                                 // Footer
                                 .WithFooter(guild.GetTranslation(LangKeys.PriceLowerCache));
                         }

@@ -22,7 +22,7 @@ public class Util
         return str.Substring(0, 1).ToUpper() + str.Substring(1).ToLower();
     }
 
-    public static string FormatPrice(double value)
+    public static string FormatPrice(decimal value)
     {
         if (value == 0)
             return "0";

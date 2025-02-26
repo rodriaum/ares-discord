@@ -7,11 +7,14 @@ public class LangKeys
     public static readonly string ToProcess = "to-process";
     public static readonly string CouldNotFindInfo = "could-not-find-info";
     public static readonly string CouldNotFindInfoID = "could-not-find-info-id";
+    public static readonly string CouldNotFindInfoToken = "could-not-find-info-token";
+    public static readonly string CouldNotFindToken = "could-not-find-token";
     public static readonly string CouldNotFindLastModel = "could-not-find-last-model";
     public static readonly string PriceLowerCache = "price-lower-cache";
     public static readonly string Request = "request";
     public static readonly string Response = "response";
     public static readonly string Success = "success";
+    public static readonly string Total = "total";
     public static readonly string ServerNotFoundDatabase = "server-not-found-database";
     public static readonly string UnableCreateServer = "unable-create-server";
     public static readonly string RoleEliminated = "role-eliminated";
@@ -32,4 +35,20 @@ public class LangKeys
     public static readonly string SuccessChatCreated = "success-chat-created";
     public static readonly string ChatDescriptionRules = "chat-description-rules";
     public static readonly string ChatDescriptionTime = "chat-description-time";
+    public static readonly string InvalidOption = "invalid-option";
+    public static readonly string InvalidOptions = "invalid-options";
+    public static readonly string InvalidOptionValue = "invalid-option-value";
+    public static readonly string ConfigUpdateSuccess = "config-updated-success";
+    public static readonly string ConfigUpdateUnSuccess = "config-updated-unsuccess";
+    public static readonly string ContentPolityViolation = "content-policy-violation";
+    public static readonly string RateLimitExceeded = "rate-limit-exceeded";
+    public static readonly string InvalidRequest = "invalid-request";
+    public static readonly string AuthenticationError = "authentication-error";
+    public static readonly string ServerError = "server-error";
+    public static readonly string Timeout = "timeout";
+
+    public static readonly string FunctionCall = "function-call";
+    public static readonly string UnableGenerateOrder = "unable-generate-order";
+    public static readonly string ModelNotFound = "model-not-found";
+    public static readonly string CloseChat = "close-chat";
 }

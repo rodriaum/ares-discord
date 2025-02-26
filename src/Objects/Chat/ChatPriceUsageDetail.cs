@@ -5,25 +5,25 @@
 /// </summary>
 public class ChatPriceUsageDetail
 {
-    public double ImageStandard_1024_1024 { get; }
-    public double ImageStandard_1024_1792 { get; }
+    public decimal ImageStandard_1024_1024 { get; }
+    public decimal ImageStandard_1024_1792 { get; }
 
-    public double ImageHD_1024_1024 { get; }
-    public double ImageHD_1024_1792 { get; }
+    public decimal ImageHD_1024_1024 { get; }
+    public decimal ImageHD_1024_1792 { get; }
 
-    public double Image_1024_1024 { get; }
-    public double Image_512_512 { get; }
-    public double Image_256_256 { get; }
+    public decimal Image_1024_1024 { get; }
+    public decimal Image_512_512 { get; }
+    public decimal Image_256_256 { get; }
 
     public ChatPriceUsageDetail
         (
-        double imageStandard_1024_1024 = 0, 
-        double ImageStandard_1024_1792 = 0.0, 
-        double ImageHD_1024_1024 = 0.0, 
-        double imageHD_1024_1792 = 0.0,
-        double image_1024_1024 = 0.0,
-        double image_512_512 = 0.0,
-        double image_256_256 = 0.0
+        decimal imageStandard_1024_1024 = 0.0m,
+        decimal ImageStandard_1024_1792 = 0.0m,
+        decimal ImageHD_1024_1024 = 0.0m,
+        decimal imageHD_1024_1792 = 0.0m,
+        decimal image_1024_1024 = 0.0m,
+        decimal image_512_512 = 0.0m,
+        decimal image_256_256 = 0.0m
         )
     {
         ImageStandard_1024_1024 = imageStandard_1024_1024;

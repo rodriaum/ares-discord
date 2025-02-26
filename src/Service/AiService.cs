@@ -10,44 +10,20 @@ using Anthropic.SDK.Messaging;
 using Ares.src.Guild.Token;
 using DeepSeek.Core;
 using DeepSeek.Core.Models;
-using static System.Net.Mime.MediaTypeNames;
 using Ares.src.Objects.Model;
-
+using Ares.src.Objects.Language;
+using Ares.src.Manager;
 
 namespace Ares.src.Service;
 
 public class AiService
 {
-    private static string GetMessageByErrorKey(string key)
+    private static string GetMessageByErrorKey(LangCategory category, string key)
     {
-        if (key.Contains("content_policy_violation"))
-        {
-            return "Sua solicitação foi rejeitada como resultado do nosso sistema de segurança. Seu prompt pode conter texto que não é permitido pelo nosso sistema de segurança.";
-        }
-        else if (key.Contains("rate_limit_exceeded"))
-        {
-            return "Você excedeu o limite de solicitações permitidas em um determinado período. Por favor, aguarde um momento antes de tentar novamente.";
-        }
-        else if (key.Contains("invalid_request"))
-        {
-            return "Houve um problema com sua solicitação. Verifique se todos os parâmetros estão corretos e tente novamente.";
-        }
-        else if (key.Contains("authentication_error"))
-        {
-            return "Erro de autenticação. Certifique-se de que suas credenciais estão corretas e válidas.";
-        }
-        else if (key.Contains("server_error"))
-        {
-            return "Ocorreu um erro interno no servidor. Tente novamente mais tarde.";
-        }
-        else if (key.Contains("timeout"))
-        {
-            return "A solicitação demorou muito para ser processada e foi interrompida. Tente novamente.";
-        }
-        else
-        {
-            return Constant.UNABLE_PERFORM_TASK;
-        }
+        LangManager manager = Core.LangManager;
+
+        string translation = manager.GetTranslation(category, key.Replace("-", "_"));
+        return !string.IsNullOrEmpty(translation) ? translation : manager.GetTranslation(category, LangKeys.InvalidRequest) + $"({nameof(GetMessageByErrorKey)})";
     }
 
     /// <summary>
@@ -61,7 +37,7 @@ public class AiService
 
         if (model.Type != ModelType.Image)
         {
-            return "Parece que houve um problema na identificação do modelo. Tente novamente!";
+            return guild.GetTranslation(LangKeys.ModelUnavailable);
         }
 
         GuildInformation information = guild.Information;
@@ -69,7 +45,7 @@ public class AiService
 
         if (tokenData == null)
         {
-            return "Não foi possível encontrar as informações sobre os tokens.";
+            return guild.GetTranslation(LangKeys.CouldNotFindInfoToken);
         }
 
         string? openAiToken = tokenData.OpenAi;
@@ -77,7 +53,7 @@ public class AiService
 
         if (string.IsNullOrEmpty(openAiToken))
         {
-            return "Ops! Parece que o servidor atual não tem um token OpenAI pré-configurado.";
+            return guild.GetTranslation(LangKeys.CouldNotFindToken);
         }
 
         try
@@ -86,7 +62,7 @@ public class AiService
 
             if (image == null)
             {
-                return "Ops! Parece que não foi possível gerar a imagem, tente novamente!";
+                return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(GenerateConversationAsync)})";
             }
 
             // Usa a URL original se não houver um token Imgur.
@@ -99,7 +75,7 @@ public class AiService
             if (info == null)
             {
                 LogUtil.Error(nameof(GenerateImageUrlAsync), "It looks like the information could not be accessed.");
-                return "Ops! Parece que não foi possível acessar as informações do canal, tente novamente!";
+                return guild.GetTranslation(LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})";
             }
 
             ChatHistoric historic = AiUtil.ConvertGeneratedImageToChatHistoric(prompt, image, imageUrl: imageUrl);
@@ -114,7 +90,7 @@ public class AiService
             string message = e.Message;
 
             LogUtil.Error("Generation", "Unable to generate an image.", message);
-            return GetMessageByErrorKey(message);
+            return GetMessageByErrorKey(guild.LanguageCategory(), message);
         }
     }
 
@@ -141,7 +117,7 @@ public class AiService
 
         if (model.Type != ModelType.Chat)
         {
-            return "Parece que houve um problema na identificação do modelo. Tente novamente!";
+            return guild.GetTranslation(LangKeys.ModelUnavailable);
         }
 
         GuildInformation information = guild.Information;
@@ -149,7 +125,7 @@ public class AiService
 
         if (tokenData == null)
         {
-            return "Não foi possível encontrar as informações sobre os tokens.";
+            return guild.GetTranslation(LangKeys.CouldNotFindToken);
         }
 
         ChatHistoric? historic = null;
@@ -170,7 +146,7 @@ public class AiService
                     return await HandleDeepSeekConversation(guild, user, model, channel, prompt, tokenData, historics);
 
                 default:
-                    return "Não foi possível identificar o modelo. Tente novamente!";
+                    return guild.GetTranslation(LangKeys.ModelNotFound);
             }
         }
         catch (Exception e)
@@ -183,7 +159,7 @@ public class AiService
             string message = e.Message;
 
             LogUtil.Error("Generation", "Unable to generate an conversation.", message);
-            return GetMessageByErrorKey(message);
+            return GetMessageByErrorKey(guild.LanguageCategory(), message);
         }
     }
 
@@ -196,7 +172,7 @@ public class AiService
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            return "Ops! Parece que o servidor atual não tem um token OpenAI pré-configurado.";
+            return guild.GetTranslation(LangKeys.CouldNotFindToken);
         }
 
         UserChatMessage userMessage = new UserChatMessage(prompt)
@@ -211,7 +187,7 @@ public class AiService
 
         ChatCompletionOptions options = new ChatCompletionOptions
         {
-            MaxOutputTokenCount = 4096 // Discord embed limit description is 4096 characters.
+            MaxOutputTokenCount = 2048 // Adjustment to avoid exceeding the 4096-character limit imposed by Discord, preventing resource waste, as any text sent beyond this limit will be truncated.
         };
 
         ChatCompletion completion = await client.CompleteChatAsync(messages, options: options);
@@ -221,11 +197,11 @@ public class AiService
             LogUtil.Error
                 (
                     "OpenAI",
-                    "Não foi possível obter a resposta.",
+                    "Unable to get response.",
                     ""
                 );
 
-            return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
+            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAIConversation)})";
         }
 
         ChatInfo? info = guild.ChatInfoByChannel(user, channel);
@@ -233,7 +209,7 @@ public class AiService
         if (info == null)
         {
             LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
-            return "Ops! Parece que não foi possível acessar as informações do canal, tente novamente!";
+            return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
         ChatHistoric historic = AiUtil.ConvertChatCompletionToChatHistoric(prompt, completion);
@@ -241,25 +217,25 @@ public class AiService
 
         await guild.UpdateChatInfoAsync(user, info);
 
-        return ProcessOpenAiResponse(completion);
+        return ProcessOpenAiResponse(guild, completion);
     }
 
-    private static string ProcessOpenAiResponse(ChatCompletion response)
+    private static string ProcessOpenAiResponse(Guild.Guild guild, ChatCompletion response)
     {
         ChatMessageContentPart? content = response.Content.FirstOrDefault();
 
         if (response == null || response.Content == null || content == null)
         {
-            return "Ops! Parece que não foi possível obter a única resposta, tente novamente!";
+            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAIConversation)})";
         }
 
         return response.FinishReason switch
         {
             ChatFinishReason.Stop => content.Text,
-            ChatFinishReason.Length => "Não será possível prosseguir porque o limite de token estabelecido pelo servidor atual foi excedido.",
-            ChatFinishReason.ContentFilter => "Não foi possível gerar porque o sistema identificou palavras ofensivas no canal atual.",
-            ChatFinishReason.FunctionCall => "Não foi possível gerar porque o sistema está lento. (FunctionCall)",
-            _ => $"Não foi possível gerar a resposta. Motivo: {response.FinishReason}"
+            ChatFinishReason.Length => guild.GetTranslation(LangKeys.RateLimitExceeded),
+            ChatFinishReason.ContentFilter => guild.GetTranslation(LangKeys.ContentPolityViolation),
+            ChatFinishReason.FunctionCall => guild.GetTranslation(LangKeys.FunctionCall),
+            _ => guild.GetTranslation(LangKeys.UnableGenerateOrder).Replace("{0}", response.FinishReason.ToString())
         };
     }
 
@@ -272,7 +248,7 @@ public class AiService
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            return "Ops! Parece que o servidor atual não tem um token Anthropic pré-configurado.";
+            return guild.GetTranslation(LangKeys.CouldNotFindToken);
         }
 
         Anthropic.SDK.Messaging.Message userMessage = new Anthropic.SDK.Messaging.Message(RoleType.User, prompt);
@@ -285,7 +261,7 @@ public class AiService
         MessageParameters parameters = new MessageParameters()
         {
             Messages = messages,
-            MaxTokens = 4096, // Discord embed limit description is 4096 characters.
+            MaxTokens = 2048, // Adjustment to avoid exceeding the 4096-character limit imposed by Discord, preventing resource waste, as any text sent beyond this limit will be truncated.
             Model = model.Model,
             Stream = false,
             Temperature = 1.0m
@@ -298,11 +274,11 @@ public class AiService
             LogUtil.Error
                 (
                     "Anthropic",
-                    "Não foi possível obter a resposta.",
+                    "Unable to get response.",
                     ""
                 );
 
-            return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
+            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleAnthropicConversation)})";
         }
 
         ChatInfo? info = guild.ChatInfoByChannel(user, channel);
@@ -310,7 +286,7 @@ public class AiService
         if (info == null)
         {
             LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
-            return "Ops! Parece que não foi possível acessar as informações do canal, tente novamente!";
+            return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
         ChatHistoric historic = AiUtil.ConvertMessageResponseToChatHistoric(prompt, response);
@@ -331,7 +307,7 @@ public class AiService
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            return "Ops! Parece que o servidor atual não tem um token DeepSeek pré-configurado.";
+            return guild.GetTranslation(LangKeys.CouldNotFindToken);
         }
 
         DeepSeek.Core.Models.Message userMessage = DeepSeek.Core.Models.Message.NewUserMessage(prompt);
@@ -344,7 +320,7 @@ public class AiService
         {
             Messages = messages,
             Model = model.Model,
-            MaxTokens = 4096 // Discord embed limit description is 4096 characters.
+            MaxTokens = 2048 // Adjustment to avoid exceeding the 4096-character limit imposed by Discord, preventing resource waste, as any text sent beyond this limit will be truncated.
         };
 
         ChatResponse? response = await client.ChatAsync(request, new CancellationToken());
@@ -353,19 +329,19 @@ public class AiService
         {
             LogUtil.Error
                 (
-                    "DeepSeek", 
-                    "Não foi possível obter a resposta.", 
-                    (client.ErrorMsg != null ? client.ErrorMsg : "Desconhecido")
+                    "DeepSeek",
+                    "Unable to get response.", 
+                    (client.ErrorMsg != null ? client.ErrorMsg : "Unknown")
                 );
 
-            return "Ops! Parece que não foi possível obter a resposta, tente novamente!";
+            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleDeepSeekConversation)})";
         }
 
         Choice? choice = response.Choices.FirstOrDefault();
 
         if (choice == null || choice.Message == null || choice.Message.Content == null)
         {
-            return "Ops! Parece que não foi possível obter a única resposta, tente novamente!";
+            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleDeepSeekConversation)})";
         }
 
         ChatInfo? info = guild.ChatInfoByChannel(user, channel);
@@ -373,7 +349,7 @@ public class AiService
         if (info == null)
         {
             LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
-            return "Ops! Parece que não foi possível acessar as informações do canal, tente novamente!";
+            return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
         ChatHistoric? historic = AiUtil.ConvertChatResponseToChatHistoric(prompt, info.Id, response);
@@ -389,17 +365,17 @@ public class AiService
 
     private static void HandleVerifyParameters(Guild.Guild guild, IGuildUser user, ChatModel model, String prompt)
     {
-        // Validação de parâmetros
+        // Parameter validation
         if (guild == null)
-            throw new ArgumentNullException(nameof(guild), "Houve um problema interno ao identificar uma guilda. Por favor, verifique se a guilda foi fornecida corretamente.");
+            throw new ArgumentNullException(nameof(guild), "There was an internal issue identifying the guild. Please check if the guild was provided correctly.");
 
         if (user == null)
-            throw new ArgumentNullException(nameof(user), "Houve um problema interno ao identificar um usuário. Por favor, verifique se o usuário foi fornecido corretamente.");
+            throw new ArgumentNullException(nameof(user), "There was an internal issue identifying the user. Please check if the user was provided correctly.");
 
         if (model == null)
-            throw new ArgumentNullException(nameof(model), "Houve um problema interno ao identificar o modelo. Por favor, verifique se o modelo foi fornecido corretamente.");
+            throw new ArgumentNullException(nameof(model), "There was an internal issue identifying the model. Please check if the model was provided correctly.");
 
         if (string.IsNullOrWhiteSpace(prompt))
-            throw new ArgumentNullException(nameof(prompt), "Houve um problema interno ao identificar o prompt. Por favor, verifique se o prompt foi fornecido corretamente.");
+            throw new ArgumentNullException(nameof(prompt), "There was an internal issue identifying the prompt. Please check if the prompt was provided correctly.");
     }
 }

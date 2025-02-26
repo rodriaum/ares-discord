@@ -1,5 +1,6 @@
 ﻿using Ares.src.Backend.Data;
 using Ares.src.Guild.Chat.Sub;
+using Ares.src.Objects.Language;
 using Ares.src.Utils.Extra;
 using Discord;
 using Discord.WebSocket;
@@ -69,7 +70,7 @@ internal class ButtonChatListener
                     LogUtil.Log("Chat", $"A chat has been disabled by \"{user.Username}#{user.Discriminator}\"");
                 }
 
-                await args.FollowupAsync("Obrigado por usar **Ares**! A fechar a conversa...");
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.CloseChat));
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();
