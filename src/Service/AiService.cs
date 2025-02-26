@@ -22,8 +22,38 @@ public class AiService
     {
         LangManager manager = Core.LangManager;
 
-        string translation = manager.GetTranslation(category, key.Replace("-", "_"));
-        return !string.IsNullOrEmpty(translation) ? translation : manager.GetTranslation(category, LangKeys.InvalidRequest) + $"({nameof(GetMessageByErrorKey)})";
+        if (key.Contains("content_policy_violation"))
+        {
+            return manager.GetTranslation(category, LangKeys.ContentPolityViolation);
+        }
+        else if (key.Contains("rate_limit_exceeded"))
+        {
+            return manager.GetTranslation(category, LangKeys.RateLimitExceeded);
+        }
+        else if (key.Contains("invalid_request"))
+        {
+            return manager.GetTranslation(category, LangKeys.InvalidRequest);
+        }
+        else if (key.Contains("authentication_error"))
+        {
+            return manager.GetTranslation(category, LangKeys.AuthenticationError);
+        }
+        else if (key.Contains("server_error"))
+        {
+            return manager.GetTranslation(category, LangKeys.ServerError);
+        }
+        else if (key.Contains("timeout"))
+        {
+            return manager.GetTranslation(category, LangKeys.Timeout);
+        }
+        else if (key.Contains("model_not_found"))
+        {
+            return manager.GetTranslation(category, LangKeys.ModelNotFound);
+        }
+        else
+        {
+            return manager.GetTranslation(category, LangKeys.UnablePerformTask);
+        }
     }
 
     /// <summary>

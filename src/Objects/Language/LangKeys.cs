@@ -50,4 +50,6 @@ public class LangKeys
     public static readonly string UnableGenerateOrder = "unable-generate-order";
     public static readonly string ModelNotFound = "model-not-found";
     public static readonly string CloseChat = "close-chat";
+    public static readonly string UnablePerformTask = "unable-perform-task";
+    public static readonly string UnableGetMember = "unable-get-member";
 }

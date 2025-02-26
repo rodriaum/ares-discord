@@ -27,8 +27,8 @@ public class AiManager
         new(
             category: ModelCategory.OpenAI,
             type: ModelType.Chat,
-            display: "GPT-4 OpenAI o1",
-            model: "gpt-o1",
+            display: "GPT-4 o1",
+            model: "o1",
             price: new ChatPriceUsage(output: 0.0000044m, input: 0.000015m),
             exclusive: true
         ),
@@ -36,8 +36,17 @@ public class AiManager
         new(
             category: ModelCategory.OpenAI,
             type: ModelType.Chat,
-            display: "GPT-4 OpenAI o3-mini",
-            model: "gpt-o3-mini",
+            display: "GPT-4 o1-mini",
+            model: "o1-mini",
+            price: new ChatPriceUsage(output: 0.0000006m, input: 0.0000011m),
+            exclusive: true
+        ),
+
+        new(
+            category: ModelCategory.OpenAI,
+            type: ModelType.Chat,
+            display: "GPT-4 o3-mini",
+            model: "o3-mini",
             price: new ChatPriceUsage(output: 0.0000006m, input: 0.0000011m),
             exclusive: true
         ),
