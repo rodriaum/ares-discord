@@ -78,7 +78,7 @@ internal class SetupCommand
                             _ => "Desconhecido"
                         };
 
-                        string availableText = (model.Available ? "Disponível" : "Indisponível");
+                        string availableText = (model.Exclusive ? "Exclusivo" : (model.Available ? "Disponível" : "Indisponível"));
 
                         menu.AddOption(new SelectMenuOptionBuilder
                         {

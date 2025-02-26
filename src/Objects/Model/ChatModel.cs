@@ -14,7 +14,7 @@ public class ChatModel
     public bool Exclusive;
     public bool Available;
 
-    public ChatModel(ModelCategory category, ModelType type, string display, string model, ChatPriceUsage? price = null, bool exclusive = false, bool available = false)
+    public ChatModel(ModelCategory category, ModelType type, string display, string model, ChatPriceUsage? price = null, bool exclusive = false, bool available = true)
     {
         Category = category;
         Type = type;

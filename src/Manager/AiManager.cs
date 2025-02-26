@@ -30,7 +30,7 @@ public class AiManager
             display: "GPT-4 OpenAI o1",
             model: "gpt-o1",
             price: new ChatPriceUsage(output: 0.0000044m, input: 0.000015m),
-            available: false
+            exclusive: true
         ),
 
         new(
@@ -39,7 +39,7 @@ public class AiManager
             display: "GPT-4 OpenAI o3-mini",
             model: "gpt-o3-mini",
             price: new ChatPriceUsage(output: 0.0000006m, input: 0.0000011m),
-            available: false
+            exclusive: true
         ),
 
         new(
@@ -153,6 +153,15 @@ public class AiManager
             model: "claude-3-sonnet-20240229",
             price: new ChatPriceUsage(output: 0.0m, input: 0.0m),
             available: false
+        ),
+
+        new(
+            category: ModelCategory.Anthropic,
+            type: ModelType.Chat,
+            display: "Claude 3.7 Sonnet",
+            model: "claude-3-7-sonnet-20250219",
+            price: new ChatPriceUsage(output: 0.000015m, input: 0.000003m),
+            exclusive: true
         ),
 
         new(

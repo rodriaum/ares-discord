@@ -123,6 +123,23 @@ internal class SelectedChatListener
                 return;
             }
 
+            if (model.Exclusive)
+            {
+                IRole exclusiveRole = socketGuild.GetRole(gid.ExclusiveRoleId);
+
+                if (exclusiveRole == null)
+                {
+                    await args.FollowupAsync(guild.GetTranslation(LangKeys.RoleEliminated));
+                    return;
+                }
+
+                if (!member.Roles.Contains(exclusiveRole))
+                {
+                    await args.FollowupAsync(guild.GetTranslation(LangKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
+                    return;
+                }
+            }
+
             SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
             RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
 
