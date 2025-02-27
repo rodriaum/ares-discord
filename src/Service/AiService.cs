@@ -1,18 +1,20 @@
-﻿using Discord.WebSocket;
-using OpenAI.Chat;
-using Discord;
-using Ares.src.Guild.Information;
-using OpenAI.Images;
-using Ares.src.Utils.Extra;
-using Ares.src.Guild.Chat.Sub;
-using Anthropic.SDK;
+﻿using Anthropic.SDK;
 using Anthropic.SDK.Messaging;
+using Ares.src.Guild.Chat.Sub;
+using Ares.src.Guild.Information;
 using Ares.src.Guild.Token;
+using Ares.src.Manager;
+using Ares.src.Objects.Language;
+using Ares.src.Objects.Model;
+using Ares.src.Utils.Extra;
 using DeepSeek.Core;
 using DeepSeek.Core.Models;
-using Ares.src.Objects.Model;
-using Ares.src.Objects.Language;
-using Ares.src.Manager;
+using Discord;
+using Discord.Rest;
+using Discord.WebSocket;
+using OpenAI.Chat;
+using OpenAI.Images;
+using System.Text;
 
 namespace Ares.src.Service;
 
@@ -61,7 +63,21 @@ public class AiService
     /// </summary>
     /// 
 
-    // Futuro: Fazer retornar o url e um bool de sucesso.
+    /// <summary>
+    /// Asynchronously generates an image URL based on the provided parameters.
+    /// </summary>
+    /// <param name="guild">Represents the guild (server) where the image generation request is made. It contains information about the server.</param>
+    /// <param name="user">Represents the user who is requesting the image generation. It contains information about the user.</param>
+    /// <param name="model">Represents the chat model being used to generate the image. It defines the behavior and capabilities of the image generation process.</param>
+    /// <param name="options">Represents the options for image generation, such as resolution, style, or other parameters.</param>
+    /// <param name="channel">The ID of the channel where the image generation request is made.</param>
+    /// <param name="prompt">The input or description used to generate the image.</param>
+    /// <returns>
+    /// A string representing the URL of the generated image.
+    /// </returns>
+    /// <remarks>
+    /// Future: Modify the function to return both the generated image URL and a boolean indicating whether the operation was successful.
+    /// </remarks>
     public async static Task<string> GenerateImageUrlAsync(Guild.Guild guild, SocketGuildUser user, ChatModel model, ImageGenerationOptions options, ulong channel, string prompt) {
         HandleVerifyParameters(guild, user, model, prompt);
 
@@ -135,14 +151,26 @@ public class AiService
         return await client.GenerateImageAsync(prompt, options);
     }
 
-
     /// <summary>
     /// <b>General</b> - Conversation Generation
     /// </summary>
 
-
-    // Futuro: Fazer retornar o texto e um bool de sucesso.
-    public async static Task<string> GenerateConversationAsync(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt) {
+    /// <summary>
+    /// Asynchronously generates a conversation based on the provided parameters.
+    /// </summary>
+    /// <param name="guild">Represents the guild (server) where the conversation is taking place. It contains information about the server.</param>
+    /// <param name="user">Represents the user who is initiating the conversation. It contains information about the user.</param>
+    /// <param name="model">Represents the chat model being used to generate the conversation. It defines the behavior and capabilities of the chat.</param>
+    /// <param name="channel">The ID of the channel where the conversation is taking place.</param>
+    /// <param name="prompt">The initial input or message that starts the conversation.</param>
+    /// <param name="botMessage">An optional SocketMessage object to generate and update the message in real time, rather than waiting for completion.</param>
+    /// <returns>
+    /// A string representing the generated conversation text.
+    /// </returns>
+    /// <remarks>
+    /// Future: Modify the function to return both the generated text and a boolean indicating whether the operation was successful.
+    /// </remarks>
+    public async static Task<string> GenerateConversationAsync(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt, RestUserMessage? botMessage = null) {
         HandleVerifyParameters(guild, user, model, prompt);
 
         if (model.Type != ModelType.Chat)
@@ -167,13 +195,13 @@ public class AiService
             switch (model.Category)
             {
                 case ModelCategory.OpenAI:
-                    return await HandleOpenAIConversation(guild, user, model, channel, prompt, tokenData, historics);
+                    return await HandleOpenAiConversation(guild, user, model, channel, prompt, tokenData, historics, botMessage);
 
                 case ModelCategory.Anthropic:
-                    return await HandleAnthropicConversation(guild, user, model, channel, prompt, tokenData, historics);
+                    return await HandleAnthropicConversation(guild, user, model, channel, prompt, tokenData, historics, botMessage);
 
                 case ModelCategory.DeepSeek:
-                    return await HandleDeepSeekConversation(guild, user, model, channel, prompt, tokenData, historics);
+                    return await HandleDeepSeekConversation(guild, user, model, channel, prompt, tokenData, historics, botMessage);
 
                 default:
                     return guild.GetTranslation(LangKeys.ModelNotFound);
@@ -197,48 +225,96 @@ public class AiService
     /// <b>OpenAI</b> - Conversation Generation
     /// </summary>
 
-    private static async Task<string> HandleOpenAIConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt, GuildTokenData tokenData, List<ChatHistoric>? historics) {
+    private static async Task<string> HandleOpenAiConversation(
+        Guild.Guild guild,
+        SocketGuildUser user,
+        ChatModel model,
+        ulong channel,
+        string prompt,
+        GuildTokenData tokenData,
+        List<ChatHistoric>? historics,
+        RestUserMessage? restUserMessage = null)
+    {
         string? token = tokenData.OpenAi;
 
         if (string.IsNullOrWhiteSpace(token))
-        {
             return guild.GetTranslation(LangKeys.CouldNotFindToken);
-        }
 
-        UserChatMessage userMessage = new UserChatMessage(prompt)
-        {
-            ParticipantName = user.GlobalName
-        };
-
+        UserChatMessage userMessage = new UserChatMessage(prompt) { ParticipantName = user.GlobalName };
         List<ChatMessage> messages = AiUtil.GetChatOpenAiMessages(historics);
+
         messages.Add(userMessage);
 
         ChatClient client = new ChatClient(model.Model, token);
+        ChatCompletionOptions options = new ChatCompletionOptions { MaxOutputTokenCount = 2048 };
 
-        ChatCompletionOptions options = new ChatCompletionOptions
-        {
-            MaxOutputTokenCount = 2048 // Adjustment to avoid exceeding the 4096-character limit imposed by Discord, preventing resource waste, as any text sent beyond this limit will be truncated.
-        };
-
+        StringBuilder sb = new StringBuilder();
         ChatCompletion completion = await client.CompleteChatAsync(messages, options: options);
 
+        if (restUserMessage != null)
+        {
+            await HandleOpenAiStreamingResponse(guild, model, restUserMessage, client, messages, options, sb);
+        }
+        else
+        {
+            return await HandleOpenAiCompletionResponse(guild, user, channel, prompt, completion);
+        }
+
+        return sb.Length > 0 ? sb.ToString() : guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAiConversation)})";
+    }
+
+    private static async Task HandleOpenAiStreamingResponse(
+        Guild.Guild guild,
+        ChatModel model,
+        RestUserMessage restUserMessage,
+        ChatClient client,
+        List<ChatMessage> messages,
+        ChatCompletionOptions options,
+        StringBuilder sb)
+    {
+        EmbedBuilder embed = new EmbedBuilder()
+            .WithTitle(guild.GetTranslation(LangKeys.AI))
+            .WithColor(Color.Gold)
+            .WithFooter(guild.GetTranslation(LangKeys.TakeUpMinutes));
+
+        DateTime lastEditDate = DateTime.UtcNow;
+        TimeSpan editCooldownTime = TimeSpan.FromSeconds(1);
+
+        await foreach (var response in client.CompleteChatStreamingAsync(messages, options))
+        {
+            if (response.ContentUpdate.Count > 0 && response.ContentUpdate[0].Text.Length <= 4096)
+            {
+                sb.Append(response.ContentUpdate[0].Text);
+                embed.WithDescription(sb.ToString());
+
+                // The Discord API allows post editing 5 times within 5 seconds.
+                if ((DateTime.UtcNow - lastEditDate) > editCooldownTime)
+                {
+                    await restUserMessage.ModifyAsync(message => message.Embed = embed.Build());
+                    lastEditDate = DateTime.UtcNow;
+                }
+            }
+        }
+    }
+
+    private static async Task<string> HandleOpenAiCompletionResponse(
+        Guild.Guild guild,
+        SocketGuildUser user,
+        ulong channel,
+        string prompt,
+        ChatCompletion? completion)
+    {
         if (completion == null)
         {
-            LogUtil.Error
-                (
-                    "OpenAI",
-                    "Unable to get response.",
-                    ""
-                );
-
-            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAIConversation)})";
+            LogUtil.Error("OpenAI", "Unable to get response.", "");
+            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAiConversation)})";
         }
 
         ChatInfo? info = guild.ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
-            LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
+            LogUtil.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
@@ -256,7 +332,7 @@ public class AiService
 
         if (response == null || response.Content == null || content == null)
         {
-            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAIConversation)})";
+            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAiConversation)})";
         }
 
         return response.FinishReason switch
@@ -273,7 +349,17 @@ public class AiService
     /// <b>Anthropic</b> - Conversation Generation
     /// </summary>
 
-    private static async Task<string> HandleAnthropicConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt, GuildTokenData tokenData, List<ChatHistoric>? historics) {
+    private static async Task<string> HandleAnthropicConversation(
+        Guild.Guild guild, 
+        SocketGuildUser user, 
+        ChatModel model, 
+        ulong channel, 
+        string prompt, 
+        GuildTokenData tokenData, 
+        List<ChatHistoric>? historics, 
+        RestUserMessage? 
+        botMessage = null) 
+    {
         string? token = tokenData.Anthropic;
 
         if (string.IsNullOrWhiteSpace(token))
@@ -315,7 +401,7 @@ public class AiService
 
         if (info == null)
         {
-            LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
+            LogUtil.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
@@ -331,7 +417,15 @@ public class AiService
     /// <b>DeepSeek</b> - Conversation Generation
     /// </summary>
 
-    private static async Task<string> HandleDeepSeekConversation(Guild.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt, GuildTokenData tokenData, List<ChatHistoric>? historics)
+    private static async Task<string> HandleDeepSeekConversation(
+        Guild.Guild guild, 
+        SocketGuildUser user, 
+        ChatModel model, 
+        ulong channel, 
+        string prompt, 
+        GuildTokenData tokenData, 
+        List<ChatHistoric>? historics,
+        RestUserMessage? botMessage = null)
     {
         string? token = tokenData.Deepseek;
 
@@ -378,7 +472,7 @@ public class AiService
 
         if (info == null)
         {
-            LogUtil.Error(nameof(HandleOpenAIConversation), "It looks like the information could not be accessed.");
+            LogUtil.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 

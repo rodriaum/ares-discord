@@ -118,7 +118,7 @@ internal class ReceivedContentListener
             switch (model.Type)
             {
                 case ModelType.Chat:
-                    string responseText = await AiService.GenerateConversationAsync(guild, guildUser, model, channel.Id, prompt);
+                    string responseText = await AiService.GenerateConversationAsync(guild, guildUser, model, channel.Id, prompt, botMessage);
 
                     Color color = model.Category switch
                     {
