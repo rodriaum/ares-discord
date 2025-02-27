@@ -11,7 +11,6 @@ using Ares.src.Utils.Extra;
 using Ares.src.Commands.System;
 using Ares.src.Commands.Data;
 using Ares.src.Listener;
-using Ares.src.Objects.Language;
 
 namespace Ares.src;
 
@@ -57,7 +56,7 @@ internal class Program
 
         // Options
         await _client.SetStatusAsync(UserStatus.DoNotDisturb);
-        await _client.SetGameAsync("Feito com ❤️ pelo Rodrigo!", type: ActivityType.CustomStatus);
+        await _client.SetGameAsync("https://github.com/rodriaum", type: ActivityType.CustomStatus);
 
         _client.Ready += RegisterCommands;
         _client.Ready += () =>
@@ -135,6 +134,13 @@ internal class Program
                 Type = ApplicationCommandOptionType.String,
                 Name = "role-usage",
                 Description = "Insira o ID do cargo que pode usar os chats.",
+                IsRequired = false
+            },
+            new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = "role-exclusive",
+                Description = "Insira o ID do cargo que pode usar os chats exclusivos.",
                 IsRequired = false
             },
             new SlashCommandOptionBuilder

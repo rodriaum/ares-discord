@@ -100,7 +100,7 @@ internal class ReceivedContentListener
             // Verifica se o canal em que o usuário enviou a mensagem é dele. (Futuramente pode ser verificado com banco de dados)
             if (!channel.Name.Contains(user.GlobalName.ToLower())) return;
 
-            IRole exclusiveRole = socketGuild.GetRole(gcd.ExclusiveRoleId);
+            // IRole exclusiveRole = socketGuild.GetRole(gcd.ExclusiveRoleId);
 
             ChatModel? model = guild.GetLastModelByUser(user, channel: channel.Id);
 

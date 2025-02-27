@@ -5,6 +5,7 @@ using Ares.src.Guild.Token;
 using Ares.src.Objects.Language;
 using Discord;
 using Discord.WebSocket;
+using System.Text;
 
 namespace Ares.src.Commands.Data;
 
@@ -81,121 +82,136 @@ internal class ConfigCommand
             return;
         }
 
-        SocketSlashCommandDataOption? option = command.Data.Options.FirstOrDefault();
-
-        if (option == null)
-        {
-            await message.ModifyAsync(msg =>
-                msg.Embed = embed
-                    .WithDescription(guild.GetTranslation(LangKeys.InvalidOptions))
-                    .WithColor(Color.Red)
-                    .Build()
-            );
-            return;
-        }
-
-        string optionName = option.Name;
-        string? optionValue = option.Value.ToString();
-
-        if (optionValue == null)
-        {
-            await message.ModifyAsync(msg =>
-                msg.Embed = embed
-                    .WithDescription(guild.GetTranslation(LangKeys.InvalidOptionValue))
-                    .WithColor(Color.Red)
-                    .Build()
-            );
-            return;
-        }
+        IReadOnlyCollection<SocketSlashCommandDataOption> options = command.Data.Options;
 
         GuildInformation information = guild.Information;
 
         GuildTokenData tokenData = information.Token;
         GuildConfigData configData = information.Config;
 
+        StringBuilder sb = new StringBuilder();
+
         bool tokenChange = false, configChange = false;
 
-        switch (optionName)
+        foreach (var option in options)
         {
-
-            /*
-             * Token Configuration
-             */
-
-            case "openai":
-                tokenData.OpenAi = optionValue;
-                // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                tokenChange = tokenData.OpenAi != optionValue;
-                break;
-
-            case "anthropic":
-                tokenData.Anthropic = optionValue;
-                // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                tokenChange = tokenData.Anthropic != optionValue;
-                break;
-
-            case "deepseek":
-                tokenData.Deepseek = optionValue;
-                // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                tokenChange = tokenData.Deepseek != optionValue;
-                break;
-
-            case "imgur":
-                tokenData.Imgur = optionValue;
-                // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                tokenChange = tokenData.Imgur != optionValue;
-                break;
-
-            /*
-             * IDs Configuration
-             */
-
-            case "role-member":
-                configData.MemberRoleId = ulong.Parse(optionValue);
-                configChange = true;
-                break;
-
-            case "role-usage":
-                configData.UsageRoleId = ulong.Parse(optionValue);
-                configChange = true;
-                break;
-
-            case "channel-setup":
-                configData.SetupChannelId = ulong.Parse(optionValue);
-                configChange = true;
-                break;
-
-            case "channel-log":
-                configData.LogChannelId = ulong.Parse(optionValue);
-                configChange = true;
-                break;
-
-            case "category-chats":
-                configData.ChatsCategoryId = ulong.Parse(optionValue);
-                configChange = true;
-                break;
-
-            /*
-             * Lang Configuration
-             */
-
-            case "lang":
-                configData.Lang = optionValue;
-                configChange = true;
-                break;
-
-            /*
-             * Default Option
-             */
-
-            default:
+            if (option == null)
+            {
                 await message.ModifyAsync(msg =>
                     msg.Embed = embed
-                        .WithDescription(guild.GetTranslation(LangKeys.InvalidOption))
+                        .WithDescription(guild.GetTranslation(LangKeys.InvalidOptions))
                         .WithColor(Color.Red)
                         .Build()
                 );
                 return;
+            }
+
+            string optionName = option.Name;
+            string? optionValue = option.Value.ToString();
+
+            if (optionValue == null)
+            {
+                await message.ModifyAsync(msg =>
+                    msg.Embed = embed
+                        .WithDescription(guild.GetTranslation(LangKeys.InvalidOptionValue))
+                        .WithColor(Color.Red)
+                        .Build()
+                );
+                return;
+            }
+
+            switch (optionName)
+            {
+
+                /*
+                 * Token Configuration
+                 */
+
+                case "openai":
+                    tokenData.OpenAi = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.OpenAi != optionValue;
+                    break;
+
+                case "anthropic":
+                    tokenData.Anthropic = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.Anthropic != optionValue;
+                    break;
+
+                case "deepseek":
+                    tokenData.Deepseek = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.Deepseek != optionValue;
+                    break;
+
+                case "imgur":
+                    tokenData.Imgur = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.Imgur != optionValue;
+                    break;
+
+                /*
+                 * IDs Configuration
+                 */
+
+                case "role-member":
+                    configData.MemberRoleId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "role-usage":
+                    configData.UsageRoleId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "role-exclusive":
+                    configData.ExclusiveRoleId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "channel-setup":
+                    configData.SetupChannelId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "channel-log":
+                    configData.LogChannelId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "category-chats":
+                    configData.ChatsCategoryId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                /*
+                 * Lang Configuration
+                 */
+
+                case "lang":
+                    configData.Lang = optionValue;
+                    configChange = true;
+                    break;
+
+                /*
+                 * Default Option
+                 */
+
+                default:
+                    await message.ModifyAsync(msg =>
+                        msg.Embed = embed
+                            .WithDescription(guild.GetTranslation(LangKeys.InvalidOption))
+                            .WithColor(Color.Red)
+                            .Build()
+                    );
+                    return;
+            }
+
+            sb.AppendLine(guild
+                .GetTranslation(LangKeys.ConfigUpdateSuccess)
+                .Replace("{0}", optionName ?? "N/A")
+                .Replace("{1}", optionValue ?? "N/A"));
         }
 
         // Só uma opção pode ser alterada por comando, por isso o uso de uma variável booleana apenas.
@@ -215,10 +231,7 @@ internal class ConfigCommand
         {
             await message.ModifyAsync(msg =>
                 msg.Embed = embed
-                    .WithDescription(guild.GetTranslation(LangKeys.ConfigUpdateSuccess)
-                        .Replace("{0}", optionName)
-                        .Replace("{1}", optionValue)
-                        )
+                    .WithDescription(sb.ToString())
                     .WithColor(Color.Green)
                     .Build()
             );
@@ -227,10 +240,7 @@ internal class ConfigCommand
         {
             await message.ModifyAsync(msg =>
                 msg.Embed = embed
-                    .WithDescription(guild.GetTranslation(LangKeys.ConfigUpdateUnSuccess)
-                        .Replace("{0}", optionName)
-                        .Replace("{1}", optionValue)
-                        )
+                    .WithDescription(guild.GetTranslation(LangKeys.ConfigUpdateUnSuccess))
                     .WithColor(Color.Red)
                     .Build()
                 );

@@ -33,7 +33,7 @@
     "invalid-option": "Could not find a valid option. Please try again!",
     "invalid-options": "Could not find the options. Please try again!",
     "invalid-option-value": "Could not find the value in the option. Please try again!",
-    "config-updated-success": "Success! Option **{0}** changed to ||{1}||",
+    "config-updated-success": "Option **{0}** changed to ||{1}||",
     "config-updated-unsuccess": "Could not change option **{0}** to ||{1}||. Please try again!",
     "content-policy-violation": "Your request was rejected due to our security system. Your prompt may contain text not allowed by our security system.",
     "rate-limit-exceeded": "You have exceeded the allowed request limit in a given period. Please wait a moment before trying again.",
