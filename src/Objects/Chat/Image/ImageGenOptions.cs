@@ -4,12 +4,12 @@ public class ImageGenOptions
 {
     public readonly ImageQuality Quality;
     public readonly ImageSize Size;
-    public readonly ImageStyle style;
+    public readonly ImageStyle Style;
 
     public ImageGenOptions(ImageQuality quality, ImageSize size, ImageStyle style)
     {
         Quality = quality;
         Size = size;
-        this.style = style;
+        this.Style = style;
     }
 }

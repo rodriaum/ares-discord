@@ -1,6 +1,7 @@
 ﻿using Anthropic.SDK.Messaging;
 using Ares.src.Backend.Data.Model.Chat.Sub;
 using Ares.src.Objects.Chat;
+using Ares.src.Objects.Chat.Image;
 using DeepSeek.Core.Models;
 using OpenAI.Chat;
 using OpenAI.Images;
@@ -78,6 +79,37 @@ public class AiUtil
         }
 
         return historics;
+    }
+
+    /// <summary>
+    /// <b>General</b> - Constructs a Image Gen Options.
+    /// </summary>
+    /// <param name="optionsOpenAi">Response containing an image options by OpenAI.</param>
+    public static List<ImageGenOptions> ConvertToImageGenOptions(ImageGenerationOptions? optionsOpenAi = null)
+    {
+        var options = new List<ImageGenOptions>();
+
+        if (optionsOpenAi != null)
+        {
+            var quality = optionsOpenAi.Quality ?? GeneratedImageQuality.Standard;
+            var size = optionsOpenAi.Size ?? GeneratedImageSize.W1024xH1024;
+            var style = optionsOpenAi.Style ?? GeneratedImageStyle.Natural;
+
+            try
+            {
+                var imageQuality = (ImageQuality)Enum.Parse(typeof(ImageQuality), quality.ToString(), ignoreCase: true);
+                var imageSize = (ImageSize)Enum.Parse(typeof(ImageSize), size.ToString(), ignoreCase: true);
+                var imageStyle = (ImageStyle)Enum.Parse(typeof(ImageStyle), style.ToString(), ignoreCase: true);
+
+                options.Add(new ImageGenOptions(imageQuality, imageSize, imageStyle));
+            }
+            catch (ArgumentException e)
+            {
+                LogUtil.Error(nameof(ConvertToImageGenOptions), "Could not convert a class to ImageGenOptions.", e.Message);
+            }
+        }
+
+        return options;
     }
 
     /// <summary>
@@ -165,6 +197,41 @@ public class AiUtil
         }
 
         return messages;
+    }
+
+    /// <summary>
+    /// <b>OpenAI</b> - Obtém as opções de geração de imagem da OpenAI.
+    /// </summary>
+    /// <param name="options">Opções de geração de imagem customizado.</param>
+    public static ImageGenerationOptions GetImageGenerationOptions(ImageGenOptions options)
+    {
+        GeneratedImageQuality quality = options.Quality switch
+        {
+            ImageQuality.Standard => GeneratedImageQuality.Standard,
+            _ => GeneratedImageQuality.High,
+        };
+
+        GeneratedImageStyle style = options.Style switch
+        {
+            ImageStyle.Vivid => GeneratedImageStyle.Vivid,
+            _ => GeneratedImageStyle.Natural,
+        };
+
+        GeneratedImageSize size = options.Size switch
+        {
+            ImageSize.W1792xH1024 => GeneratedImageSize.W1792xH1024,
+            ImageSize.W1024xH1792 => GeneratedImageSize.W1024xH1024,
+            ImageSize.W1024xH1024 => GeneratedImageSize.W1024xH1024,
+            ImageSize.W512xH512 => GeneratedImageSize.W512xH512,
+            _ => GeneratedImageSize.W256xH256
+        };
+
+        return new ImageGenerationOptions()
+        {
+            Quality = quality,
+            Style = style,
+            Size = size
+        };
     }
 
     /// <summary>
