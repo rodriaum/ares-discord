@@ -2,29 +2,29 @@
 
 internal class GuildManager
 {
-    private readonly Dictionary<string, Guild.Guild> GUILD_DICTIONARY = new Dictionary<string, Guild.Guild>();
+    private readonly Dictionary<string, Backend.Data.Model.Guild> GUILD_DICTIONARY = new Dictionary<string, Backend.Data.Model.Guild>();
 
-    public IEnumerable<Guild.Guild> Fetch()
+    public IEnumerable<Backend.Data.Model.Guild> Fetch()
     {
         return GUILD_DICTIONARY.Values.ToList();
     }
 
-    public IEnumerable<Guild.Guild> Fetch(Predicate<Guild.Guild> filter)
+    public IEnumerable<Backend.Data.Model.Guild> Fetch(Predicate<Backend.Data.Model.Guild> filter)
     {
         return Fetch().Where(it => filter(it)).ToList();
     }
 
-    public bool IsPresent(Predicate<Guild.Guild> filter)
+    public bool IsPresent(Predicate<Backend.Data.Model.Guild> filter)
     {
         return Fetch().Any(it => filter(it));
     }
 
-    public Guild.Guild? Fetch(string guildId)
+    public Backend.Data.Model.Guild? Fetch(string guildId)
     {
         return GUILD_DICTIONARY.GetValueOrDefault(guildId);
     }
 
-    public void Save(Guild.Guild guild)
+    public void Save(Backend.Data.Model.Guild guild)
     {
         GUILD_DICTIONARY.TryAdd(guild.Id, guild);
     }

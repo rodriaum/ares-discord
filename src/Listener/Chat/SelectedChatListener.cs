@@ -2,13 +2,14 @@
 using Discord.Rest;
 using Discord.WebSocket;
 using Ares.src.Utils.Extra;
-using Ares.src.Guild.Information;
-using Ares.src.Guild.Config;
-using Ares.src.Guild.Chat.Sub;
 using Ares.src.Objects.Model;
 using Ares.src.Backend.Data;
 using MongoDB.Driver;
 using Ares.src.Objects.Language;
+using Ares.src.Backend.Data.Model.Information;
+using Ares.src.Backend.Data.Model.Config;
+using Ares.src.Backend.Data.Model.Chat.Sub;
+using Ares.src.Backend.Data.Repository;
 
 namespace Ares.src.Listener.Chat;
 
@@ -39,7 +40,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            GuildData? data = Core.GuildData;
+            GuildRepository? data = Core.GuildRepository;
 
             if (data == null)
             {
@@ -47,7 +48,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            Guild.Guild? guild = await data.Fetch(guildId);
+            Backend.Data.Model.Guild? guild = await data.Fetch(guildId);
             const int maxAttempts = 3;
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
@@ -71,7 +72,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            GuildInformation information = guild.Information;
+            GInformationModel information = guild.Information;
 
             if (information == null)
             {
@@ -143,7 +144,7 @@ internal class SelectedChatListener
             SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
             RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
 
-            ChatInfo info = new ChatInfo
+            ChatInfoModel info = new ChatInfoModel
                 (
                     active: true,
                     channel: channel.Id,

@@ -1,5 +1,5 @@
 ﻿using Anthropic.SDK.Messaging;
-using Ares.src.Guild.Chat.Sub;
+using Ares.src.Backend.Data.Model.Chat.Sub;
 using Ares.src.Objects.Chat;
 using DeepSeek.Core.Models;
 using OpenAI.Chat;
@@ -14,9 +14,9 @@ public class AiUtil
     /// </summary>
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
     /// <param name="response">Resposta gerada pela IA da Anthropic.</param>
-    public static ChatHistoric ConvertMessageResponseToChatHistoric(string prompt, MessageResponse response)
+    public static ChatHistoricModel ConvertMessageResponseToChatHistoric(string prompt, MessageResponse response)
     {
-        return new ChatHistoric
+        return new ChatHistoricModel
         (
             prompt: prompt,
             response: response.Message.ToString(),
@@ -28,7 +28,7 @@ public class AiUtil
     /// <b>Anthropic</b> - Obtém mensagens do histórico de chat da Anthropic.
     /// </summary>
     /// <param name="historics">Lista de históricos de chat armazenados.</param>
-    public static List<Anthropic.SDK.Messaging.Message> GetChatAnthropicMessages(List<ChatHistoric>? historics)
+    public static List<Anthropic.SDK.Messaging.Message> GetChatAnthropicMessages(List<ChatHistoricModel>? historics)
     {
         if (historics == null || historics.Count == 0)
         {
@@ -37,7 +37,7 @@ public class AiUtil
 
         List<Anthropic.SDK.Messaging.Message> messages = new List<Anthropic.SDK.Messaging.Message>();
 
-        foreach (ChatHistoric historic in historics)
+        foreach (ChatHistoricModel historic in historics)
         {
             if (!string.IsNullOrWhiteSpace(historic.Prompt))
             {
@@ -73,10 +73,10 @@ public class AiUtil
     /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
     /// <param name="image">Resposta com a imagem gerada pela IA da OpenAI.</param>
     /// <param name="imageUrl">Caso exista uma URL de mídia customizada.</param>
-    public static ChatHistoric ConvertGeneratedImageToChatHistoric(string prompt, GeneratedImage image, string imageUrl = "")
+    public static ChatHistoricModel ConvertGeneratedImageToChatHistoric(string prompt, GeneratedImage image, string imageUrl = "")
     {
         
-        return new ChatHistoric
+        return new ChatHistoricModel
         (
             prompt: prompt,
             response: image.RevisedPrompt,
@@ -90,12 +90,12 @@ public class AiUtil
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
     /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
     /// <param name="completion">Resposta gerada pela IA da OpenAI.</param>
-    public static ChatHistoric ConvertChatCompletionToChatHistoric(string prompt, ChatCompletion completion)
+    public static ChatHistoricModel ConvertChatCompletionToChatHistoric(string prompt, ChatCompletion completion)
     {
         var content = completion.Content[0];
         string? imageUrl = content.ImageUri?.OriginalString;
 
-        return new ChatHistoric
+        return new ChatHistoricModel
         (
             prompt: prompt,
             response: content.Text,
@@ -108,7 +108,7 @@ public class AiUtil
     /// <summary>
     /// <b>OpenAI</b> - Cria uma mensagem de usuário a partir do histórico.
     /// </summary>
-    public static ChatMessage CreateUserMessage(ChatHistoric historic)
+    public static ChatMessage CreateUserMessage(ChatHistoricModel historic)
     {
         return ChatMessage.CreateUserMessage(historic.Prompt);
     }
@@ -116,7 +116,7 @@ public class AiUtil
     /// <summary>
     /// <b>OpenAI</b> - Cria uma mensagem de sistema a partir do histórico.
     /// </summary>
-    public static ChatMessage? CreateSystemMessage(ChatHistoric historic)
+    public static ChatMessage? CreateSystemMessage(ChatHistoricModel historic)
     {
         return ChatMessage.CreateSystemMessage(historic.Response);
     }
@@ -125,7 +125,7 @@ public class AiUtil
     /// <b>OpenAI</b> - Obtém mensagens do histórico de chat da OpenAI.
     /// </summary>
     /// <param name="historics">Lista de históricos de chat armazenados.</param>
-    public static List<ChatMessage> GetChatOpenAiMessages(List<ChatHistoric>? historics)
+    public static List<ChatMessage> GetChatOpenAiMessages(List<ChatHistoricModel>? historics)
     {
         if (historics == null || historics.Count == 0)
         {
@@ -134,7 +134,7 @@ public class AiUtil
 
         List<ChatMessage> messages = new List<ChatMessage>();
 
-        foreach (ChatHistoric historic in historics)
+        foreach (ChatHistoricModel historic in historics)
         {
             if (!string.IsNullOrWhiteSpace(historic.Prompt))
             {
@@ -170,7 +170,7 @@ public class AiUtil
     /// <param name="prompt">Texto de entrada enviado pelo usuário.</param>
     /// <param name="channel">Identificador do canal onde ocorreu a interação.</param>
     /// <param name="response">Resposta gerada pela IA da DeepSeek.</param>
-    public static ChatHistoric? ConvertChatResponseToChatHistoric(string prompt, string guid, ChatResponse response)
+    public static ChatHistoricModel? ConvertChatResponseToChatHistoric(string prompt, string guid, ChatResponse response)
     {
         Choice? choice = response.Choices.FirstOrDefault();
         
@@ -182,7 +182,7 @@ public class AiUtil
 
         DeepSeek.Core.Models.Usage? usage = response.Usage;
 
-        return new ChatHistoric
+        return new ChatHistoricModel
         (
             prompt: prompt,
             response: choice.Message.Content,
@@ -194,7 +194,7 @@ public class AiUtil
     /// <b>DeepSeek</b> - Obtém mensagens do histórico de chat da DeepSeek.
     /// </summary>
     /// <param name="historics">Lista de históricos de chat armazenados.</param>
-    public static List<DeepSeek.Core.Models.Message> GetChatDeepSeekMessages(List<ChatHistoric>? historics)
+    public static List<DeepSeek.Core.Models.Message> GetChatDeepSeekMessages(List<ChatHistoricModel>? historics)
     {
         if (historics == null || historics.Count == 0)
         {
@@ -203,7 +203,7 @@ public class AiUtil
         
         List<DeepSeek.Core.Models.Message> messages = new List<DeepSeek.Core.Models.Message>();
 
-        foreach (ChatHistoric historic in historics)
+        foreach (ChatHistoricModel historic in historics)
         {
             if (!string.IsNullOrWhiteSpace(historic.Prompt))
             {

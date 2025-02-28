@@ -1,5 +1,5 @@
-﻿using Ares.src.Backend.Data;
-using Ares.src.Guild.Chat.Sub;
+﻿using Ares.src.Backend.Data.Model.Chat.Sub;
+using Ares.src.Backend.Data.Repository;
 using Ares.src.Objects.Language;
 using Ares.src.Utils.Extra;
 using Discord;
@@ -33,7 +33,7 @@ internal class ButtonChatListener
                 return;
             }
 
-            GuildData? data = Core.GuildData;
+            GuildRepository? data = Core.GuildRepository;
 
             if (data == null)
             {
@@ -41,7 +41,7 @@ internal class ButtonChatListener
                 return;
             }
 
-            Guild.Guild? guild = await data.Fetch(args.GuildId.GetValueOrDefault());
+            Backend.Data.Model.Guild? guild = await data.Fetch(args.GuildId.GetValueOrDefault());
 
             if (guild == null)
             {
@@ -59,7 +59,7 @@ internal class ButtonChatListener
                     return;
                 }
 
-                ChatInfo? info = guild.ChatInfoByChannel(user, channel.Id);
+                ChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
 
                 if (info != null)
                 {

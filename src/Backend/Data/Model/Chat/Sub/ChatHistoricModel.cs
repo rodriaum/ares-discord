@@ -1,12 +1,12 @@
 ﻿using Ares.src.Objects.Chat;
 using Ares.src.Utils.Extra;
 
-namespace Ares.src.Guild.Chat.Sub;
+namespace Ares.src.Backend.Data.Model.Chat.Sub;
 
 /// <summary>
 /// Representa o histórico de conversas.
 /// </summary>
-public class ChatHistoric
+public class ChatHistoricModel
 {
     /// <summary>
     /// Pergunta ou comando enviado pelo usuário.
@@ -34,24 +34,24 @@ public class ChatHistoric
     public long Timestamp { get; set; }
 
     /// <summary>
-    /// Inicializa uma nova instância da classe <see cref="ChatHistoric"/>.
+    /// Inicializa uma nova instância da classe <see cref="ChatHistoricModel"/>.
     /// </summary>
     /// <param name="prompt">Pergunta</param>
     /// <param name="response">Resposta ou Prompt Revisado</param>
     /// <param name="imageUrl">Opcional: Url da Image</param>
     /// <param name="usage">Uso de Tokens</param>
     /// <param name="timestamp">Timestamp da Conversa</param>
-    public ChatHistoric(string prompt = "", string? response = "", string? imageUrl = "", ChatValueUsage? usage = null, long timestamp = -1)
+    public ChatHistoricModel(string prompt = "", string? response = "", string? imageUrl = "", ChatValueUsage? usage = null, long timestamp = -1)
     {
-        this.Prompt = prompt;
-        this.Response = response;
-        this.ImageUrl = imageUrl;
-        this.Usage = usage;
-        this.Timestamp = timestamp;
+        Prompt = prompt;
+        Response = response;
+        ImageUrl = imageUrl;
+        Usage = usage;
+        Timestamp = timestamp;
 
         if (timestamp == -1)
         {
-            this.Timestamp = TimeUtil.CurrentTimeMillis();
+            Timestamp = TimeUtil.CurrentTimeMillis();
         }
     }
 }

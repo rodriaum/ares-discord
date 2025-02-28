@@ -1,4 +1,4 @@
-﻿using Ares.src.Backend.Data;
+﻿using Ares.src.Backend.Data.Repository;
 using Ares.src.Backend.Database;
 using Ares.src.Backend.Database.Mongo;
 using Ares.src.Manager;
@@ -10,7 +10,7 @@ internal class Core
     // Databases
     public static MongoDatabase? Database { get; set; }
 
-    public static GuildData? GuildData { get; set; }
+    public static GuildRepository? GuildRepository { get; set; }
     public static GuildManager GuildManager = new GuildManager();
 
     // General Managers
@@ -29,6 +29,6 @@ internal class Core
 
         Database = database;
 
-        GuildData = new GuildData(database);
+        GuildRepository = new GuildRepository(database);
     }
 }

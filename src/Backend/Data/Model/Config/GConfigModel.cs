@@ -1,6 +1,6 @@
 ﻿using Lombok.NET;
 
-namespace Ares.src.Guild.Config;
+namespace Ares.src.Backend.Data.Model.Config;
 
 [AllArgsConstructor]
 public partial class GuildConfigData
@@ -18,6 +18,6 @@ public partial class GuildConfigData
 
     public GuildConfigData()
     {
-        this.Lang = "pt";
+        Lang = "pt";
     }
 }

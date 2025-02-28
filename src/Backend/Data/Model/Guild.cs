@@ -1,21 +1,21 @@
-﻿using Ares.src.Guild.Chat.Sub;
-using Ares.src.Guild.Config;
-using Ares.src.Guild.Data;
-using Ares.src.Guild.Information;
-using Ares.src.Guild.Token;
+﻿using Ares.src.Backend.Data.Model.Chat;
+using Ares.src.Backend.Data.Model.Chat.Sub;
+using Ares.src.Backend.Data.Model.Config;
+using Ares.src.Backend.Data.Model.Information;
+using Ares.src.Backend.Data.Model.Token;
 using Ares.src.Manager;
 using Ares.src.Objects.Language;
 using Ares.src.Objects.Model;
 using Ares.src.Utils.Extra;
 using Discord;
 
-namespace Ares.src.Guild;
+namespace Ares.src.Backend.Data.Model;
 
 public class Guild
 {
     public readonly string Id;
 
-    public GuildInformation Information;
+    public GInformationModel Information;
 
     /// <summary>
     /// Construtor da classe Guild.
@@ -23,8 +23,8 @@ public class Guild
     /// <param name="id">Identificador da guilda.</param>
     public Guild(string id)
     {
-        this.Id = id;
-        this.Information = new GuildInformation();
+        Id = id;
+        Information = new GInformationModel();
     }
 
     /// <summary>
@@ -37,7 +37,7 @@ public class Guild
         if (fields == null || fields.Count == 0)
             throw new ArgumentException("A lista de campos não pode ser nula ou vazia.", nameof(fields));
 
-        if (Core.GuildData is not { } guildData)
+        if (Core.GuildRepository is not { } guildData)
         {
             LogUtil.Error(nameof(SaveAsync), "GuildData está nulo. Não foi possível salvar os campos.");
             return false;
@@ -77,7 +77,7 @@ public class Guild
     /// </summary>
     /// <param name="information">Objeto com as informações da guilda.</param>
     /// <returns>Retorna true se as informações foram salvas com sucesso, false caso contrário.</returns>
-    public async Task<bool> SaveInformation(GuildInformation information)
+    public async Task<bool> SaveInformation(GInformationModel information)
     {
         if (information == null)
         {
@@ -85,7 +85,7 @@ public class Guild
             return false;
         }
 
-        this.Information = information;
+        Information = information;
 
         return await SaveAsync("Information");
     }
@@ -95,10 +95,10 @@ public class Guild
     /// </summary>
     /// <param name="data">Objeto contendo os dados de chat da guilda.</param>
     /// <returns>Retorna true se os dados foram atualizados com sucesso, false caso contrário.</returns>
-    public async Task<bool> SaveChatDataAsync(GuildChatData chatData)
+    public async Task<bool> SaveChatDataAsync(GChatModel chatData)
     {
-        this.Information.Chat = chatData;
-        return await SaveInformation(this.Information);
+        Information.Chat = chatData;
+        return await SaveInformation(Information);
     }
 
     /// <summary>
@@ -107,43 +107,43 @@ public class Guild
     /// <param name="user">Usuário a atualizar no banco de dados.</param>
     /// <param name="infos">Lista de informações a serem adicionadas.</param>
     /// <param name="onlyCached">Opcional: Caso precise ser guardado localmente em vez de no banco de dados.</param>
-    public async Task<bool> SaveInfoAsync(IUser user, List<ChatInfo> infos, bool onlyCached = false)
+    public async Task<bool> SaveInfoAsync(IUser user, List<ChatInfoModel> infos, bool onlyCached = false)
     {
-        this.Information.Chat.Infos[user.Id] = infos;
-        return (!onlyCached ? await SaveInformation(this.Information) : true);
+        Information.Chat.Infos[user.Id] = infos;
+        return !onlyCached ? await SaveInformation(Information) : true;
     }
 
-    public async Task<bool> SaveHistoricAsync(IUser user, ChatInfo info)
+    public async Task<bool> SaveHistoricAsync(IUser user, ChatInfoModel info)
     {
-        List<ChatInfo>? list = this.ChatInfos(user);
+        List<ChatInfoModel>? list = ChatInfos(user);
 
         if (list == null) return await Task.FromResult(false);
 
         list.Add(info);
 
         await SaveInfoAsync(user, list);
-        return await SaveInformation(this.Information);
+        return await SaveInformation(Information);
     }
 
-    public async Task<bool> UpdateChatInfoAsync(IUser user, ChatInfo info)
+    public async Task<bool> UpdateChatInfoAsync(IUser user, ChatInfoModel info)
     {
-        List<ChatInfo>? infos = this.ChatInfos(user);
+        List<ChatInfoModel>? infos = ChatInfos(user);
 
         if (infos == null)
         {
-            infos = new List<ChatInfo>();
-            await this.SaveInfoAsync(user, infos, onlyCached: true);
+            infos = new List<ChatInfoModel>();
+            await SaveInfoAsync(user, infos, onlyCached: true);
         }
 
         var existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
 
         if (existingInfo != null)
         {
-            this.Information.Chat.Infos[user.Id].Remove(existingInfo);
+            Information.Chat.Infos[user.Id].Remove(existingInfo);
         }
 
-        this.Information.Chat.Infos[user.Id].Add(info);
-        return await SaveInformation(this.Information);
+        Information.Chat.Infos[user.Id].Add(info);
+        return await SaveInformation(Information);
     }
 
     /// <summary>
@@ -153,9 +153,9 @@ public class Guild
     /// <returns>Retorna true se os dados foram atualizados com sucesso, false caso contrário.</returns>
     public async Task<bool> SaveGuildConfigDataAsync(GuildConfigData configData)
     {
-        this.Information.Config = configData;
+        Information.Config = configData;
 
-        return await SaveInformation(this.Information);
+        return await SaveInformation(Information);
     }
 
     /// <summary>
@@ -163,11 +163,11 @@ public class Guild
     /// </summary>
     /// <param name="tokenData">Objeto contendo os dados dos tokens da guilda.</param>
     /// <returns>Retorna true se os dados foram atualizados com sucesso, false caso contrário.</returns>
-    public async Task<bool> SaveGuildTokenDataAsync(GuildTokenData tokenData)
+    public async Task<bool> SaveGuildTokenDataAsync(GTokenModel tokenData)
     {
-        this.Information.Token = tokenData;
+        Information.Token = tokenData;
 
-        return await SaveInformation(this.Information);
+        return await SaveInformation(Information);
     }
 
     /** Sistema de Conversa */
@@ -176,14 +176,14 @@ public class Guild
     /// Retorna o histórico de conversas da guilda.
     /// </summary>
     /// <returns>Dicionário contendo os históricos de conversas ou null caso não existam.</returns>
-    public Dictionary<ulong, List<ChatInfo>>? Infos()
+    public Dictionary<ulong, List<ChatInfoModel>>? Infos()
     {
         return Information.Chat.Infos;
     }
 
-    public List<ChatHistoric>? ChatHistorics(IUser user, ulong channel = 0)
+    public List<ChatHistoricModel>? ChatHistorics(IUser user, ulong channel = 0)
     {
-        List<ChatInfo>? infos = Infos()?[user.Id];
+        List<ChatInfoModel>? infos = Infos()?[user.Id];
 
         if (infos == null) return null;
 
@@ -192,69 +192,69 @@ public class Guild
             infos = infos.FindAll(historic => historic.Channel == channel);
         }
 
-        List<ChatHistoric> historics = infos.SelectMany(info => info.Historics).ToList();
+        List<ChatHistoricModel> historics = infos.SelectMany(info => info.Historics).ToList();
 
         return historics;
     }
 
-    public List<ChatInfo>? ChatInfos(IUser user)
+    public List<ChatInfoModel>? ChatInfos(IUser user)
     {
         return Infos()?[user.Id];
     }
 
-    public List<ChatHistoric>? ChatHistoricsByChannel(IUser user, ulong channel)
+    public List<ChatHistoricModel>? ChatHistoricsByChannel(IUser user, ulong channel)
     {
-        List<ChatHistoric>? historics = this.ChatHistorics(user, channel: channel);
+        List<ChatHistoricModel>? historics = ChatHistorics(user, channel: channel);
         if (historics == null) return null;
 
         return historics;
     }
 
-    public ChatInfo? ChatInfoByChannel(IUser user, ulong channel)
+    public ChatInfoModel? ChatInfoByChannel(IUser user, ulong channel)
     {
         return Infos()?[user.Id].FindLast(historic => historic.Channel == channel);
     }
 
     public Task<bool> ToggleChatInfo(IUser user, ulong channel, bool active)
     {
-        var infos = this.ChatInfos(user);
+        var infos = ChatInfos(user);
         if (infos == null)
         {
             LogUtil.Error(nameof(ToggleChatInfo), "Não foi possível alterar o status de uma informação de um chat.");
             return Task.FromResult(false);
         }
 
-        ChatInfo? info = infos.LastOrDefault(i => i.Channel == channel);
+        ChatInfoModel? info = infos.LastOrDefault(i => i.Channel == channel);
 
         if (info != null)
         {
             info.Active = active;
         }
 
-        return this.SaveInfoAsync(user, infos);
+        return SaveInfoAsync(user, infos);
     }
 
-    public ChatHistoric? LastChatHistoric(IUser user, ulong channel = 0)
+    public ChatHistoricModel? LastChatHistoric(IUser user, ulong channel = 0)
     {
         if (channel != 0)
         {
-            return this.ChatInfoByChannel(user, channel)?.Historics.LastOrDefault();
+            return ChatInfoByChannel(user, channel)?.Historics.LastOrDefault();
         }
 
-        return this.ChatHistorics(user)?.LastOrDefault();
+        return ChatHistorics(user)?.LastOrDefault();
     }
 
-    public ChatInfo? LastChatInfo(IUser user, ulong channel = 0)
+    public ChatInfoModel? LastChatInfo(IUser user, ulong channel = 0)
     {
-        List<ChatInfo>? infos = this.ChatInfos(user);
+        List<ChatInfoModel>? infos = ChatInfos(user);
 
         if (infos == null || infos.Count == 0)
             return null;
 
-        return (channel != 0 ? infos.FindAll(it => it.Channel == channel).LastOrDefault() : infos.LastOrDefault());
+        return channel != 0 ? infos.FindAll(it => it.Channel == channel).LastOrDefault() : infos.LastOrDefault();
     }
 
-    public async Task<bool> CreateChatData(IUser user, ChatInfo info)
+    public async Task<bool> CreateChatData(IUser user, ChatInfoModel info)
     {
         if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -264,7 +264,7 @@ public class Guild
             return await Task.FromResult(false);
         }
 
-        GuildChatData chat = Information.Chat;
+        GChatModel chat = Information.Chat;
 
         if (chat == null)
         {
@@ -276,18 +276,18 @@ public class Guild
         {
             if (!chat.Infos.TryGetValue(user.Id, out var infos))
             {
-                infos = new List<ChatInfo>();
+                infos = new List<ChatInfoModel>();
                 chat.Infos[user.Id] = infos;
             }
 
             if (info.Historics == null)
             {
-                info.Historics = new List<ChatHistoric>();
+                info.Historics = new List<ChatHistoricModel>();
             }
 
             infos.Add(info);
 
-            bool success = await this.SaveChatDataAsync(chat);
+            bool success = await SaveChatDataAsync(chat);
 
             if (success)
             {
@@ -303,7 +303,7 @@ public class Guild
         }
     }
 
-    public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, List<ChatHistoric> historics)
+    public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, List<ChatHistoricModel> historics)
     {
         if (user == null) throw new ArgumentNullException(nameof(user));
         if (historics == null) throw new ArgumentNullException(nameof(historics));
@@ -311,7 +311,7 @@ public class Guild
         if (Information.Chat is not { } chat)
             return false;
 
-        ChatInfo? info = this.ChatInfoByChannel(user, channel);
+        ChatInfoModel? info = ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
@@ -325,9 +325,9 @@ public class Guild
         return await SaveInformation(Information);
     }
 
-    public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, ChatHistoric historic)
+    public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, ChatHistoricModel historic)
     {
-        ChatInfo? info = this.ChatInfoByChannel(user, channel);
+        ChatInfoModel? info = ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
@@ -335,7 +335,7 @@ public class Guild
             return false;
         }
 
-        List<ChatHistoric> historics = info.Historics;
+        List<ChatHistoricModel> historics = info.Historics;
 
         if (historics == null)
         {
@@ -345,12 +345,12 @@ public class Guild
 
         historics.Add(historic);
 
-        return await this.UpdateChatHistoricsAsync(user, channel, historics);
+        return await UpdateChatHistoricsAsync(user, channel, historics);
     }
 
-    public async Task<bool> RemoveConversationAsync(IUser user, ulong channel, ChatHistoric historic)
+    public async Task<bool> RemoveConversationAsync(IUser user, ulong channel, ChatHistoricModel historic)
     {
-        ChatInfo? info = this.ChatInfoByChannel(user, channel);
+        ChatInfoModel? info = ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
@@ -358,7 +358,7 @@ public class Guild
             return false;
         }
 
-        List<ChatHistoric> historics = info.Historics;
+        List<ChatHistoricModel> historics = info.Historics;
 
         if (historics == null)
         {
@@ -368,7 +368,7 @@ public class Guild
 
         historics.Remove(historic);
 
-        return await this.UpdateChatHistoricsAsync(user, channel, historics);
+        return await UpdateChatHistoricsAsync(user, channel, historics);
     }
 
     /// <summary>
@@ -380,7 +380,7 @@ public class Guild
     {
         if (user == null) throw new ArgumentNullException(nameof(user));
 
-        var infos = this.Infos();
+        var infos = Infos();
 
         if (infos == null)
         {
@@ -390,14 +390,14 @@ public class Guild
 
         var info = infos.TryGetValue(user.Id, out var value);
 
-        return value != null && (value.Count > 0 && value[value.Count - 1].Active);
+        return value != null && value.Count > 0 && value[value.Count - 1].Active;
     }
 
     public ChatModel? GetLastModelByUser(IUser user, ulong channel = 0)
     {
         if (user == null) throw new ArgumentNullException(nameof(user));
 
-        var info = this.LastChatInfo(user, channel: channel);
+        var info = LastChatInfo(user, channel: channel);
         if (info == null) return null;
 
         var model = info.Model;
@@ -416,11 +416,11 @@ public class Guild
 
     public LangCategory LanguageCategory()
     {
-        return Core.LangManager.GetCategoryByCode(this.Language());
+        return Core.LangManager.GetCategoryByCode(Language());
     }
 
     public string GetTranslation(string code)
     {
-        return Core.LangManager.GetTranslation(this.LanguageCategory(), code);
+        return Core.LangManager.GetTranslation(LanguageCategory(), code);
     }
 }

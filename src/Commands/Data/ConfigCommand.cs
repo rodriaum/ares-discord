@@ -1,7 +1,8 @@
 ﻿using Ares.src.Backend.Data;
-using Ares.src.Guild.Config;
-using Ares.src.Guild.Information;
-using Ares.src.Guild.Token;
+using Ares.src.Backend.Data.Model.Config;
+using Ares.src.Backend.Data.Model.Information;
+using Ares.src.Backend.Data.Model.Token;
+using Ares.src.Backend.Data.Repository;
 using Ares.src.Objects.Language;
 using Discord;
 using Discord.WebSocket;
@@ -32,7 +33,7 @@ internal class ConfigCommand
         await command.RespondAsync(ephemeral: true, embed: embed.Build());
         Discord.Rest.RestInteractionMessage message = await command.GetOriginalResponseAsync();
 
-        GuildData? data = Core.GuildData;
+        GuildRepository? data = Core.GuildRepository;
         if (data == null)
         {
             await message.ModifyAsync(msg =>
@@ -57,7 +58,7 @@ internal class ConfigCommand
             return;
         }
 
-        Guild.Guild? guild = await data.Fetch(guildId.Value);
+        Backend.Data.Model.Guild? guild = await data.Fetch(guildId.Value);
         const int maxAttempts = 3;
 
         for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
@@ -84,9 +85,9 @@ internal class ConfigCommand
 
         IReadOnlyCollection<SocketSlashCommandDataOption> options = command.Data.Options;
 
-        GuildInformation information = guild.Information;
+        GInformationModel information = guild.Information;
 
-        GuildTokenData tokenData = information.Token;
+        GTokenModel tokenData = information.Token;
         GuildConfigData configData = information.Config;
 
         StringBuilder sb = new StringBuilder();

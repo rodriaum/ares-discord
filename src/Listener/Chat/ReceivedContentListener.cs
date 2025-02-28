@@ -1,17 +1,18 @@
-﻿using Ares.src.Guild.Information;
-using Ares.src.Utils.Extra;
+﻿using Ares.src.Utils.Extra;
 using Ares.src.Utils;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 using OpenAI.Images;
-using Ares.src.Guild.Config;
 using Ares.src.Service;
-using Ares.src.Guild.Chat.Sub;
 using Ares.src.Objects.Chat;
 using Ares.src.Objects.Model;
 using Ares.src.Backend.Data;
 using Ares.src.Objects.Language;
+using Ares.src.Backend.Data.Model.Information;
+using Ares.src.Backend.Data.Model.Config;
+using Ares.src.Backend.Data.Model.Chat.Sub;
+using Ares.src.Backend.Data.Repository;
 
 namespace Ares.src.Listener.Chat;
 
@@ -51,7 +52,7 @@ internal class ReceivedContentListener
             if (user.Id.Equals(_client.CurrentUser.Id)) return;
             if (args is not SocketUserMessage message) return;
 
-            GuildData? data = Core.GuildData;
+            GuildRepository? data = Core.GuildRepository;
 
             if (data == null)
             {
@@ -67,7 +68,7 @@ internal class ReceivedContentListener
                 return;
             }
 
-            Guild.Guild? guild = await data.Fetch(socketGuild.Id);
+            Backend.Data.Model.Guild? guild = await data.Fetch(socketGuild.Id);
             if (guild == null) return;
 
             EmbedBuilder embed = new EmbedBuilder()
@@ -76,7 +77,7 @@ internal class ReceivedContentListener
                 .WithColor(Color.Gold)
                 .WithFooter(guild.GetTranslation(LangKeys.TakeUpMinutes));
 
-            GuildInformation information = guild.Information;
+            GInformationModel information = guild.Information;
 
             if (information == null)
             {
@@ -145,7 +146,7 @@ internal class ReceivedContentListener
                     }
 
                     // Uma vez que o texto foi gerado, ele já fica registrado como o ultimo histórico de chat.
-                    ChatHistoric? historic = guild.LastChatHistoric(user, channel: channel.Id);
+                    ChatHistoricModel? historic = guild.LastChatHistoric(user, channel: channel.Id);
 
                     if (historic != null)
                     {

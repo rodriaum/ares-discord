@@ -1,4 +1,5 @@
-﻿using Ares.src.Backend.Database.Mongo;
+﻿using Ares.src.Backend.Data.Model;
+using Ares.src.Backend.Database.Mongo;
 using Ares.src.Manager;
 using Ares.src.Utils.Extra;
 using MongoDB.Bson;
@@ -7,12 +8,12 @@ using Newtonsoft.Json;
 
 using System.Collections.Concurrent;
 
-namespace Ares.src.Backend.Data;
+namespace Ares.src.Backend.Data.Repository;
 
 /// <summary>
 /// Classe responsável por gerenciar dados de guildas no banco de dados MongoDB.
 /// </summary>
-internal class GuildData
+internal class GuildRepository
 {
     /// <summary>
     /// Representa a coleção "guilds" no banco de dados MongoDB.
@@ -25,16 +26,16 @@ internal class GuildData
     private readonly GuildManager _manager;
 
     /// <summary>
-    /// Inicializa uma nova instância da classe <see cref="GuildData"/> com a coleção de guildas e o gerenciador de guildas.
+    /// Inicializa uma nova instância da classe <see cref="GuildRepository"/> com a coleção de guildas e o gerenciador de guildas.
     /// </summary>
     /// <param name="database">Instância do banco de dados MongoDB que contém a coleção "guilds".</param>
-    public GuildData(MongoDatabase database)
+    public GuildRepository(MongoDatabase database)
     {
-        this._collection = database.mongoDatabase?.GetCollection<BsonDocument>("guilds");
-        this._manager = Core.GuildManager;
+        _collection = database.mongoDatabase?.GetCollection<BsonDocument>("guilds");
+        _manager = Core.GuildManager;
 
         // Criação de índices na coleção para otimização de consultas.
-        this.CreateIndexes();
+        CreateIndexes();
     }
 
     /// <summary>
@@ -51,7 +52,7 @@ internal class GuildData
             try
             {
                 // Tenta enviar um comando ping para verificar a conexão.
-                await this._collection?.Database.RunCommandAsync((Command<BsonDocument>)"{ ping: 1 }");
+                await _collection?.Database.RunCommandAsync((Command<BsonDocument>)"{ ping: 1 }");
                 isConnected = true;
             }
             catch (Exception ex)
@@ -73,7 +74,7 @@ internal class GuildData
         await LogUtil.LogAsync("MongoDB", "Creating indexes in the database...");
 
         // Verifica se a coleção foi inicializada antes de tentar criar os índices.
-        if (this._collection == null)
+        if (_collection == null)
         {
             LogUtil.Error("CollectionNull", "Collection returned null when creating guild data indexes.");
             return;
@@ -90,7 +91,7 @@ internal class GuildData
                 var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
                 var indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
 
-                await this._collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
+                await _collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
 
                 await LogUtil.LogAsync("MongoDB", "Indexes created.");
 
@@ -107,19 +108,19 @@ internal class GuildData
     /// Salva ou atualiza uma guilda no banco de dados, retornando o objeto atualizado.
     /// </summary>
     /// <param name="id">ID único da guilda.</param>
-    /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda salva ou atualizada.</returns>
-    public async Task<Guild.Guild?> Save(string id)
+    /// <returns>Objeto <see cref="Model.Guild"/> representando a guilda salva ou atualizada.</returns>
+    public async Task<Model.Guild?> Save(string id)
     {
-        if (this._collection == null)
+        if (_collection == null)
         {
             LogUtil.Error("CollectionNull", "Collection returned null when save guild data.");
             return null;
         }
 
         var filter = Builders<BsonDocument>.Filter.Eq("Id", id);
-        var element = await this._collection.Find(filter).FirstOrDefaultAsync();
+        var element = await _collection.Find(filter).FirstOrDefaultAsync();
 
-        Guild.Guild? guild = new Guild.Guild(id);
+        Model.Guild? guild = new Guild(id);
 
         if (element != null)
         {
@@ -129,7 +130,7 @@ internal class GuildData
                 var document = BsonTypeMapper.MapToDotNetValue(element);
                 var json = JsonConvert.SerializeObject(document);
 
-                guild = JsonConvert.DeserializeObject<Guild.Guild>(json);
+                guild = JsonConvert.DeserializeObject<Model.Guild>(json);
             }
             catch (JsonReaderException ex)
             {
@@ -140,7 +141,7 @@ internal class GuildData
         {
             // Insere o documento no banco de dados caso não exista.
             var document = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
-            await this._collection.InsertOneAsync(document);
+            await _collection.InsertOneAsync(document);
 
             _manager.Save(guild);
         }
@@ -152,20 +153,20 @@ internal class GuildData
     /// Salva ou atualiza uma guilda no banco de dados, retornando o objeto atualizado.
     /// </summary>
     /// <param name="id">Ulong da guilda.</param>
-    /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda salva ou atualizada.</returns>
-    public async Task<Guild.Guild?> Save(ulong id)
+    /// <returns>Objeto <see cref="Model.Guild"/> representando a guilda salva ou atualizada.</returns>
+    public async Task<Model.Guild?> Save(ulong id)
     {
-        return await this.Save(id.ToString());
+        return await Save(id.ToString());
     }
 
     /// <summary>
     /// Recupera uma guilda do cache ou do banco de dados usando o ID.
     /// </summary>
     /// <param name="id">ID único da guilda.</param>
-    /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
-    public async Task<Guild.Guild?> Fetch(string id)
+    /// <returns>Objeto <see cref="Model.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
+    public async Task<Model.Guild?> Fetch(string id)
     {
-        Guild.Guild? guild = _manager.Fetch(id);
+        Model.Guild? guild = _manager.Fetch(id);
 
         if (guild == null)
         {
@@ -179,7 +180,7 @@ internal class GuildData
                     var document = BsonTypeMapper.MapToDotNetValue(element);
                     var json = JsonConvert.SerializeObject(document);
 
-                    guild = JsonConvert.DeserializeObject<Guild.Guild>(json);
+                    guild = JsonConvert.DeserializeObject<Model.Guild>(json);
                 }
                 catch (JsonReaderException ex)
                 {
@@ -195,20 +196,20 @@ internal class GuildData
     /// Sobrecarga do método Fetch que aceita um ID numérico do tipo ulong.
     /// </summary>
     /// <param name="id">ID numérico da guilda.</param>
-    /// <returns>Objeto <see cref="Guild.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
-    public async Task<Guild.Guild?> Fetch(ulong id)
+    /// <returns>Objeto <see cref="Model.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
+    public async Task<Model.Guild?> Fetch(ulong id)
     {
-        return await this.Fetch(id.ToString());
+        return await Fetch(id.ToString());
     }
 
     /// <summary>
     /// Atualiza um campo específico de uma guilda no banco de dados.
     /// </summary>
-    /// <param name="guild">Objeto <see cref="Guild.Guild"/> representando a guilda a ser atualizada.</param>
+    /// <param name="guild">Objeto <see cref="Model.Guild"/> representando a guilda a ser atualizada.</param>
     /// <param name="field">Nome do campo a ser atualizado.</param>
-    public async Task<bool> Update(Guild.Guild guild, string field)
+    public async Task<bool> Update(Model.Guild guild, string field)
     {
-        if (this._collection == null)
+        if (_collection == null)
         {
             LogUtil.Error("CollectionNull", "Collection returned null when update guild data.");
             return false;
@@ -232,7 +233,7 @@ internal class GuildData
             {
                 // Define ou remove o campo no documento do banco de dados.
                 var update = value != null ? Builders<BsonDocument>.Update.Set(field, value) : Builders<BsonDocument>.Update.Unset(field);
-                await this._collection.UpdateOneAsync(filter, update);
+                await _collection.UpdateOneAsync(filter, update);
 
                 return true;
             }
@@ -242,7 +243,7 @@ internal class GuildData
         {
             string? src = e.Source;
 
-            LogUtil.Error((string.IsNullOrEmpty(src) ? "Exception" : src), "Unable to save data.", e.Message);
+            LogUtil.Error(string.IsNullOrEmpty(src) ? "Exception" : src, "Unable to save data.", e.Message);
         }
 
         return false;
@@ -263,7 +264,7 @@ internal class GuildData
     /// <param name="id">Ulong da guilda a ser removida do cache.</param>
     public void DeleteCache(ulong id)
     {
-        this.DeleteCache(id.ToString());
+        DeleteCache(id.ToString());
     }
 
     /// <summary>
@@ -271,11 +272,11 @@ internal class GuildData
     /// </summary>
     /// <param name="limit">Número máximo de guildas a serem recuperadas (0 para sem limite).</param>
     /// <returns>Uma <see cref="ConcurrentBag{T}"/> contendo as guildas recuperadas.</returns>
-    public async Task<ConcurrentBag<Guild.Guild>> GetGuilds(int limit = 0)
+    public async Task<ConcurrentBag<Model.Guild>> GetGuilds(int limit = 0)
     {
-        var accounts = new ConcurrentBag<Guild.Guild>();
+        var accounts = new ConcurrentBag<Model.Guild>();
 
-        if (this._collection == null)
+        if (_collection == null)
         {
             LogUtil.Error("CollectionNull", "Collection returned null when get all guilds.");
             return accounts;
@@ -293,7 +294,7 @@ internal class GuildData
                 var json = document.ToJson();
                 var bsonDocument = BsonTypeMapper.MapToDotNetValue(document);
                 var jsonString = JsonConvert.SerializeObject(bsonDocument);
-                var guild = JsonConvert.DeserializeObject<Guild.Guild>(jsonString);
+                var guild = JsonConvert.DeserializeObject<Model.Guild>(jsonString);
 
                 if (guild != null)
                     accounts.Add(guild);
