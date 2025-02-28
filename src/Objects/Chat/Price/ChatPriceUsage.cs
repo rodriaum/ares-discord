@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Objects.Chat;
+﻿namespace Ares.src.Objects.Chat.Price;
 
 /// <summary>
 /// Representa o preço em dólar por token usado no pedido e resposta.
@@ -16,13 +16,13 @@ public class ChatPriceUsage
     public decimal InputPricePerToken { get; }
 
     /// <summary> Preço de forma detalhista. (Opcional) </summary>
-    public ChatPriceUsageDetail? ChatPriceUsageDetail { get; set; }
+    public List<ChatPriceUsageDetail>? ChatPriceUsageDetail { get; set; }
 
-    public ChatPriceUsage(decimal output = 0, decimal input = 0, ChatPriceUsageDetail? detail = null)
+    public ChatPriceUsage(decimal output = 0, decimal input = 0, List<ChatPriceUsageDetail>? details = null)
     {
         OutputPricePerToken = output;
         InputPricePerToken = input;
-        ChatPriceUsageDetail = detail;
+        ChatPriceUsageDetail = details ?? new List<ChatPriceUsageDetail>();
     }
 
     public decimal TotalPrice()

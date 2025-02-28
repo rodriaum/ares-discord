@@ -13,6 +13,7 @@ using Ares.src.Backend.Data.Model.Information;
 using Ares.src.Backend.Data.Model.Config;
 using Ares.src.Backend.Data.Model.Chat.Sub;
 using Ares.src.Backend.Data.Repository;
+using Ares.src.Objects.Chat.Price;
 
 namespace Ares.src.Listener.Chat;
 
@@ -145,35 +146,52 @@ internal class ReceivedContentListener
                             .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
                     }
 
-                    // Uma vez que o texto foi gerado, ele já fica registrado como o ultimo histórico de chat.
-                    ChatHistoricModel? historic = guild.LastChatHistoric(user, channel: channel.Id);
+                    List<ChatHistoricModel>? historics = guild.ChatHistoricsByChannel(user, channel.Id);
 
-                    if (historic != null)
+                    if (historics != null && historics.Any())
                     {
-                        ChatValueUsage? usage = historic.Usage;
-                        ChatPriceUsage? price = model.Price;
+                        // Uma vez que o texto foi gerado, ele já fica registrado como o ultimo histórico de chat.
+                        ChatHistoricModel? historic = historics.LastOrDefault();
 
-                        if (usage != null && price != null)
+                        if (historic != null)
                         {
-                            decimal inputPrice = usage.InputTokens * price.InputPricePerToken;
-                            decimal outputPrice = usage.OutputTokens * price.OutputPricePerToken;
+                            ChatValueUsage? usage = historic.Usage;
+                            ChatPriceUsage? price = model.Price;
 
-                            priceEmbed = new EmbedBuilder()
-                                // Input Field
-                                .AddField("Tokens", usage.InputTokens, true)
-                                .AddField(guild.GetTranslation(LangKeys.Request), $"$ {Util.FormatPrice(inputPrice)}", true)
-                                // Broke Line
-                                .AddField("\u200B", "\u200B", false)
-                                // Output Field
-                                .AddField("Tokens", usage.OutputTokens, true)
-                                .AddField(guild.GetTranslation(LangKeys.Response), $"$ {Util.FormatPrice(outputPrice)}", true)
-                                // Broke Line
-                                .AddField("\u200B", "\u200B", false)
-                                // Total Field
-                                .AddField("Tokens", usage.TotalTokens(), true)
-                                .AddField(guild.GetTranslation(LangKeys.Total), $"$ {Util.FormatPrice(inputPrice + outputPrice)}", true)
-                                // Footer
-                                .WithFooter(guild.GetTranslation(LangKeys.PriceLowerCache));
+                            if (price != null)
+                            {
+                                switch (model.Type)
+                                {
+                                    case ModelType.Chat:
+                                        if (usage != null && price != null)
+                                        {
+                                            decimal inputPrice = usage.InputTokens * price.InputPricePerToken;
+                                            decimal outputPrice = usage.OutputTokens * price.OutputPricePerToken;
+
+                                            priceEmbed = new EmbedBuilder()
+                                                // Input Field
+                                                .AddField("Tokens", usage.InputTokens, true)
+                                                .AddField(guild.GetTranslation(LangKeys.Request), $"$ {Util.FormatPrice(inputPrice)}", true)
+                                                // Broke Line
+                                                .AddField("\u200B", "\u200B", false)
+                                                // Output Field
+                                                .AddField("Tokens", usage.OutputTokens, true)
+                                                .AddField(guild.GetTranslation(LangKeys.Response), $"$ {Util.FormatPrice(outputPrice)}", true)
+                                                // Broke Line
+                                                .AddField("\u200B", "\u200B", false)
+                                                // Total Field
+                                                .AddField("Tokens", usage.TotalTokens(), true)
+                                                .AddField(guild.GetTranslation(LangKeys.Total), $"$ {Util.FormatPrice(inputPrice + outputPrice)}", true);
+
+                                        }
+                                        break;
+                                }
+
+                                if (priceEmbed != null)
+                                {
+                                    priceEmbed.WithFooter(guild.GetTranslation(LangKeys.PriceLowerCache));
+                                }
+                            }
                         }
                     }
                     break;

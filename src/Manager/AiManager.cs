@@ -1,4 +1,5 @@
-﻿using Ares.src.Objects.Chat;
+﻿using Ares.src.Objects.Chat.Image;
+using Ares.src.Objects.Chat.Price;
 using Ares.src.Objects.Model;
 using Ares.src.Utils;
 using Ares.src.Utils.Extra;
@@ -112,12 +113,13 @@ public class AiManager
                 display: "DALL·E 3",
                 model: "dall-e-3",
                 price: new ChatPriceUsage(
-                detail: new ChatPriceUsageDetail(
-                    imageStandard_1024_1024: 0.04m,
-                    ImageStandard_1024_1792: 0.08m,
-                    ImageHD_1024_1024: 0.08m,
-                    imageHD_1024_1792: 0.12m
-                    )
+                    details: new List<ChatPriceUsageDetail>()
+                    {
+                        new ChatPriceUsageDetail(ImageQuality.High, ImageSize.W1024xH1792, 0.12m),
+                        new ChatPriceUsageDetail(ImageQuality.High, ImageSize.W1024xH1024, 0.08m),
+                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W1024xH1792, 0.08m),
+                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W1024xH1024, 0.04m)
+                    }
                 ),
                 available: true
             ),
@@ -128,11 +130,12 @@ public class AiManager
                 display: "DALL·E 2",
                 model: "dall-e-2",
                 price: new ChatPriceUsage(
-                detail: new ChatPriceUsageDetail(
-                    image_256_256: 0.016m,
-                    image_512_512: 0.018m,
-                    image_1024_1024: 0.02m
-                    )
+                    details: new List<ChatPriceUsageDetail>()
+                    {
+                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W1024xH1024, 0.016m),
+                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W512xH512, 0.018m),
+                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W256xH256, 0.02m)
+                    }
                 ),
                 available: true
             ),

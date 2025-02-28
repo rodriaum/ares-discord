@@ -16,8 +16,6 @@ using Discord.WebSocket;
 using OpenAI.Chat;
 using OpenAI.Images;
 using System.Text;
-using System.Threading.Channels;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Ares.src.Service;
 

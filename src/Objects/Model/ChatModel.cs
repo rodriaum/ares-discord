@@ -1,5 +1,5 @@
 ﻿using Ares.src.Manager;
-using Ares.src.Objects.Chat;
+using Ares.src.Objects.Chat.Price;
 using MongoDB.Driver.Linq;
 
 namespace Ares.src.Objects.Model;
