@@ -1,8 +1,8 @@
-﻿using System.Collections.ObjectModel;
-using Ares.src.Objects.Chat;
+﻿using Ares.src.Objects.Chat;
 using Ares.src.Objects.Model;
 using Ares.src.Utils;
 using Ares.src.Utils.Extra;
+using System.Collections.ObjectModel;
 
 namespace Ares.src.Manager;
 
@@ -24,6 +24,24 @@ public class AiManager
         List<ChatModel> models = new List<ChatModel>
         {
         // OpenAI Models
+        new(
+            category: ModelCategory.OpenAI,
+            type: ModelType.Chat,
+            display: "GPT-4.5 Preview",
+            model: "gpt-4.5-preview",
+            price: new ChatPriceUsage(output: 0.00015m, input: 0.000068m),
+            exclusive: true
+        ),
+
+        new(
+            category: ModelCategory.OpenAI,
+            type: ModelType.Chat,
+            display: "GPT-4 o1 Preview",
+            model: "o1-preview",
+            price: new ChatPriceUsage(output: 0.0000044m, input: 0.000015m),
+            exclusive: true
+        ),
+
         new(
             category: ModelCategory.OpenAI,
             type: ModelType.Chat,
@@ -116,6 +134,24 @@ public class AiManager
                 )
             ),
             available: true
+        ),
+
+        new(
+            category: ModelCategory.OpenAI,
+            type: ModelType.TTS,
+            display: "TTS 1",
+            model: "tts-1",
+            price: new ChatPriceUsage(output: 0.0m, input: 0.0m),
+            available: false
+        ),
+
+        new(
+            category: ModelCategory.OpenAI,
+            type: ModelType.TTS,
+            display: "TTS 1 HD",
+            model: "tts-1-hd",
+            price: new ChatPriceUsage(output: 0.0m, input: 0.0m),
+            available: false
         ),
 
         // Anthropic Models

@@ -133,10 +133,8 @@ public class AiService
         }
         catch (Exception e)
         {
-            string message = e.Message;
-
-            LogUtil.Error("Generation", "Unable to generate an image.", message);
-            return GetMessageByErrorKey(guild.LanguageCategory(), message);
+            LogUtil.Error("Generation", "Unable to generate an image.", e.Message);
+            return GetMessageByErrorKey(guild.LanguageCategory(), e.Message);
         }
     }
 
@@ -214,10 +212,8 @@ public class AiService
                 LogUtil.Error("Generation", "Unable to remove user conversation after internal issue");
             }
 
-            string message = e.Message;
-
-            LogUtil.Error("Generation", "Unable to generate an conversation.", message);
-            return GetMessageByErrorKey(guild.LanguageCategory(), message);
+            LogUtil.Error("Generation", "Unable to generate an conversation.", e.Message);
+            return GetMessageByErrorKey(guild.LanguageCategory(), e.Message);
         }
     }
 

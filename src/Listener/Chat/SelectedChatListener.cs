@@ -113,7 +113,7 @@ internal class SelectedChatListener
 
             if (model == null)
             {
-                await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
+                await args.FollowupAsync(guild.GetTranslation(LangKeys.ModelNotFound));
                 return;
             }
 

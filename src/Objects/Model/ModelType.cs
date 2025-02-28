@@ -4,5 +4,6 @@ public enum ModelType
 {
     Chat,
     Question,
-    Image
+    Image,
+    TTS
 }
