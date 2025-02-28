@@ -1,7 +1,7 @@
 {
     "ai": "Artificial Intelligence",
     "take-up-minutes": "It may take up to minutes",
-    "to-process": "Processing...",
+    "to-process": "Processing... <a:loading:1344953082676641813>",
     "could-not-find-info": "Could not find the current guild information in the database.",
     "could-not-find-info-id": "Could not find information about the IDs.",
     "could-not-find-last-model": "Could not find the last used model.",
