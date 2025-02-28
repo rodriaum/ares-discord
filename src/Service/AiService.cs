@@ -16,6 +16,8 @@ using Discord.WebSocket;
 using OpenAI.Chat;
 using OpenAI.Images;
 using System.Text;
+using System.Threading.Channels;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Ares.src.Service;
 
@@ -244,7 +246,7 @@ public class AiService
         string prompt,
         GTokenModel tokenData,
         List<ChatHistoricModel>? historics,
-        RestUserMessage? restUserMessage = null)
+        RestUserMessage? restBotMessage = null)
     {
         string? token = tokenData.OpenAi;
 
@@ -259,26 +261,36 @@ public class AiService
         ChatClient client = new ChatClient(model.Model, token);
         ChatCompletionOptions options = new ChatCompletionOptions { MaxOutputTokenCount = 2048 };
 
-        ChatCompletion completion = await client.CompleteChatAsync(messages, options: options);
-
-        if (restUserMessage != null)
+        if (restBotMessage != null)
         {
-            return await HandleOpenAiStreamingResponse(guild, model, restUserMessage, client, messages, options);
+            return await HandleOpenAiStreamingResponse(guild, user, channel, prompt, model, restBotMessage, client, messages, options);
         }
         else
         {
+            ChatCompletion completion = await client.CompleteChatAsync(messages, options: options);
             return await HandleOpenAiCompletionResponse(guild, user, channel, prompt, completion);
         }
     }
 
     private static async Task<string> HandleOpenAiStreamingResponse(
         Guild guild,
+        SocketGuildUser user,
+        ulong channel,
+        string prompt,
         ChatModel model,
-        RestUserMessage restUserMessage,
+        RestUserMessage restBotMessage,
         ChatClient client,
         List<ChatMessage> messages,
         ChatCompletionOptions options)
     {
+        ChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
+
+        if (info == null)
+        {
+            LogUtil.Error(nameof(HandleOpenAiStreamingResponse), "It looks like the information could not be accessed.");
+            return guild.GetTranslation(LangKeys.CouldNotFindInfo);
+        }
+
         EmbedBuilder embed = new EmbedBuilder()
             .WithTitle(guild.GetTranslation(LangKeys.AI))
             .WithColor(Color.Gold)
@@ -291,19 +303,31 @@ public class AiService
 
         await foreach (var response in client.CompleteChatStreamingAsync(messages, options))
         {
-            if (response.ContentUpdate.Count > 0 && response.ContentUpdate[0].Text.Length <= 4096)
+            if (response.ContentUpdate.Count > 0)
             {
-                sb.Append(response.ContentUpdate[0].Text);
-                embed.WithDescription(sb.ToString());
+                ChatMessageContentPart content = response.ContentUpdate[0];
 
-                // The Discord API allows post editing 5 times within 5 seconds.
+                sb.Append(content.Text);
+                string text = sb.ToString();
+
+                if (text.Length > 4096)
+                {
+                    text = text.Substring(0, 4095);
+                    embed.WithFooter($"{DateTime.Now.Year} - Ares | {model.DisplayName} (Limite de caracteres alcançado)");
+                }
+
+                embed.WithDescription(text);
+
                 if ((DateTime.UtcNow - lastEditDate) > editCooldownTime)
                 {
-                    await restUserMessage.ModifyAsync(message => message.Embed = embed.Build());
+                    await restBotMessage.ModifyAsync(message => message.Embed = embed.Build());
                     lastEditDate = DateTime.UtcNow;
                 }
             }
         }
+
+        info.Historics.Add(new ChatHistoricModel(prompt, sb.ToString()));
+        await guild.UpdateChatInfoAsync(user, info);
 
         return sb.ToString();
     }
@@ -337,7 +361,7 @@ public class AiService
         return ProcessOpenAiResponse(guild, completion);
     }
 
-    private static string ProcessOpenAiResponse(Backend.Data.Model.Guild guild, ChatCompletion response)
+    private static string ProcessOpenAiResponse(Guild guild, ChatCompletion response)
     {
         ChatMessageContentPart? content = response.Content.FirstOrDefault();
 
@@ -389,9 +413,7 @@ public class AiService
         {
             Messages = messages,
             MaxTokens = 2048, // Adjustment to avoid exceeding the 4096-character limit imposed by Discord, preventing resource waste, as any text sent beyond this limit will be truncated.
-            Model = model.Model,
-            Stream = false,
-            Temperature = 1.0m
+            Model = model.Model
         };
 
         MessageResponse? response = await client.Messages.GetClaudeMessageAsync(parameters);
@@ -498,7 +520,7 @@ public class AiService
         return choice.Message.Content;
     }
 
-    private static void HandleVerifyParameters(Backend.Data.Model.Guild guild, IGuildUser user, ChatModel model, String prompt)
+    private static void HandleVerifyParameters(Guild guild, IGuildUser user, ChatModel model, string prompt)
     {
         // Parameter validation
         if (guild == null)
