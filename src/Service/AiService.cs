@@ -1,5 +1,6 @@
 ﻿using Anthropic.SDK;
 using Anthropic.SDK.Messaging;
+using Ares.src.Backend.Data.Model;
 using Ares.src.Backend.Data.Model.Chat.Sub;
 using Ares.src.Backend.Data.Model.Information;
 using Ares.src.Backend.Data.Model.Token;
@@ -78,7 +79,14 @@ public class AiService
     /// <remarks>
     /// Future: Modify the function to return both the generated image URL and a boolean indicating whether the operation was successful.
     /// </remarks>
-    public async static Task<string> GenerateImageUrlAsync(Backend.Data.Model.Guild guild, SocketGuildUser user, ChatModel model, ImageGenerationOptions options, ulong channel, string prompt) {
+    public async static Task<string> GenerateImageUrlAsync(
+        Guild guild, 
+        SocketGuildUser user, 
+        ChatModel model, 
+        ImageGenerationOptions options, 
+        ulong channel, 
+        string prompt) 
+    {
         HandleVerifyParameters(guild, user, model, prompt);
 
         if (model.Type != ModelType.Image)
@@ -124,7 +132,7 @@ public class AiService
                 return guild.GetTranslation(LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})";
             }
 
-            ChatHistoricModel historic = AiUtil.ConvertGeneratedImageToChatHistoric(prompt, image, imageUrl: imageUrl);
+            ChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, imageUrl: imageUrl, imageOpenAi: image)[0];
             info.Historics.Add(historic);
 
             await guild.UpdateChatInfoAsync(user, info);
@@ -168,7 +176,14 @@ public class AiService
     /// <remarks>
     /// Future: Modify the function to return both the generated text and a boolean indicating whether the operation was successful.
     /// </remarks>
-    public async static Task<string> GenerateConversationAsync(Backend.Data.Model.Guild guild, SocketGuildUser user, ChatModel model, ulong channel, string prompt, RestUserMessage? botMessage = null) {
+    public async static Task<string> GenerateConversationAsync(
+        Guild guild, 
+        SocketGuildUser user, 
+        ChatModel model,
+        ulong channel, 
+        string prompt, 
+        RestUserMessage? botMessage = null) 
+    {
         HandleVerifyParameters(guild, user, model, prompt);
 
         if (model.Type != ModelType.Chat)
@@ -209,7 +224,7 @@ public class AiService
         {
             if (user != null && channel != 0 && historic != null && !await guild.RemoveConversationAsync(user, channel, historic))
             {
-                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue");
+                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue" );
             }
 
             LogUtil.Error("Generation", "Unable to generate an conversation.", e.Message);
@@ -222,7 +237,7 @@ public class AiService
     /// </summary>
 
     private static async Task<string> HandleOpenAiConversation(
-        Backend.Data.Model.Guild guild,
+        Guild guild,
         SocketGuildUser user,
         ChatModel model,
         ulong channel,
@@ -244,29 +259,25 @@ public class AiService
         ChatClient client = new ChatClient(model.Model, token);
         ChatCompletionOptions options = new ChatCompletionOptions { MaxOutputTokenCount = 2048 };
 
-        StringBuilder sb = new StringBuilder();
         ChatCompletion completion = await client.CompleteChatAsync(messages, options: options);
 
         if (restUserMessage != null)
         {
-            await HandleOpenAiStreamingResponse(guild, model, restUserMessage, client, messages, options, sb);
+            return await HandleOpenAiStreamingResponse(guild, model, restUserMessage, client, messages, options);
         }
         else
         {
             return await HandleOpenAiCompletionResponse(guild, user, channel, prompt, completion);
         }
-
-        return sb.Length > 0 ? sb.ToString() : guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAiConversation)})";
     }
 
-    private static async Task HandleOpenAiStreamingResponse(
-        Backend.Data.Model.Guild guild,
+    private static async Task<string> HandleOpenAiStreamingResponse(
+        Guild guild,
         ChatModel model,
         RestUserMessage restUserMessage,
         ChatClient client,
         List<ChatMessage> messages,
-        ChatCompletionOptions options,
-        StringBuilder sb)
+        ChatCompletionOptions options)
     {
         EmbedBuilder embed = new EmbedBuilder()
             .WithTitle(guild.GetTranslation(LangKeys.AI))
@@ -275,6 +286,8 @@ public class AiService
 
         DateTime lastEditDate = DateTime.UtcNow;
         TimeSpan editCooldownTime = TimeSpan.FromSeconds(1);
+
+        StringBuilder sb = new StringBuilder();
 
         await foreach (var response in client.CompleteChatStreamingAsync(messages, options))
         {
@@ -291,10 +304,12 @@ public class AiService
                 }
             }
         }
+
+        return sb.ToString();
     }
 
     private static async Task<string> HandleOpenAiCompletionResponse(
-        Backend.Data.Model.Guild guild,
+        Guild guild,
         SocketGuildUser user,
         ulong channel,
         string prompt,
@@ -314,7 +329,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        ChatHistoricModel historic = AiUtil.ConvertChatCompletionToChatHistoric(prompt, completion);
+        ChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, responseOpenAi: completion)[0];
         info.Historics.Add(historic);
 
         await guild.UpdateChatInfoAsync(user, info);
@@ -346,7 +361,7 @@ public class AiService
     /// </summary>
 
     private static async Task<string> HandleAnthropicConversation(
-        Backend.Data.Model.Guild guild, 
+        Guild guild, 
         SocketGuildUser user, 
         ChatModel model, 
         ulong channel, 
@@ -401,7 +416,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        ChatHistoricModel historic = AiUtil.ConvertMessageResponseToChatHistoric(prompt, response);
+        ChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, responseAnthropic: response)[0];
         info.Historics.Add(historic);
 
         await guild.UpdateChatInfoAsync(user, info);
@@ -414,7 +429,7 @@ public class AiService
     /// </summary>
 
     private static async Task<string> HandleDeepSeekConversation(
-        Backend.Data.Model.Guild guild, 
+        Guild guild, 
         SocketGuildUser user, 
         ChatModel model, 
         ulong channel, 
@@ -472,7 +487,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        ChatHistoricModel? historic = AiUtil.ConvertChatResponseToChatHistoric(prompt, info.Id, response);
+        ChatHistoricModel? historic = AiUtil.ConvertToChatHistoric(prompt, responseDeepSeek: response)[0];
 
         if (historic != null)
         {
