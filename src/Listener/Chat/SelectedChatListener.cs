@@ -3,13 +3,13 @@ using Discord.Rest;
 using Discord.WebSocket;
 using Ares.src.Utils.Extra;
 using Ares.src.Objects.Model;
-using Ares.src.Backend.Data;
 using MongoDB.Driver;
 using Ares.src.Objects.Language;
 using Ares.src.Backend.Data.Model.Information;
 using Ares.src.Backend.Data.Model.Config;
 using Ares.src.Backend.Data.Model.Chat.Sub;
 using Ares.src.Backend.Data.Repository;
+using Ares.src.Objects.Chat.Image;
 
 namespace Ares.src.Listener.Chat;
 
@@ -167,6 +167,8 @@ internal class SelectedChatListener
             embed.AddField(guild.GetTranslation(LangKeys.FieldRules), guild.GetTranslation(LangKeys.ChatDescriptionRules));
             embed.AddField(guild.GetTranslation(LangKeys.FieldTime), guild.GetTranslation(LangKeys.ChatDescriptionTime));
 
+            ComponentBuilder component = new ComponentBuilder();
+
             switch (model.Type)
             {
                 case ModelType.Chat:
@@ -177,6 +179,63 @@ internal class SelectedChatListener
                 case ModelType.Image:
                     embed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryImageDesc));
                     embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionImage));
+
+                    /* 
+                     * Quality Menu
+                     */
+
+                    SelectMenuBuilder qualityMenu = new SelectMenuBuilder()
+                        .WithPlaceholder("Qualidade")
+                        .WithCustomId("quality-menu");
+
+                    Enum.GetValues(typeof(ImageQuality))
+                        .Cast<ImageQuality>()
+                        .ToList()
+                        .ForEach(quality => qualityMenu.AddOption(new SelectMenuOptionBuilder()
+                        {
+                            Label = quality.ToString(),
+                            Value = quality.ToString()
+                        }));
+
+                    component.WithSelectMenu(qualityMenu);
+
+                    /* 
+                     * Size Menu
+                     */
+
+                    SelectMenuBuilder sizeMenu = new SelectMenuBuilder()
+                        .WithPlaceholder("Tamanho")
+                        .WithCustomId("size-menu");
+
+                    Enum.GetValues(typeof(ImageSize))
+                        .Cast<ImageSize>()
+                        .ToList()
+                        .ForEach(size => sizeMenu.AddOption(new SelectMenuOptionBuilder()
+                        {
+                            Label = size.ToString(),
+                            Value = size.ToString()
+                        }));
+
+                    component.WithSelectMenu(sizeMenu);
+
+                    /* 
+                     * Style Menu
+                     */
+
+                    SelectMenuBuilder styleMenu = new SelectMenuBuilder()
+                        .WithPlaceholder("Estilo")
+                        .WithCustomId("style-menu");
+
+                    Enum.GetValues(typeof(ImageStyle))
+                        .Cast<ImageStyle>()
+                        .ToList()
+                        .ForEach(quality => styleMenu.AddOption(new SelectMenuOptionBuilder()
+                        {
+                            Label = quality.ToString(),
+                            Value = quality.ToString(),
+                        }));
+
+                    component.WithSelectMenu(styleMenu);
                     break;
 
                 default:
@@ -184,16 +243,12 @@ internal class SelectedChatListener
                     break;
             }
 
-            ButtonBuilder button = new ButtonBuilder()
+            component.WithButton(new ButtonBuilder()
                .WithLabel(guild.GetTranslation(LangKeys.ButtonEndChat))
                .WithStyle(ButtonStyle.Danger)
-               .WithCustomId("close-chat");
+               .WithCustomId("close-chat"));
 
-            MessageComponent component = new ComponentBuilder()
-                .WithButton(button)
-                .Build();
-
-            await channel.SendMessageAsync(embed: embed.Build(), components: component);
+            await channel.SendMessageAsync(embed: embed.Build(), components: component.Build());
 
             OverwritePermissions permissions = new OverwritePermissions(
                 viewChannel: PermValue.Allow,

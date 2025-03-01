@@ -1,4 +1,6 @@
-﻿namespace Ares.src.Backend.Data.Model.Chat.Sub;
+﻿using Ares.src.Objects.Chat.Image;
+
+namespace Ares.src.Backend.Data.Model.Chat.Sub;
 
 public class ChatInfoModel
 {
@@ -6,14 +8,16 @@ public class ChatInfoModel
     public bool Active { get; set; }
     public ulong Channel { get; set; }
     public string Model { get; set; }
+    public ImageGenOptions? ImageGenOptions { get; set; }
     public List<ChatHistoricModel> Historics { get; set; }
 
-    public ChatInfoModel(ulong channel, string model, bool active = false, List<ChatHistoricModel>? historics = null)
+    public ChatInfoModel(ulong channel, string model, bool active = false, ImageGenOptions? imageGenOptions = null, List<ChatHistoricModel>? historics = null)
     {
         Id = Guid.NewGuid().ToString();
         Channel = channel;
         Model = model;
         Active = active;
-        Historics = historics != null ? historics : new List<ChatHistoricModel>();
+        ImageGenOptions = imageGenOptions;
+        Historics = historics ?? new List<ChatHistoricModel>();
     }
 }

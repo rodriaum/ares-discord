@@ -5,6 +5,7 @@ using Ares.src.Backend.Data.Model.Chat.Sub;
 using Ares.src.Backend.Data.Model.Information;
 using Ares.src.Backend.Data.Model.Token;
 using Ares.src.Manager;
+using Ares.src.Objects.Chat.Image;
 using Ares.src.Objects.Language;
 using Ares.src.Objects.Model;
 using Ares.src.Utils.Extra;
@@ -83,7 +84,7 @@ public class AiService
         Guild guild, 
         SocketGuildUser user, 
         ChatModel model, 
-        ImageGenerationOptions options, 
+        ImageGenOptions options, 
         ulong channel, 
         string prompt) 
     {
@@ -112,7 +113,8 @@ public class AiService
 
         try
         {
-            GeneratedImage? image = await GenerateImageAsync(model, openAiToken, prompt, options);
+            ImageGenerationOptions openAiOptions = AiUtil.GetImageGenerationOptions(options);
+            GeneratedImage? image = await GenerateImageAsync(model, openAiToken, prompt, openAiOptions);
 
             if (image == null)
             {

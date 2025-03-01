@@ -14,6 +14,7 @@ using Ares.src.Backend.Data.Model.Config;
 using Ares.src.Backend.Data.Model.Chat.Sub;
 using Ares.src.Backend.Data.Repository;
 using Ares.src.Objects.Chat.Price;
+using Ares.src.Objects.Chat.Image;
 
 namespace Ares.src.Listener.Chat;
 
@@ -102,7 +103,13 @@ internal class ReceivedContentListener
             // Verifica se o canal em que o usuário enviou a mensagem é dele. (Futuramente pode ser verificado com banco de dados)
             if (!channel.Name.Contains(user.GlobalName.ToLower())) return;
 
-            // IRole exclusiveRole = socketGuild.GetRole(gcd.ExclusiveRoleId);
+            ChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
+
+            if (info == null)
+            {
+                await channel.SendMessageAsync(embed: embed.WithDescription(guild.GetTranslation(LangKeys.CouldNotFindInfo)).Build());
+                return;
+            }
 
             ChatModel? model = guild.GetLastModelByUser(user, channel: channel.Id);
 
@@ -197,15 +204,8 @@ internal class ReceivedContentListener
                     break;
 
                 case ModelType.Image:
-
-                    // Futuramente vai dar para personalizar.
-                    ImageGenerationOptions options = new()
-                    {
-                        Quality = GeneratedImageQuality.Standard,
-                        Size = GeneratedImageSize.W1024xH1024,
-                        Style = GeneratedImageStyle.Natural,
-                        ResponseFormat = GeneratedImageFormat.Uri
-                    };
+                    ImageGenOptions? options = info.ImageGenOptions 
+                        ?? new ImageGenOptions(ImageQuality.Standard, ImageSize.W1024xH1024, ImageStyle.Natural);
 
                     string responseImageUrl = await AiService.GenerateImageUrlAsync(guild, guildUser, model, options, channel.Id, prompt);
 
