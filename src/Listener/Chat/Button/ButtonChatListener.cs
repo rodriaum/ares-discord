@@ -61,19 +61,18 @@ internal class ButtonChatListener
 
                 ChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
 
-                if (info != null)
+                if (info == null)
                 {
-                    LogUtil.Log("Chat", $"Chat ID \"{info.Id}\" has been disabled by \"{user.Username}#{user.Discriminator}\"");
-                }
-                else
-                {
-                    LogUtil.Log("Chat", $"A chat has been disabled by \"{user.Username}#{user.Discriminator}\"");
+                    await args.FollowupAsync("Parece que você não é o proprietário desse canal.");
+                    return;
                 }
 
                 await args.FollowupAsync(guild.GetTranslation(LangKeys.CloseChat));
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();
+
+                LogUtil.Log("Chat", $"Chat ID \"{info.Id}\" has been disabled by \"{user.Username}#{user.Discriminator}\"");
             }
             else
             {

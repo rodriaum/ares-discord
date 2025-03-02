@@ -3,7 +3,6 @@ using Ares.src.Backend.Data.Model.Chat.Sub;
 using Ares.src.Backend.Data.Model.Config;
 using Ares.src.Backend.Data.Model.Information;
 using Ares.src.Backend.Data.Model.Token;
-using Ares.src.Manager;
 using Ares.src.Objects.Language;
 using Ares.src.Objects.Model;
 using Ares.src.Utils.Extra;
