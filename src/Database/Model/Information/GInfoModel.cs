@@ -1,10 +1,10 @@
-﻿using Ares.src.Backend.Data.Model.Chat;
-using Ares.src.Backend.Data.Model.Config;
-using Ares.src.Backend.Data.Model.Token;
+﻿using Ares.src.Database.Model.Chat;
+using Ares.src.Database.Model.Config;
+using Ares.src.Database.Model.Token;
 
-namespace Ares.src.Backend.Data.Model.Information;
+namespace Ares.src.Database.Model.Information;
 
-public class GInformationModel
+public class GInfoModel
 {
     public GTokenModel Token { get; set; }
     public GuildConfigData Config { get; set; }
@@ -15,7 +15,7 @@ public class GInformationModel
     /// <summary>
     /// Construtor padrão que inicializa a classe com valores padrão.
     /// </summary>
-    public GInformationModel()
+    public GInfoModel()
     {
         Token = new GTokenModel();
         Config = new GuildConfigData();

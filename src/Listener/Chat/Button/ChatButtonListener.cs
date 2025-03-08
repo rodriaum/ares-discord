@@ -1,5 +1,6 @@
-﻿using Ares.src.Backend.Data.Model.Chat.Sub;
-using Ares.src.Backend.Data.Repository;
+﻿using Ares.src.Database.Collection;
+using Ares.src.Database.Model;
+using Ares.src.Database.Model.Chat.Sub;
 using Ares.src.Objects.Language;
 using Ares.src.Utils.Extra;
 using Discord;
@@ -7,10 +8,10 @@ using Discord.WebSocket;
 
 namespace Ares.src.Listener.Chat.Button;
 
-internal class ButtonChatListener
+internal class ChatButtonListener
 {
 
-    public ButtonChatListener(DiscordSocketClient client)
+    public ChatButtonListener(DiscordSocketClient client)
     {
         client.ButtonExecuted += ButtonExecutedHandler;
     }
@@ -33,7 +34,7 @@ internal class ButtonChatListener
                 return;
             }
 
-            GuildRepository? data = Core.GuildRepository;
+            GuildCollection? data = Core.GuildRepository;
 
             if (data == null)
             {
@@ -41,7 +42,7 @@ internal class ButtonChatListener
                 return;
             }
 
-            Backend.Data.Model.Guild? guild = await data.Fetch(args.GuildId.GetValueOrDefault());
+            Guild? guild = await data.Fetch(args.GuildId.GetValueOrDefault());
 
             if (guild == null)
             {
@@ -59,7 +60,7 @@ internal class ButtonChatListener
                     return;
                 }
 
-                ChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
+                GChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
 
                 if (info == null)
                 {

@@ -41,7 +41,7 @@ internal class Program
 
         // Listeners
         new SelectedChatListener(_client);
-        new ButtonChatListener(_client);
+        new ChatButtonListener(_client);
         new ReceivedContentListener(_client);
         new GuildListener(_client);
 
@@ -64,7 +64,6 @@ internal class Program
             LogUtil.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"");
             return Task.CompletedTask;
         };
-
 
         await Task.Delay(Timeout.Infinite);
     }

@@ -5,11 +5,12 @@ using Ares.src.Utils.Extra;
 using Ares.src.Objects.Model;
 using MongoDB.Driver;
 using Ares.src.Objects.Language;
-using Ares.src.Backend.Data.Model.Information;
-using Ares.src.Backend.Data.Model.Config;
-using Ares.src.Backend.Data.Model.Chat.Sub;
-using Ares.src.Backend.Data.Repository;
+using Ares.src.Database.Collection;
 using Ares.src.Objects.Chat.Image;
+using Ares.src.Database.Model;
+using Ares.src.Database.Model.Config;
+using Ares.src.Database.Model.Information;
+using Ares.src.Database.Model.Chat.Sub;
 
 namespace Ares.src.Listener.Chat;
 
@@ -40,7 +41,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            GuildRepository? data = Core.GuildRepository;
+            GuildCollection? data = Core.GuildRepository;
 
             if (data == null)
             {
@@ -48,7 +49,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            Backend.Data.Model.Guild? guild = await data.Fetch(guildId);
+            Guild? guild = await data.Fetch(guildId);
             const int maxAttempts = 3;
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
@@ -72,7 +73,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            GInformationModel information = guild.Information;
+            GInfoModel information = guild.Information;
 
             if (information == null)
             {
@@ -144,7 +145,7 @@ internal class SelectedChatListener
             SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
             RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
 
-            ChatInfoModel info = new ChatInfoModel
+            GChatInfoModel info = new GChatInfoModel
                 (
                     active: true,
                     channel: channel.Id,

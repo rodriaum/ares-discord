@@ -1,5 +1,5 @@
-﻿using Ares.src.Backend.Data.Model;
-using Ares.src.Backend.Database.Mongo;
+﻿using Ares.src.Database.Model;
+using Ares.src.Database.Mongo;
 using Ares.src.Manager;
 using Ares.src.Utils.Extra;
 using MongoDB.Bson;
@@ -8,12 +8,12 @@ using Newtonsoft.Json;
 
 using System.Collections.Concurrent;
 
-namespace Ares.src.Backend.Data.Repository;
+namespace Ares.src.Database.Collection;
 
 /// <summary>
 /// Classe responsável por gerenciar dados de guildas no banco de dados MongoDB.
 /// </summary>
-internal class GuildRepository
+internal class GuildCollection
 {
     /// <summary>
     /// Representa a coleção "guilds" no banco de dados MongoDB.
@@ -26,10 +26,10 @@ internal class GuildRepository
     private readonly GuildManager _manager;
 
     /// <summary>
-    /// Inicializa uma nova instância da classe <see cref="GuildRepository"/> com a coleção de guildas e o gerenciador de guildas.
+    /// Inicializa uma nova instância da classe <see cref="GuildCollection"/> com a coleção de guildas e o gerenciador de guildas.
     /// </summary>
     /// <param name="database">Instância do banco de dados MongoDB que contém a coleção "guilds".</param>
-    public GuildRepository(MongoDatabase database)
+    public GuildCollection(MongoDatabase database)
     {
         _collection = database.mongoDatabase?.GetCollection<BsonDocument>("guilds");
         _manager = Core.GuildManager;

@@ -1,6 +1,7 @@
 ﻿using Discord.WebSocket;
 using Discord;
-using Ares.src.Backend.Data.Repository;
+using Ares.src.Database.Collection;
+using Ares.src.Database.Model;
 
 namespace Ares.src.Listener;
 
@@ -26,12 +27,12 @@ class GuildListener
         IReadOnlyCollection<IGuild>? guilds = _client.Guilds;
         if (guilds == null || guilds.Count == 0) return;
 
-        GuildRepository? data = Core.GuildRepository;
+        GuildCollection? data = Core.GuildRepository;
         if (data == null) return;
 
         foreach (IGuild iguild in guilds)
         {
-            Backend.Data.Model.Guild? guild = await data.Fetch(iguild.Id);
+            Guild? guild = await data.Fetch(iguild.Id);
             if (guild != null) continue;
 
             await data.Save(iguild.Id.ToString());
@@ -42,7 +43,7 @@ class GuildListener
     {
         if (guild == null) return;
 
-        GuildRepository? data = Core.GuildRepository;
+        GuildCollection? data = Core.GuildRepository;
         if (data == null) return;
 
         await data.Save(guild.Id);
@@ -52,7 +53,7 @@ class GuildListener
     {
         if (guild == null) return Task.FromResult(false);
 
-        GuildRepository? data = Core.GuildRepository;
+        GuildCollection? data = Core.GuildRepository;
         if (data == null) return Task.FromResult(false);
 
         data.DeleteCache(guild.Id);

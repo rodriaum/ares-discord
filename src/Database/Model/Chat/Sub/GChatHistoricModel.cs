@@ -1,12 +1,12 @@
 ﻿using Ares.src.Objects.Chat;
 using Ares.src.Utils.Extra;
 
-namespace Ares.src.Backend.Data.Model.Chat.Sub;
+namespace Ares.src.Database.Model.Chat.Sub;
 
 /// <summary>
 /// Representa o histórico de conversas.
 /// </summary>
-public class ChatHistoricModel
+public class GChatHistoricModel
 {
     /// <summary>
     /// Pergunta ou comando enviado pelo usuário.
@@ -34,14 +34,14 @@ public class ChatHistoricModel
     public long Timestamp { get; set; }
 
     /// <summary>
-    /// Inicializa uma nova instância da classe <see cref="ChatHistoricModel"/>.
+    /// Inicializa uma nova instância da classe <see cref="GChatHistoricModel"/>.
     /// </summary>
     /// <param name="prompt">Pergunta</param>
     /// <param name="response">Resposta ou Prompt Revisado</param>
     /// <param name="imageUrl">Opcional: Url da Image</param>
     /// <param name="usage">Uso de Tokens</param>
     /// <param name="timestamp">Timestamp da Conversa</param>
-    public ChatHistoricModel(string prompt = "", string? response = "", string? imageUrl = "", ChatValueUsage? usage = null, long timestamp = -1)
+    public GChatHistoricModel(string prompt = "", string? response = "", string? imageUrl = "", ChatValueUsage? usage = null, long timestamp = -1)
     {
         Prompt = prompt;
         Response = response;

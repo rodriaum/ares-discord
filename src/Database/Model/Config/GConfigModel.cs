@@ -1,8 +1,5 @@
-﻿using Lombok.NET;
+﻿namespace Ares.src.Database.Model.Config;
 
-namespace Ares.src.Backend.Data.Model.Config;
-
-[AllArgsConstructor]
 public partial class GuildConfigData
 {
     public string Lang { get; set; }

@@ -2,9 +2,9 @@
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
 
-namespace Ares.src.Backend.Database.Mongo;
+namespace Ares.src.Database.Mongo;
 
-internal class MongoDatabase : Database
+internal class MongoDatabase : DatabaseTemplate
 {
     private static readonly string PATTERN = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
     private static readonly Regex IP_PATTERN = new Regex(PATTERN + "\\." + PATTERN + "\\." + PATTERN + "\\." + PATTERN);

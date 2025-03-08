@@ -1,8 +1,5 @@
-﻿using Lombok.NET;
+﻿namespace Ares.src.Database;
 
-namespace Ares.src.Backend.Database;
-
-[AllArgsConstructor]
 internal partial class DatabaseCredentials
 {
     public string? Host { get; set; }

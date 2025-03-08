@@ -1,9 +1,9 @@
 ﻿using Anthropic.SDK;
 using Anthropic.SDK.Messaging;
-using Ares.src.Backend.Data.Model;
-using Ares.src.Backend.Data.Model.Chat.Sub;
-using Ares.src.Backend.Data.Model.Information;
-using Ares.src.Backend.Data.Model.Token;
+using Ares.src.Database.Model;
+using Ares.src.Database.Model.Chat.Sub;
+using Ares.src.Database.Model.Information;
+using Ares.src.Database.Model.Token;
 using Ares.src.Manager;
 using Ares.src.Objects.Chat.Image;
 using Ares.src.Objects.Language;
@@ -95,7 +95,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.ModelUnavailable);
         }
 
-        GInformationModel information = guild.Information;
+        GInfoModel information = guild.Information;
         GTokenModel? tokenData = information.Token;
 
         if (tokenData == null)
@@ -126,7 +126,7 @@ public class AiService
                 ? image.ImageUri.OriginalString
                 : await RequestUtil.UploadMediaFromUrl(imgurToken, image.ImageUri.OriginalString) ?? image.ImageUri.OriginalString;
 
-            ChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
+            GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
 
             if (info == null)
             {
@@ -134,7 +134,7 @@ public class AiService
                 return guild.GetTranslation(LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})";
             }
 
-            ChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, imageUrl: imageUrl, imageOpenAi: image)[0];
+            GChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, imageUrl: imageUrl, imageOpenAi: image)[0];
             info.Historics.Add(historic);
 
             await guild.UpdateChatInfoAsync(user, info);
@@ -193,7 +193,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.ModelUnavailable);
         }
 
-        GInformationModel information = guild.Information;
+        GInfoModel information = guild.Information;
         GTokenModel? tokenData = information.Token;
 
         if (tokenData == null)
@@ -201,11 +201,11 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindToken);
         }
 
-        ChatHistoricModel? historic = null;
+        GChatHistoricModel? historic = null;
 
         try
         {
-            List<ChatHistoricModel>? historics = guild.ChatHistorics(user, channel: channel);
+            List<GChatHistoricModel>? historics = guild.ChatHistorics(user, channel: channel);
 
             switch (model.Category)
             {
@@ -245,7 +245,7 @@ public class AiService
         ulong channel,
         string prompt,
         GTokenModel tokenData,
-        List<ChatHistoricModel>? historics,
+        List<GChatHistoricModel>? historics,
         RestUserMessage? restBotMessage = null)
     {
         string? token = tokenData.OpenAi;
@@ -283,7 +283,7 @@ public class AiService
         List<ChatMessage> messages,
         ChatCompletionOptions options)
     {
-        ChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
+        GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
@@ -326,7 +326,7 @@ public class AiService
             }
         }
 
-        info.Historics.Add(new ChatHistoricModel(prompt, sb.ToString()));
+        info.Historics.Add(new GChatHistoricModel(prompt, sb.ToString()));
         await guild.UpdateChatInfoAsync(user, info);
 
         return sb.ToString();
@@ -345,7 +345,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAiConversation)})";
         }
 
-        ChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
+        GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
@@ -353,7 +353,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        ChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, responseOpenAi: completion)[0];
+        GChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, responseOpenAi: completion)[0];
         info.Historics.Add(historic);
 
         await guild.UpdateChatInfoAsync(user, info);
@@ -391,7 +391,7 @@ public class AiService
         ulong channel, 
         string prompt, 
         GTokenModel tokenData, 
-        List<ChatHistoricModel>? historics, 
+        List<GChatHistoricModel>? historics, 
         RestUserMessage? 
         botMessage = null) 
     {
@@ -430,7 +430,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleAnthropicConversation)})";
         }
 
-        ChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
+        GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
@@ -438,7 +438,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        ChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, responseAnthropic: response)[0];
+        GChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, responseAnthropic: response)[0];
         info.Historics.Add(historic);
 
         await guild.UpdateChatInfoAsync(user, info);
@@ -457,7 +457,7 @@ public class AiService
         ulong channel, 
         string prompt, 
         GTokenModel tokenData, 
-        List<ChatHistoricModel>? historics,
+        List<GChatHistoricModel>? historics,
         RestUserMessage? botMessage = null)
     {
         string? token = tokenData.Deepseek;
@@ -501,7 +501,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleDeepSeekConversation)})";
         }
 
-        ChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
+        GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
@@ -509,7 +509,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        ChatHistoricModel? historic = AiUtil.ConvertToChatHistoric(prompt, responseDeepSeek: response)[0];
+        GChatHistoricModel? historic = AiUtil.ConvertToChatHistoric(prompt, responseDeepSeek: response)[0];
 
         if (historic != null)
         {

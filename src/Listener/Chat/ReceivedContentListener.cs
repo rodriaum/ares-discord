@@ -3,18 +3,17 @@ using Ares.src.Utils;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using OpenAI.Images;
 using Ares.src.Service;
 using Ares.src.Objects.Chat;
 using Ares.src.Objects.Model;
-using Ares.src.Backend.Data;
 using Ares.src.Objects.Language;
-using Ares.src.Backend.Data.Model.Information;
-using Ares.src.Backend.Data.Model.Config;
-using Ares.src.Backend.Data.Model.Chat.Sub;
-using Ares.src.Backend.Data.Repository;
+using Ares.src.Database.Collection;
 using Ares.src.Objects.Chat.Price;
 using Ares.src.Objects.Chat.Image;
+using Ares.src.Database.Model;
+using Ares.src.Database.Model.Config;
+using Ares.src.Database.Model.Information;
+using Ares.src.Database.Model.Chat.Sub;
 
 namespace Ares.src.Listener.Chat;
 
@@ -54,7 +53,7 @@ internal class ReceivedContentListener
             if (user.Id.Equals(_client.CurrentUser.Id)) return;
             if (args is not SocketUserMessage message) return;
 
-            GuildRepository? data = Core.GuildRepository;
+            GuildCollection? data = Core.GuildRepository;
 
             if (data == null)
             {
@@ -70,7 +69,7 @@ internal class ReceivedContentListener
                 return;
             }
 
-            Backend.Data.Model.Guild? guild = await data.Fetch(socketGuild.Id);
+            Guild? guild = await data.Fetch(socketGuild.Id);
             if (guild == null) return;
 
             EmbedBuilder embed = new EmbedBuilder()
@@ -79,7 +78,7 @@ internal class ReceivedContentListener
                 .WithColor(Color.Gold)
                 .WithFooter(guild.GetTranslation(LangKeys.TakeUpMinutes));
 
-            GInformationModel information = guild.Information;
+            GInfoModel information = guild.Information;
 
             if (information == null)
             {
@@ -103,7 +102,7 @@ internal class ReceivedContentListener
             // Verifica se o canal em que o usuário enviou a mensagem é dele. (Futuramente pode ser verificado com banco de dados)
             if (!channel.Name.Contains(user.GlobalName.ToLower())) return;
 
-            ChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
+            GChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
 
             if (info == null)
             {
@@ -153,12 +152,12 @@ internal class ReceivedContentListener
                             .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
                     }
 
-                    List<ChatHistoricModel>? historics = guild.ChatHistoricsByChannel(user, channel.Id);
+                    List<GChatHistoricModel>? historics = guild.ChatHistoricsByChannel(user, channel.Id);
 
                     if (historics != null && historics.Any())
                     {
                         // Uma vez que o texto foi gerado, ele já fica registrado como o ultimo histórico de chat.
-                        ChatHistoricModel? historic = historics.LastOrDefault();
+                        GChatHistoricModel? historic = historics.LastOrDefault();
 
                         if (historic != null)
                         {
