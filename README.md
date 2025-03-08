@@ -4,7 +4,7 @@ Ares é uma plataforma de chat privado poderosa e flexível projetada para aprim
 
 ## Demonstração em Vídeo
 
-https://github.com/user-attachments/assets/c9784c01-b1ac-4ec5-b980-4f399a814791
+https://github.com/user-attachments/assets/4adcdaf8-8a5a-4a45-ac0b-68eb1518bc1f
 
 *O vídeo acima demonstra como criar um chat privado, usar comandos de IA e gerenciar modelos no Ares.*
 
