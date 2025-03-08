@@ -2,6 +2,12 @@
 
 Ares é uma plataforma de chat privado poderosa e flexível projetada para aprimorar sua experiência no Discord com interações inteligentes. Esta plataforma utiliza tecnologias de IA de ponta para gerar texto, imagens e mais, tudo isso mantendo armazenamento de dados seguro e em conformidade.
 
+## Demonstração em Vídeo
+
+https://github.com/user-attachments/assets/demo-ares-platform.mp4
+
+*O vídeo acima demonstra como criar um chat privado, usar comandos de IA e gerenciar modelos no Ares.*
+
 ## Recursos
 
 ### Gerenciamento de Chat Privado
@@ -27,7 +33,7 @@ Siga estes passos para configurar seu ambiente:
 1. Clone o repositório:
    ```bash
    git clone https://github.com/rodriaum/ares-discord.git
-   cd Ares
+   cd ares-discord
    ```
 2. Instale os pacotes NuGet necessários:
    ```bash
