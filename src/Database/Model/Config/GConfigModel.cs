@@ -15,6 +15,7 @@ public partial class GuildConfigData
 
     public GuildConfigData()
     {
-        Lang = "pt";
+        // By default, the language is Portuguese
+        this.Lang = "pt";
     }
 }

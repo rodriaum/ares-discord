@@ -41,7 +41,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            GuildCollection? data = Core.GuildRepository;
+            GuildCollection? data = Program.GuildCollection;
 
             if (data == null)
             {

@@ -53,7 +53,7 @@ internal class ReceivedContentListener
             if (user.Id.Equals(_client.CurrentUser.Id)) return;
             if (args is not SocketUserMessage message) return;
 
-            GuildCollection? data = Core.GuildRepository;
+            GuildCollection? data = Program.GuildCollection;
 
             if (data == null)
             {

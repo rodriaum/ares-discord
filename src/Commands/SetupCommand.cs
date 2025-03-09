@@ -75,6 +75,7 @@ internal class SetupCommand
                             ModelType.Chat => "Chat",
                             ModelType.Question => "Questão",
                             ModelType.Image => "Imagem",
+                            ModelType.TTS => "Audio",
                             _ => "Desconhecido"
                         };
 

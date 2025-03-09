@@ -24,7 +24,7 @@ public class AiService
 {
     private static string GetMessageByErrorKey(LangCategory category, string key)
     {
-        LangManager manager = Core.LangManager;
+        LangManager manager = Program.LangManager;
 
         if (key.Contains("content_policy_violation"))
         {
@@ -81,12 +81,12 @@ public class AiService
     /// Future: Modify the function to return both the generated image URL and a boolean indicating whether the operation was successful.
     /// </remarks>
     public async static Task<string> GenerateImageUrlAsync(
-        Guild guild, 
-        SocketGuildUser user, 
-        ChatModel model, 
-        ImageGenOptions options, 
-        ulong channel, 
-        string prompt) 
+        Guild guild,
+        SocketGuildUser user,
+        ChatModel model,
+        ImageGenOptions options,
+        ulong channel,
+        string prompt)
     {
         HandleVerifyParameters(guild, user, model, prompt);
 
@@ -179,12 +179,12 @@ public class AiService
     /// Future: Modify the function to return both the generated text and a boolean indicating whether the operation was successful.
     /// </remarks>
     public async static Task<string> GenerateConversationAsync(
-        Guild guild, 
-        SocketGuildUser user, 
+        Guild guild,
+        SocketGuildUser user,
         ChatModel model,
-        ulong channel, 
-        string prompt, 
-        RestUserMessage? botMessage = null) 
+        ulong channel,
+        string prompt,
+        RestUserMessage? botMessage = null)
     {
         HandleVerifyParameters(guild, user, model, prompt);
 
@@ -226,7 +226,7 @@ public class AiService
         {
             if (user != null && channel != 0 && historic != null && !await guild.RemoveConversationAsync(user, channel, historic))
             {
-                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue" );
+                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue");
             }
 
             LogUtil.Error("Generation", "Unable to generate an conversation.", e.Message);
@@ -385,15 +385,15 @@ public class AiService
     /// </summary>
 
     private static async Task<string> HandleAnthropicConversation(
-        Guild guild, 
-        SocketGuildUser user, 
-        ChatModel model, 
-        ulong channel, 
-        string prompt, 
-        GTokenModel tokenData, 
-        List<GChatHistoricModel>? historics, 
-        RestUserMessage? 
-        botMessage = null) 
+        Guild guild,
+        SocketGuildUser user,
+        ChatModel model,
+        ulong channel,
+        string prompt,
+        GTokenModel tokenData,
+        List<GChatHistoricModel>? historics,
+        RestUserMessage?
+        botMessage = null)
     {
         string? token = tokenData.Anthropic;
 
@@ -451,12 +451,12 @@ public class AiService
     /// </summary>
 
     private static async Task<string> HandleDeepSeekConversation(
-        Guild guild, 
-        SocketGuildUser user, 
-        ChatModel model, 
-        ulong channel, 
-        string prompt, 
-        GTokenModel tokenData, 
+        Guild guild,
+        SocketGuildUser user,
+        ChatModel model,
+        ulong channel,
+        string prompt,
+        GTokenModel tokenData,
         List<GChatHistoricModel>? historics,
         RestUserMessage? botMessage = null)
     {
@@ -487,7 +487,7 @@ public class AiService
             LogUtil.Error
                 (
                     "DeepSeek",
-                    "Unable to get response.", 
+                    "Unable to get response.",
                     (client.ErrorMsg != null ? client.ErrorMsg : "Unknown")
                 );
 

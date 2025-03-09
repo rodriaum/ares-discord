@@ -8,7 +8,7 @@ using Discord;
 using Discord.WebSocket;
 using System.Text;
 
-namespace Ares.src.Commands.Data;
+namespace Ares.src.Commands;
 
 internal class ConfigCommand
 {
@@ -17,12 +17,12 @@ internal class ConfigCommand
     public ConfigCommand(DiscordSocketClient client)
     {
         client.SlashCommandExecuted += SlashCommandHandler;
-        this._client = client;
+        _client = client;
     }
 
     private async Task SlashCommandHandler(SocketSlashCommand command)
     {
-        if (this._client == null || !(command.Data.Name.Equals("config-token") || command.Data.Name.Equals("config-id") || command.Data.Name.Equals("config-lang"))) return;
+        if (_client == null || !(command.Data.Name.Equals("config-token") || command.Data.Name.Equals("config-id") || command.Data.Name.Equals("config-lang"))) return;
 
         EmbedBuilder embed = new EmbedBuilder()
             .WithTitle("Config")
@@ -33,7 +33,7 @@ internal class ConfigCommand
         await command.RespondAsync(ephemeral: true, embed: embed.Build());
         Discord.Rest.RestInteractionMessage message = await command.GetOriginalResponseAsync();
 
-        GuildCollection? data = Core.GuildRepository;
+        GuildCollection? data = Program.GuildCollection;
         if (data == null)
         {
             await message.ModifyAsync(msg =>

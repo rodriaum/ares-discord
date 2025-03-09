@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 
-namespace Ares.src.Commands.System;
+namespace Ares.src.Commands;
 
 internal class PingCommand
 {

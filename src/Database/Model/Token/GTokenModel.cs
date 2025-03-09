@@ -9,9 +9,9 @@ public class GTokenModel
 
     public GTokenModel(string openai = "", string anthropic = "", string deepseek = "", string? imgur = "")
     {
-        OpenAi = openai;
-        Anthropic = anthropic;
-        Deepseek = deepseek;
-        Imgur = imgur;
+        this.OpenAi = openai;
+        this.Anthropic = anthropic;
+        this.Deepseek = deepseek;
+        this.Imgur = imgur;
     }
 }

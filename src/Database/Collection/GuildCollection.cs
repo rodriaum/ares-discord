@@ -11,38 +11,38 @@ using System.Collections.Concurrent;
 namespace Ares.src.Database.Collection;
 
 /// <summary>
-/// Classe responsável por gerenciar dados de guildas no banco de dados MongoDB.
+/// Class responsible for managing guild data in MongoDB database.
 /// </summary>
 internal class GuildCollection
 {
     /// <summary>
-    /// Representa a coleção "guilds" no banco de dados MongoDB.
+    /// Represents the "guilds" collection in MongoDB database.
     /// </summary>
     private readonly IMongoCollection<BsonDocument>? _collection;
 
     /// <summary>
-    /// Referência ao gerenciador de guildas usado para operações de cache e lógica relacionada.
+    /// Reference to the guild manager used for caching operations and related logic.
     /// </summary>
     private readonly GuildManager _manager;
 
     /// <summary>
-    /// Inicializa uma nova instância da classe <see cref="GuildCollection"/> com a coleção de guildas e o gerenciador de guildas.
+    /// Initializes a new instance of the <see cref="GuildCollection"/> class with the guilds collection and guild manager.
     /// </summary>
-    /// <param name="database">Instância do banco de dados MongoDB que contém a coleção "guilds".</param>
+    /// <param name="database">MongoDB database instance that contains the "guilds" collection.</param>
     public GuildCollection(MongoDatabase database)
     {
         _collection = database.mongoDatabase?.GetCollection<BsonDocument>("guilds");
-        _manager = Core.GuildManager;
+        _manager = Program.GuildManager;
 
-        // Criação de índices na coleção para otimização de consultas.
+        // Create indexes in the collection to optimize queries.
         CreateIndexes();
     }
 
     /// <summary>
-    /// Tenta estabelecer uma conexão com o MongoDB, verificando a conexão a cada 15 segundos
-    /// caso a conexão falhe. A função continuará tentando até que a conexão seja bem-sucedida.
+    /// Attempts to establish a connection with MongoDB, checking the connection every 15 seconds
+    /// if the connection fails. The function will continue trying until the connection is successful.
     /// </summary>
-    /// <returns>Retorna true quando a conexão com o MongoDB for estabelecida com sucesso.</returns>
+    /// <returns>Returns true when the connection to MongoDB is successfully established.</returns>
     public async Task<bool> WaitForMongoConnectionAsync()
     {
         var isConnected = false;
@@ -51,8 +51,9 @@ internal class GuildCollection
         {
             try
             {
-                // Tenta enviar um comando ping para verificar a conexão.
-                await _collection?.Database.RunCommandAsync((Command<BsonDocument>)"{ ping: 1 }");
+                // Try to send a ping command to verify the connection.
+                if (_collection == null) continue;
+                await _collection.Database.RunCommandAsync((Command<BsonDocument>)"{ ping: 1 }");
                 isConnected = true;
             }
             catch (Exception ex)
@@ -65,27 +66,26 @@ internal class GuildCollection
         return isConnected;
     }
 
-
     /// <summary>
-    /// Cria índices na coleção "guilds" para melhorar a performance das consultas.
+    /// Creates indexes in the "guilds" collection to improve query performance.
     /// </summary>
     public async void CreateIndexes()
     {
         await LogUtil.LogAsync("MongoDB", "Creating indexes in the database...");
 
-        // Verifica se a coleção foi inicializada antes de tentar criar os índices.
+        // Check if the collection was initialized before trying to create indexes.
         if (_collection == null)
         {
             LogUtil.Error("CollectionNull", "Collection returned null when creating guild data indexes.");
             return;
         }
 
-        // Chama a função para aguardar a conexão com o MongoDB.
+        // Call the function to wait for MongoDB connection.
         bool isConnected = await WaitForMongoConnectionAsync();
 
         if (isConnected)
         {
-            // Após a conexão ser bem-sucedida, cria os índices.
+            // After the connection is successful, create the indexes.
             try
             {
                 var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
@@ -94,7 +94,6 @@ internal class GuildCollection
                 await _collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
 
                 await LogUtil.LogAsync("MongoDB", "Indexes created.");
-
             }
             catch (Exception ex)
             {
@@ -103,12 +102,11 @@ internal class GuildCollection
         }
     }
 
-
     /// <summary>
-    /// Salva ou atualiza uma guilda no banco de dados, retornando o objeto atualizado.
+    /// Saves or updates a guild in the database, returning the updated object.
     /// </summary>
-    /// <param name="id">ID único da guilda.</param>
-    /// <returns>Objeto <see cref="Model.Guild"/> representando a guilda salva ou atualizada.</returns>
+    /// <param name="id">Unique ID of the guild.</param>
+    /// <returns>A <see cref="Model.Guild"/> object representing the saved or updated guild.</returns>
     public async Task<Model.Guild?> Save(string id)
     {
         if (_collection == null)
@@ -126,7 +124,7 @@ internal class GuildCollection
         {
             try
             {
-                // Converte o documento BSON para JSON e desserializa para o objeto Guild.Guild.
+                // Convert the BSON document to JSON and deserialize to the Guild object.
                 var document = BsonTypeMapper.MapToDotNetValue(element);
                 var json = JsonConvert.SerializeObject(document);
 
@@ -139,7 +137,7 @@ internal class GuildCollection
         }
         else
         {
-            // Insere o documento no banco de dados caso não exista.
+            // Insert the document in the database if it doesn't exist.
             var document = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
             await _collection.InsertOneAsync(document);
 
@@ -150,20 +148,20 @@ internal class GuildCollection
     }
 
     /// <summary>
-    /// Salva ou atualiza uma guilda no banco de dados, retornando o objeto atualizado.
+    /// Saves or updates a guild in the database, returning the updated object.
     /// </summary>
-    /// <param name="id">Ulong da guilda.</param>
-    /// <returns>Objeto <see cref="Model.Guild"/> representando a guilda salva ou atualizada.</returns>
+    /// <param name="id">Ulong of the guild.</param>
+    /// <returns>A <see cref="Model.Guild"/> object representing the saved or updated guild.</returns>
     public async Task<Model.Guild?> Save(ulong id)
     {
         return await Save(id.ToString());
     }
 
     /// <summary>
-    /// Recupera uma guilda do cache ou do banco de dados usando o ID.
+    /// Retrieves a guild from the cache or database using its ID.
     /// </summary>
-    /// <param name="id">ID único da guilda.</param>
-    /// <returns>Objeto <see cref="Model.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
+    /// <param name="id">Unique ID of the guild.</param>
+    /// <returns>A <see cref="Model.Guild"/> object representing the retrieved guild, or null if not found.</returns>
     public async Task<Model.Guild?> Fetch(string id)
     {
         Model.Guild? guild = _manager.Fetch(id);
@@ -176,7 +174,7 @@ internal class GuildCollection
             {
                 try
                 {
-                    // Converte o documento BSON para JSON e desserializa para o objeto Guild.Guild.
+                    // Convert the BSON document to JSON and deserialize to the Guild object.
                     var document = BsonTypeMapper.MapToDotNetValue(element);
                     var json = JsonConvert.SerializeObject(document);
 
@@ -193,20 +191,21 @@ internal class GuildCollection
     }
 
     /// <summary>
-    /// Sobrecarga do método Fetch que aceita um ID numérico do tipo ulong.
+    /// Overload of the Fetch method that accepts a ulong numeric ID.
     /// </summary>
-    /// <param name="id">ID numérico da guilda.</param>
-    /// <returns>Objeto <see cref="Model.Guild"/> representando a guilda recuperada, ou null se não encontrada.</returns>
+    /// <param name="id">Numeric ID of the guild.</param>
+    /// <returns>A <see cref="Model.Guild"/> object representing the retrieved guild, or null if not found.</returns>
     public async Task<Model.Guild?> Fetch(ulong id)
     {
         return await Fetch(id.ToString());
     }
 
     /// <summary>
-    /// Atualiza um campo específico de uma guilda no banco de dados.
+    /// Updates a specific field of a guild in the database.
     /// </summary>
-    /// <param name="guild">Objeto <see cref="Model.Guild"/> representando a guilda a ser atualizada.</param>
-    /// <param name="field">Nome do campo a ser atualizado.</param>
+    /// <param name="guild">A <see cref="Model.Guild"/> object representing the guild to be updated.</param>
+    /// <param name="field">Name of the field to be updated.</param>
+    /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> Update(Model.Guild guild, string field)
     {
         if (_collection == null)
@@ -217,27 +216,26 @@ internal class GuildCollection
 
         try
         {
-            // Converte a guilda para BSON para manipulação no MongoDB.
+            // Convert the guild to BSON for MongoDB manipulation.
             BsonDocument tree = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
             BsonElement valueElement;
 
-            // Obtém o valor do campo especificado, se existir.
+            // Get the value of the specified field, if it exists.
             BsonValue? value = tree.TryGetElement(field, out valueElement) ? valueElement.Value : null;
 
-            // Cria um filtro para localizar a guilda no banco de dados.
+            // Create a filter to locate the guild in the database.
             FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
 
             BsonDocument element = await _collection.Find(filter).FirstOrDefaultAsync();
 
             if (element != null)
             {
-                // Define ou remove o campo no documento do banco de dados.
+                // Set or remove the field in the database document.
                 var update = value != null ? Builders<BsonDocument>.Update.Set(field, value) : Builders<BsonDocument>.Update.Unset(field);
                 await _collection.UpdateOneAsync(filter, update);
 
                 return true;
             }
-
         }
         catch (Exception e)
         {
@@ -250,28 +248,28 @@ internal class GuildCollection
     }
 
     /// <summary>
-    /// Remove uma guilda do cache local.
+    /// Removes a guild from the local cache.
     /// </summary>
-    /// <param name="id">ID único da guilda a ser removida do cache.</param>
+    /// <param name="id">Unique ID of the guild to be removed from the cache.</param>
     public void DeleteCache(string id)
     {
         _manager?.Delete(id);
     }
 
     /// <summary>
-    /// Remove uma guilda do cache local.
+    /// Removes a guild from the local cache.
     /// </summary>
-    /// <param name="id">Ulong da guilda a ser removida do cache.</param>
+    /// <param name="id">Ulong of the guild to be removed from the cache.</param>
     public void DeleteCache(ulong id)
     {
         DeleteCache(id.ToString());
     }
 
     /// <summary>
-    /// Recupera todas as guildas do banco de dados, com a opção de limitar o número de resultados.
+    /// Retrieves all guilds from the database, with the option to limit the number of results.
     /// </summary>
-    /// <param name="limit">Número máximo de guildas a serem recuperadas (0 para sem limite).</param>
-    /// <returns>Uma <see cref="ConcurrentBag{T}"/> contendo as guildas recuperadas.</returns>
+    /// <param name="limit">Maximum number of guilds to retrieve (0 for no limit).</param>
+    /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved guilds.</returns>
     public async Task<ConcurrentBag<Model.Guild>> GetGuilds(int limit = 0)
     {
         var accounts = new ConcurrentBag<Model.Guild>();
@@ -280,7 +278,6 @@ internal class GuildCollection
         {
             LogUtil.Error("CollectionNull", "Collection returned null when get all guilds.");
             return accounts;
-
         }
 
         var options = new FindOptions<BsonDocument> { Limit = limit };
@@ -290,7 +287,7 @@ internal class GuildCollection
         {
             try
             {
-                // Converte o documento BSON para JSON e desserializa para o objeto Guild.Guild.
+                // Convert the BSON document to JSON and deserialize to the Guild object.
                 var json = document.ToJson();
                 var bsonDocument = BsonTypeMapper.MapToDotNetValue(document);
                 var jsonString = JsonConvert.SerializeObject(bsonDocument);

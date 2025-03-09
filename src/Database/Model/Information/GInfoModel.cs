@@ -10,11 +10,6 @@ public class GInfoModel
     public GuildConfigData Config { get; set; }
     public GChatModel Chat { get; set; }
 
-
-
-    /// <summary>
-    /// Construtor padrão que inicializa a classe com valores padrão.
-    /// </summary>
     public GInfoModel()
     {
         Token = new GTokenModel();

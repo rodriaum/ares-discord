@@ -27,7 +27,7 @@ class GuildListener
         IReadOnlyCollection<IGuild>? guilds = _client.Guilds;
         if (guilds == null || guilds.Count == 0) return;
 
-        GuildCollection? data = Core.GuildRepository;
+        GuildCollection? data = Program.GuildCollection;
         if (data == null) return;
 
         foreach (IGuild iguild in guilds)
@@ -43,7 +43,7 @@ class GuildListener
     {
         if (guild == null) return;
 
-        GuildCollection? data = Core.GuildRepository;
+        GuildCollection? data = Program.GuildCollection;
         if (data == null) return;
 
         await data.Save(guild.Id);
@@ -53,7 +53,7 @@ class GuildListener
     {
         if (guild == null) return Task.FromResult(false);
 
-        GuildCollection? data = Core.GuildRepository;
+        GuildCollection? data = Program.GuildCollection;
         if (data == null) return Task.FromResult(false);
 
         data.DeleteCache(guild.Id);

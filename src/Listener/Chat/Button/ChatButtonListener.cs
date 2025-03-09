@@ -16,8 +16,6 @@ internal class ChatButtonListener
         client.ButtonExecuted += ButtonExecutedHandler;
     }
 
-    /* Close Button */
-
     private async Task ButtonExecutedHandler(SocketMessageComponent args)
     {
         if (!args.Data.CustomId.Equals("close-chat")) return;
@@ -34,7 +32,7 @@ internal class ChatButtonListener
                 return;
             }
 
-            GuildCollection? data = Core.GuildRepository;
+            GuildCollection? data = Program.GuildCollection;
 
             if (data == null)
             {
