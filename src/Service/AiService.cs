@@ -8,14 +8,17 @@ using Ares.src.Manager;
 using Ares.src.Objects.Chat.Image;
 using Ares.src.Objects.Language;
 using Ares.src.Objects.Model;
-using Ares.src.Utils.Extra;
+using Ares.src.Util;
 using DeepSeek.Core;
 using DeepSeek.Core.Models;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
+using OpenAI;
+using OpenAI.Audio;
 using OpenAI.Chat;
 using OpenAI.Images;
+using System.ClientModel;
 using System.Text;
 
 namespace Ares.src.Service;
@@ -124,7 +127,7 @@ public class AiService
             // Usa a URL original se não houver um token Imgur.
             string imageUrl = string.IsNullOrWhiteSpace(imgurToken)
                 ? image.ImageUri.OriginalString
-                : await RequestUtil.UploadMediaFromUrl(imgurToken, image.ImageUri.OriginalString) ?? image.ImageUri.OriginalString;
+                : await WebUtil.UploadMediaFromUrl(imgurToken, image.ImageUri.OriginalString) ?? image.ImageUri.OriginalString;
 
             GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
 
@@ -144,7 +147,8 @@ public class AiService
         catch (Exception e)
         {
             LogUtil.Error("Generation", "Unable to generate an image.", e.Message);
-            return GetMessageByErrorKey(guild.LanguageCategory(), e.Message);
+            LangCategory lang = guild.LangCategory() ?? Program.LangManager.GetLanguages().First();
+            return GetMessageByErrorKey(lang, e.Message);
         }
     }
 
@@ -157,6 +161,98 @@ public class AiService
         ImageClient client = new ImageClient(model.Model, token);
 
         return await client.GenerateImageAsync(prompt, options);
+    }
+
+    /// <summary>
+    /// <b>General</b> - TTS Generation
+    /// </summary>
+
+    /// <summary>
+    /// Asynchronously generates a TTS based on the provided parameters.
+    /// </summary>
+    /// <param name="guild">Represents the guild (server) where the chat is taking place. It contains information about the server.</param>
+    /// <param name="user">Represents the user who is initiating the chat. It contains information about the user.</param>
+    /// <param name="model">Represents the chat model being used to generate the conversation. It defines the behavior and capabilities of the chat.</param>
+    /// <param name="channel">The ID of the channel chat.</param>
+    /// <param name="prompt">The initial input or message.</param>
+    /// <returns>
+    /// A string representing the generated conversation text and a check saying whether the content is the audio string or an error message..
+    /// </returns>
+    /// <remarks>
+    /// Future: Modify the function to return both the generated text and a boolean indicating whether the operation was successful.
+    /// </remarks>
+    public async static Task<(string, bool)> GenerateTTSAsync(
+        Guild guild,
+        SocketGuildUser user,
+        ChatModel model,
+        ulong channel,
+        string prompt)
+    {
+        HandleVerifyParameters(guild, user, model, prompt);
+
+        if (model.Type != ModelType.TTS)
+        {
+            return (guild.GetTranslation(LangKeys.ModelUnavailable), false);
+        }
+
+        GInfoModel information = guild.Information;
+        GTokenModel? tokenData = information.Token;
+
+        if (tokenData == null)
+        {
+            return (guild.GetTranslation(LangKeys.CouldNotFindToken), false);
+        }
+
+        GChatHistoricModel? historic = null;
+
+        try
+        {
+            List<GChatHistoricModel>? historics = guild.ChatHistorics(user, channel: channel);
+
+            switch (model.Category) 
+            {
+                case ModelCategory.OpenAI:
+                    return await HandleOpenAiTTS(guild, user, model, prompt, tokenData);
+                default:
+                    return (guild.GetTranslation(LangKeys.ModelNotFound), false);
+            }
+        }
+        catch (Exception e)
+        {
+            if (user != null && channel != 0 && historic != null && !await guild.RemoveConversationAsync(user, channel, historic))
+            {
+                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue");
+            }
+
+            LogUtil.Error("Generation", "Unable to generate an conversation.", e.Message);
+
+            LangCategory lang = guild.LangCategory() ?? Program.LangManager.GetLanguages().First();
+            return (GetMessageByErrorKey(lang, e.Message), false);
+        }
+    }
+
+    /// <summary>
+    /// <b>OpenAI</b> - TTS Generation
+    /// </summary>
+
+    private static async Task<(string, bool)> HandleOpenAiTTS(
+        Guild guild,
+        SocketGuildUser user,
+        ChatModel model,
+        string prompt,
+        GTokenModel tokenData)
+    {
+        string? token = tokenData.OpenAi;
+
+        if (string.IsNullOrWhiteSpace(token))
+            return (guild.GetTranslation(LangKeys.CouldNotFindToken), false);
+
+        OpenAIClient client = new(token);
+        AudioClient ttsClient = client.GetAudioClient(model.Model);
+
+        ClientResult<BinaryData> result = await ttsClient.GenerateSpeechAsync(prompt, GeneratedSpeechVoice.Alloy);
+
+        return (result.Value.ToString(), true);
     }
 
     /// <summary>
@@ -230,14 +326,13 @@ public class AiService
             }
 
             LogUtil.Error("Generation", "Unable to generate an conversation.", e.Message);
-            return GetMessageByErrorKey(guild.LanguageCategory(), e.Message);
+            return GetMessageByErrorKey(guild.LangCategory(), e.Message);
         }
     }
 
     /// <summary>
     /// <b>OpenAI</b> - Conversation Generation
     /// </summary>
-
     private static async Task<string> HandleOpenAiConversation(
         Guild guild,
         SocketGuildUser user,

@@ -1,8 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using Ares.src.Manager;
-using Ares.src.Utils;
 using Ares.src.Objects.Model;
+using Ares.src.Util;
 
 namespace Ares.src.Commands;
 
@@ -63,7 +63,7 @@ internal class SetupCommand
                     string name = category.ToString();
 
                     SelectMenuBuilder menu = new SelectMenuBuilder()
-                        .WithPlaceholder(Util.CapitalizeFirstLetter(name))
+                        .WithPlaceholder(FormatterUtil.CapitalizeFirstLetter(name))
                         .WithCustomId($"chat-menu-{name}");
 
                     foreach (ChatModel model in AiManager.Models)

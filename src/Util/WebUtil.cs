@@ -1,9 +1,9 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace Ares.src.Utils.Extra;
+namespace Ares.src.Util;
 
-public class RequestUtil
+public class WebUtil
 {
     private const string ImgurApiUrl = "https://api.imgur.com/3/image";
 
@@ -30,9 +30,19 @@ public class RequestUtil
             {
                 JsonElement root = doc.RootElement;
 
-                string imgurLink = root.GetProperty("data").GetProperty("link").GetString();
-                return imgurLink;
+                string? imgurLink = root.GetProperty("data").GetProperty("link").GetString();
+                return imgurLink ?? "";
             }
         }
+    }
+
+    public static bool IsValidUrl(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+        {
+            return uri != null && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+        }
+
+        return false;
     }
 }

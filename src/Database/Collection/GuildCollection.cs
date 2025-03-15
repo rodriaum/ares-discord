@@ -1,7 +1,7 @@
 ﻿using Ares.src.Database.Model;
 using Ares.src.Database.Mongo;
 using Ares.src.Manager;
-using Ares.src.Utils.Extra;
+using Ares.src.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;

@@ -1,8 +1,7 @@
 ﻿using Ares.src.Objects.Chat.Image;
 using Ares.src.Objects.Chat.Price;
 using Ares.src.Objects.Model;
-using Ares.src.Utils;
-using Ares.src.Utils.Extra;
+using Ares.src.Util;
 using System.Collections.ObjectModel;
 
 namespace Ares.src.Manager;
@@ -146,7 +145,7 @@ public class AiManager
                 display: "TTS 1",
                 model: "tts-1",
                 price: new ChatPriceUsage(output: 0.0m, input: 0.0m),
-                available: false
+                available: true
             ),
 
             new(
@@ -155,7 +154,7 @@ public class AiManager
                 display: "TTS 1 HD",
                 model: "tts-1-hd",
                 price: new ChatPriceUsage(output: 0.0m, input: 0.0m),
-                available: false
+                exclusive: true
             ),
 
             // Anthropic Models
@@ -266,7 +265,7 @@ public class AiManager
         foreach (var model in models)
         {
             LogUtil.Log(
-                $"AI: {Util.CapitalizeFirstLetter(model.Category.ToString())}",
+                $"AI: {FormatterUtil.CapitalizeFirstLetter(model.Category.ToString())}",
                 $"Engine type \"{model.Type}\" with model \"{model.Model}\" registered."
             );
         }

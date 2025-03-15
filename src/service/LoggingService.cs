@@ -1,16 +1,19 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
-using Ares.src.Utils.Extra;
+using Ares.src.Util;
 
 namespace Ares.src.Service;
 
 internal class LoggingService
 {
-    public LoggingService(DiscordSocketClient client, CommandService command)
+    public LoggingService(DiscordSocketClient? client = null, CommandService? command = null)
     {
-        client.Log += LogAsync;
-        command.Log += LogAsync;
+        if (client != null)
+            client.Log += LogAsync;
+
+        if (command != null)
+            command.Log += LogAsync;
     }
 
     private Task LogAsync(LogMessage message)
@@ -18,14 +21,15 @@ internal class LoggingService
         if (message.Exception is CommandException ex)
         {
             LogUtil.Error(
-                $"Command: {message.Severity}", 
+                $"Command", 
                 $"{ex.Command.Aliases.First()} failed to execute in {ex.Context.Channel}.",
-                ex.Message
+                ex.Message,
+                severity: message.Severity
                 );
         }
         else
         {
-            LogUtil.Error($"[General: {message.Severity}", "Failed to execute a command.", message.Message);
+            LogUtil.Error($"General", message.Message, severity: message.Severity);
         }
 
         return Task.CompletedTask;

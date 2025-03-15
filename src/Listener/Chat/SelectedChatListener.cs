@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using Ares.src.Utils.Extra;
 using Ares.src.Objects.Model;
 using MongoDB.Driver;
 using Ares.src.Objects.Language;
@@ -11,6 +10,7 @@ using Ares.src.Database.Model;
 using Ares.src.Database.Model.Config;
 using Ares.src.Database.Model.Information;
 using Ares.src.Database.Model.Chat.Sub;
+using Ares.src.Util;
 
 namespace Ares.src.Listener.Chat;
 
@@ -237,6 +237,11 @@ internal class SelectedChatListener
                         }));
 
                     component.WithSelectMenu(styleMenu);
+                    break;
+
+                case ModelType.TTS:
+                    embed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryTTSDesc));
+                    embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionTTS));
                     break;
 
                 default:

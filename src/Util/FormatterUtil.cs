@@ -1,17 +1,19 @@
 ﻿using System.Globalization;
 
-namespace Ares.src.Utils;
+namespace Ares.src.Util;
 
-public class Util
+public class FormatterUtil
 {
-    public static bool IsValidUrl(string url)
+    public static string FormatMillis(long ms)
     {
-        if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
-        {
-            return uri != null && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
-        }
+        return TimeUtil.CurrentTimeMillis() - ms + "ms";
+    }
 
-        return false;
+    public static string FormatSeconds(long ms)
+    {
+        long seconds = (TimeUtil.CurrentTimeMillis() - ms) / 1000;
+
+        return seconds > 0 ? seconds + "s" : FormatMillis(ms);
     }
 
     public static string CapitalizeFirstLetter(string str)

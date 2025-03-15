@@ -3,7 +3,7 @@ using MongoDB.Bson;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace Ares.src.Utils.Extra.Json;
+namespace Ares.src.Util;
 
 internal class JsonUtil
 {
@@ -47,10 +47,10 @@ internal class JsonUtil
             return element.ToString();
         }
 
-        return element.ToString(Newtonsoft.Json.Formatting.None);
+        return element.ToString(Formatting.None);
     }
 
-    public static T MapToObject<T>(Dictionary<string, string> map)
+    public static T? MapToObject<T>(Dictionary<string, string> map)
     {
         var obj = new JObject();
 

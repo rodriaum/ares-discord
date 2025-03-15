@@ -10,6 +10,7 @@ public class LangKeys
     public static readonly string CouldNotFindInfoToken = "could-not-find-info-token";
     public static readonly string CouldNotFindToken = "could-not-find-token";
     public static readonly string CouldNotFindLastModel = "could-not-find-last-model";
+    public static readonly string CouldNotFindModel = "could-not-find-model";
     public static readonly string PriceLowerCache = "price-lower-cache";
     public static readonly string Request = "request";
     public static readonly string Response = "response";
@@ -52,4 +53,6 @@ public class LangKeys
     public static readonly string CloseChat = "close-chat";
     public static readonly string UnablePerformTask = "unable-perform-task";
     public static readonly string UnableGetMember = "unable-get-member";
+    public static readonly string ChatDescriptionTTS = "chat-description-tts";
+    public static readonly string HistoryTTSDesc = "history-tts-description";
 }

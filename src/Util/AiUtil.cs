@@ -6,7 +6,7 @@ using DeepSeek.Core.Models;
 using OpenAI.Chat;
 using OpenAI.Images;
 
-namespace Ares.src.Utils.Extra;
+namespace Ares.src.Util;
 
 public class AiUtil
 {
@@ -50,7 +50,7 @@ public class AiUtil
             (
                 prompt: prompt,
                 response: choiceDeepSeek.Message.Content,
-                usage: new ChatValueUsage((usageDeepSeek != null ? usageDeepSeek.CompletionTokens : 0), (usageDeepSeek != null ? usageDeepSeek.PromptTokens : 0))
+                usage: new ChatValueUsage(usageDeepSeek != null ? usageDeepSeek.CompletionTokens : 0, usageDeepSeek != null ? usageDeepSeek.PromptTokens : 0)
             ));
         }
 
@@ -62,7 +62,7 @@ public class AiUtil
             (
                 prompt: prompt,
                 response: contentOpenAi.Text,
-                imageUrl: (!string.IsNullOrWhiteSpace(imageUrl) ? contentOpenAi.ImageUri?.OriginalString : imageUrl),
+                imageUrl: !string.IsNullOrWhiteSpace(imageUrl) ? contentOpenAi.ImageUri?.OriginalString : imageUrl,
                 usage: new ChatValueUsage(responseOpenAi.Usage.OutputTokenCount, responseOpenAi.Usage.InputTokenCount),
                 timestamp: responseOpenAi.CreatedAt.Ticks
             ));
@@ -74,7 +74,7 @@ public class AiUtil
             (
                 prompt: prompt,
                 response: imageOpenAi.RevisedPrompt,
-                imageUrl: (!string.IsNullOrWhiteSpace(imageUrl) ? imageOpenAi.ImageUri.OriginalString : imageUrl)
+                imageUrl: !string.IsNullOrWhiteSpace(imageUrl) ? imageOpenAi.ImageUri.OriginalString : imageUrl
             ));
         }
 

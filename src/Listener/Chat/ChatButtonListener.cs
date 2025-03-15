@@ -2,11 +2,11 @@
 using Ares.src.Database.Model;
 using Ares.src.Database.Model.Chat.Sub;
 using Ares.src.Objects.Language;
-using Ares.src.Utils.Extra;
+using Ares.src.Util;
 using Discord;
 using Discord.WebSocket;
 
-namespace Ares.src.Listener.Chat.Button;
+namespace Ares.src.Listener.Chat;
 
 internal class ChatButtonListener
 {

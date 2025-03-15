@@ -1,5 +1,5 @@
 ﻿using Ares.src.Objects.Chat;
-using Ares.src.Utils.Extra;
+using Ares.src.Util;
 
 namespace Ares.src.Database.Model.Chat.Sub;
 

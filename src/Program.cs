@@ -1,14 +1,12 @@
 ﻿using Ares.src.Commands;
-using Ares.src.Commands.Data;
-using Ares.src.Commands.System;
 using Ares.src.Database;
 using Ares.src.Database.Collection;
 using Ares.src.Database.Mongo;
 using Ares.src.Listener;
 using Ares.src.Listener.Chat;
-using Ares.src.Listener.Chat.Button;
 using Ares.src.Manager;
-using Ares.src.Utils.Extra;
+using Ares.src.Service;
+using Ares.src.Util;
 using Discord;
 using Discord.Net;
 using Discord.WebSocket;
@@ -62,7 +60,24 @@ internal class Program
         // Configure Discord client with appropriate intents
         var config = new DiscordSocketConfig()
         {
-            GatewayIntents = GatewayIntents.All
+            GatewayIntents = GatewayIntents.Guilds |
+                             GatewayIntents.GuildMembers |
+                             GatewayIntents.GuildBans |
+                             GatewayIntents.GuildEmojis |
+                             GatewayIntents.GuildIntegrations |
+                             GatewayIntents.GuildWebhooks |
+                             GatewayIntents.GuildVoiceStates |
+                             GatewayIntents.GuildMessages |
+                             GatewayIntents.GuildMessageReactions |
+                             GatewayIntents.GuildMessageTyping |
+                             GatewayIntents.DirectMessages |
+                             GatewayIntents.DirectMessageReactions |
+                             GatewayIntents.DirectMessageTyping |
+                             GatewayIntents.MessageContent |
+                             GatewayIntents.AutoModerationConfiguration |
+                             GatewayIntents.AutoModerationActionExecution |
+                             GatewayIntents.GuildMessagePolls |
+                             GatewayIntents.DirectMessagePolls
         };
 
         _client = new DiscordSocketClient(config);
@@ -70,6 +85,8 @@ internal class Program
         // Connect to Discord
         await _client.LoginAsync(TokenType.Bot, Env.GetString("DISCORD_TOKEN"));
         await _client.StartAsync();
+
+        new LoggingService(client: _client);
 
         // Initialize event listeners
         InitListeners();
@@ -295,7 +312,6 @@ internal class Program
             foreach (SlashCommandBuilder command in commands)
             {
                 var build = command.Build();
-                await _client.CreateGlobalApplicationCommandAsync(build);
                 LogUtil.Log("Commands", $"Command \"{build.Name}\" registered.");
             }
         }

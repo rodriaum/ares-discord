@@ -5,7 +5,7 @@ using Ares.src.Database.Model.Information;
 using Ares.src.Database.Model.Token;
 using Ares.src.Objects.Language;
 using Ares.src.Objects.Model;
-using Ares.src.Utils.Extra;
+using Ares.src.Util;
 using Discord;
 
 namespace Ares.src.Database.Model;
@@ -525,7 +525,7 @@ public class Guild
     /// Gets the language category object based on the guild's configured language.
     /// </summary>
     /// <returns>The language category object or null if not found.</returns>
-    public LangCategory? LanguageCategory()
+    public LangCategory? LangCategory()
     {
         return Program.LangManager.GetCategoryByCode(this.Language());
     }
@@ -537,7 +537,7 @@ public class Guild
     /// <returns>The translated string or the original code if translation was not found.</returns>
     public string GetTranslation(string code)
     {
-        LangCategory? category = LanguageCategory();
+        LangCategory? category = LangCategory();
         if (category == null) return code;
 
         return Program.LangManager.GetTranslation(category, code);

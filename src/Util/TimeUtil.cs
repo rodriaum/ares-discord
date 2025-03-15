@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Utils.Extra;
+﻿namespace Ares.src.Util;
 
 internal class TimeUtil
 {
