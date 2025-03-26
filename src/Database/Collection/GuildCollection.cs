@@ -1,12 +1,14 @@
 ﻿using Ares.Database.Model;
 using Ares.Database.Mongo;
+using Ares.Database.Redis;
 using Ares.Manager;
 using Ares.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
-
+using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
+using System.Text.Json.Nodes;
 
 namespace Ares.Database.Collection;
 
@@ -21,17 +23,30 @@ internal class GuildCollection
     private readonly IMongoCollection<BsonDocument>? _collection;
 
     /// <summary>
+    /// Reference to the Redis database used for caching operations and related logic.
+    /// </summary>
+    private readonly RedisDatabase _redisDatabase;
+
+    /// <summary>
     /// Reference to the guild manager used for caching operations and related logic.
     /// </summary>
     private readonly GuildManager _manager;
 
     /// <summary>
+    /// Key prefix used for guild data in Redis.
+    /// </summary>
+    private readonly String GuildKey = "guild:";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="GuildCollection"/> class with the guilds collection and guild manager.
     /// </summary>
-    /// <param name="database">MongoDB database instance that contains the "guilds" collection.</param>
-    public GuildCollection(MongoDatabase database)
+    /// <param name="mongoDatabase">MongoDB database instance that contains the "guilds" collection.</param>
+    /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
+    public GuildCollection(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
     {
-        _collection = database.mongoDatabase?.GetCollection<BsonDocument>("guilds");
+        _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("guilds");
+        this._redisDatabase = redisDatabase;
+
         _manager = Program.GuildManager;
 
         // Create indexes in the collection to optimize queries.
@@ -107,7 +122,7 @@ internal class GuildCollection
     /// </summary>
     /// <param name="id">Unique ID of the guild.</param>
     /// <returns>A <see cref="Model.Guild"/> object representing the saved or updated guild.</returns>
-    public async Task<Model.Guild?> Save(string id)
+    public async Task<Guild?> Save(string id)
     {
         if (_collection == null)
         {
@@ -118,7 +133,7 @@ internal class GuildCollection
         var filter = Builders<BsonDocument>.Filter.Eq("Id", id);
         var element = await _collection.Find(filter).FirstOrDefaultAsync();
 
-        Model.Guild? guild = new Guild(id);
+        Guild? guild = new Guild(id);
 
         if (element != null)
         {
@@ -141,6 +156,8 @@ internal class GuildCollection
             var document = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
             await _collection.InsertOneAsync(document);
 
+            _redisDatabase.Save(GuildKey + id, guild);
+
             _manager.Save(guild);
         }
 
@@ -152,7 +169,7 @@ internal class GuildCollection
     /// </summary>
     /// <param name="id">Ulong of the guild.</param>
     /// <returns>A <see cref="Model.Guild"/> object representing the saved or updated guild.</returns>
-    public async Task<Model.Guild?> Save(ulong id)
+    public async Task<Guild?> Save(ulong id)
     {
         return await Save(id.ToString());
     }
@@ -162,27 +179,39 @@ internal class GuildCollection
     /// </summary>
     /// <param name="id">Unique ID of the guild.</param>
     /// <returns>A <see cref="Model.Guild"/> object representing the retrieved guild, or null if not found.</returns>
-    public async Task<Model.Guild?> Fetch(string id)
+    /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
+    /// <seealso cref="Fetch(ulong, bool)"/>
+    public async Task<Model.Guild?> Fetch(string id, bool saveInRedis = false)
     {
         Model.Guild? guild = _manager.Fetch(id);
 
         if (guild == null)
         {
-            BsonDocument element = await _collection.Find(Builders<BsonDocument>.Filter.Eq("Id", id)).FirstOrDefaultAsync();
+            guild = _redisDatabase.Load<Guild>(GuildKey + id);
 
-            if (element != null)
+            if (guild == null)
             {
-                try
-                {
-                    // Convert the BSON document to JSON and deserialize to the Guild object.
-                    var document = BsonTypeMapper.MapToDotNetValue(element);
-                    var json = JsonConvert.SerializeObject(document);
+                BsonDocument element = await _collection.Find(Builders<BsonDocument>.Filter.Eq("Id", id)).FirstOrDefaultAsync();
 
-                    guild = JsonConvert.DeserializeObject<Model.Guild>(json);
-                }
-                catch (JsonReaderException ex)
+                if (element != null)
                 {
-                    await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
+                    try
+                    {
+                        // Convert the BSON document to JSON and deserialize to the Guild object.
+                        var document = BsonTypeMapper.MapToDotNetValue(element);
+                        var json = JsonConvert.SerializeObject(document);
+
+                        guild = JsonConvert.DeserializeObject<Model.Guild>(json);
+                    }
+                    catch (JsonReaderException ex)
+                    {
+                        await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
+                    }
+
+                    if (saveInRedis)
+                    {
+                        _redisDatabase.Save(GuildKey + id, guild);
+                    }
                 }
             }
         }
@@ -195,9 +224,11 @@ internal class GuildCollection
     /// </summary>
     /// <param name="id">Numeric ID of the guild.</param>
     /// <returns>A <see cref="Model.Guild"/> object representing the retrieved guild, or null if not found.</returns>
-    public async Task<Model.Guild?> Fetch(ulong id)
+    /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
+    /// <seealso cref="Fetch(string, bool)"/>
+    public async Task<Model.Guild?> Fetch(ulong id, bool saveInRedis = false)
     {
-        return await Fetch(id.ToString());
+        return await Fetch(id.ToString(), saveInRedis);
     }
 
     /// <summary>
@@ -233,9 +264,33 @@ internal class GuildCollection
                 // Set or remove the field in the database document.
                 var update = value != null ? Builders<BsonDocument>.Update.Set(field, value) : Builders<BsonDocument>.Update.Unset(field);
                 await _collection.UpdateOneAsync(filter, update);
-
-                return true;
             }
+
+            /*
+             * Redis
+             * Update the local cache with the new data.
+             */
+
+            tree.TryGetValue("Value", out BsonValue fieldValue);
+
+            JObject message = new JObject
+            {
+                ["id"] = guild.Id,
+                ["field"] = field,
+                ["value"] = tree[field].AsString
+            };
+
+            _redisDatabase.Publish(Constant.GuildChannel, message.ToString());
+
+            if (value == null)
+            {
+                _redisDatabase.Delete(GuildKey + guild.Id);
+                return false;
+            }
+
+            _redisDatabase.Update(GuildKey + guild.Id, guild);
+
+            return true;
         }
         catch (Exception e)
         {
@@ -253,6 +308,7 @@ internal class GuildCollection
     /// <param name="id">Unique ID of the guild to be removed from the cache.</param>
     public void DeleteCache(string id)
     {
+        _redisDatabase.Cache(GuildKey + id, 300);
         _manager?.Delete(id);
     }
 
@@ -263,6 +319,15 @@ internal class GuildCollection
     public void DeleteCache(ulong id)
     {
         DeleteCache(id.ToString());
+    }
+
+    /// <summary>
+    /// Removes the expiration time from the specified key, making it persistent.
+    /// </summary>
+    /// <param name="id">The unique identifier for the key to be persisted.</param>
+    public void Persist(string id)
+    {
+        _redisDatabase.Persist(GuildKey + id);
     }
 
     /// <summary>

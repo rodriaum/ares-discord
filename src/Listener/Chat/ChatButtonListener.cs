@@ -28,7 +28,7 @@ internal class ChatButtonListener
 
             if (user == null)
             {
-                await args.FollowupAsync(Constant.UNABLE_GET_MEMBER);
+                await args.FollowupAsync(Constant.UnableGetMember);
                 return;
             }
 
@@ -36,7 +36,7 @@ internal class ChatButtonListener
 
             if (data == null)
             {
-                await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
+                await args.FollowupAsync(Constant.UnablePerformTask);
                 return;
             }
 
@@ -54,7 +54,7 @@ internal class ChatButtonListener
             {
                 if (!await guild.ToggleChatInfo(user, channel.Id, false))
                 {
-                    await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
+                    await args.FollowupAsync(Constant.UnablePerformTask);
                     return;
                 }
 
@@ -75,12 +75,12 @@ internal class ChatButtonListener
             }
             else
             {
-                await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
+                await args.FollowupAsync(Constant.UnablePerformTask);
             }
         }
         catch (Exception e)
         {
-            await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
+            await args.FollowupAsync(Constant.UnablePerformTask);
             await AresLogger.ErrorAsync("ButtonException", "Unable to close chat.", e.Message);
         }
     }

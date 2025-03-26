@@ -6,8 +6,8 @@ namespace Ares.Database.Mongo;
 
 internal class MongoDatabase : DatabaseTemplate
 {
-    private static readonly string PATTERN = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
-    private static readonly Regex IP_PATTERN = new Regex(PATTERN + "\\." + PATTERN + "\\." + PATTERN + "\\." + PATTERN);
+    private static readonly string _pattern = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
+    private static readonly Regex _ipPattern = new Regex(_pattern + "\\." + _pattern + "\\." + _pattern + "\\." + _pattern);
 
     private readonly DatabaseCredentials credentials;
 
@@ -23,7 +23,7 @@ internal class MongoDatabase : DatabaseTemplate
             throw new ArgumentException($"Host cannot be null ({nameof(MongoDatabase)})");
         }
 
-        this.url = IP_PATTERN.Match(credential.Host).Success
+        this.url = _ipPattern.Match(credential.Host).Success
             ? "mongodb://" + (credential.User == null ? "" : credential.User + ":" + credential.Password + "@")
             + credential.Host + "/" + credential.Database
             + "?retryWrites=true&w=majority"

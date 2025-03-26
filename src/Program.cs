@@ -154,7 +154,7 @@ internal class Program
          * Database collections
          */
 
-        GuildCollection = new GuildCollection(mongoDatabase);
+        GuildCollection = new GuildCollection(mongoDatabase, redisDatabase);
     }
 
     /// <summary>

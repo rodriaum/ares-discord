@@ -2,6 +2,16 @@
 
 internal class Constant
 {
-    public static string UNABLE_PERFORM_TASK = "Ops! Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.";
-    public static string UNABLE_GET_MEMBER = "Ops! Não foi possível encontrar as informações do seu perfil.";
+    /*
+     * General 
+     */
+
+    public static readonly string UnablePerformTask = "Ops! Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.";
+    public static readonly string UnableGetMember = "Ops! Não foi possível encontrar as informações do seu perfil.";
+
+    /*
+     * Redis Channels
+     */
+
+    public static readonly string GuildChannel = "guild_channel";
 }

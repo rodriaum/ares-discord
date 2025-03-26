@@ -32,7 +32,7 @@ class GuildListener
 
         foreach (IGuild iguild in guilds)
         {
-            Guild? guild = await data.Fetch(iguild.Id);
+            Guild? guild = await data.Fetch(iguild.Id, saveInRedis: true);
             if (guild != null) continue;
 
             await data.Save(iguild.Id.ToString());

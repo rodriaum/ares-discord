@@ -49,14 +49,14 @@ internal class ReceivedContentListener
             SocketGuild socketGuild = channel.Guild;
             if (socketGuild == null)
             {
-                await channel.SendMessageAsync(Constant.UNABLE_GET_MEMBER);
+                await channel.SendMessageAsync(Constant.UnableGetMember);
                 return;
             }
 
             GuildCollection? data = Program.GuildCollection;
             if (data == null)
             {
-                await channel.SendMessageAsync(Constant.UNABLE_PERFORM_TASK);
+                await channel.SendMessageAsync(Constant.UnablePerformTask);
                 return;
             }
 

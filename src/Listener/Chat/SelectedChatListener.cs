@@ -37,7 +37,7 @@ internal class SelectedChatListener
 
             if (_client == null || user == null)
             {
-                await args.FollowupAsync(Constant.UNABLE_GET_MEMBER);
+                await args.FollowupAsync(Constant.UnableGetMember);
                 return;
             }
 
@@ -45,7 +45,7 @@ internal class SelectedChatListener
 
             if (data == null)
             {
-                await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
+                await args.FollowupAsync(Constant.UnablePerformTask);
                 return;
             }
 
@@ -69,7 +69,7 @@ internal class SelectedChatListener
 
             if (socketGuild == null)
             {
-                await args.FollowupAsync(Constant.UNABLE_GET_MEMBER);
+                await args.FollowupAsync(Constant.UnableGetMember);
                 return;
             }
 
@@ -268,7 +268,7 @@ internal class SelectedChatListener
         }
         catch (Exception e)
         {
-            await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
+            await args.FollowupAsync(Constant.UnablePerformTask);
             await AresLogger.ErrorAsync("SelectException", "Unable to process chat model choice.", e.Message);
         }
     }
