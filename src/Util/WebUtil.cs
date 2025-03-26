@@ -23,7 +23,7 @@ public class WebUtil
 
             if (!response.IsSuccessStatusCode)
             {
-                LogUtil.Error("Request", $"Erro ao enviar imagem.", jsonResponse);
+                AresLogger.Error("Request", $"Erro ao enviar imagem.", jsonResponse);
             }
 
             using (JsonDocument doc = JsonDocument.Parse(jsonResponse))

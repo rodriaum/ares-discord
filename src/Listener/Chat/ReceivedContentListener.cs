@@ -125,7 +125,7 @@ internal class ReceivedContentListener
         }
         catch (Exception e)
         {
-            await LogUtil.ErrorAsync(nameof(MessageReceivedHandler), "Can't process the content receiver.", e.Message);
+            await AresLogger.ErrorAsync(nameof(MessageReceivedHandler), "Can't process the content receiver.", e.Message);
         }
     }
 
@@ -257,7 +257,7 @@ internal class ReceivedContentListener
 
                 long fileSize = memory.Length;
 
-                LogUtil.Log("Audio", $"Audio file size: {fileSize} bytes");
+                AresLogger.Log("Audio", $"Audio file size: {fileSize} bytes");
 
                 // If the file is very small (< 1KB), it is probably empty or corrupt.
                 if (fileSize < 1024)
@@ -276,7 +276,7 @@ internal class ReceivedContentListener
                 embed.WithDescription(guild.GetTranslation(LangKeys.UnableGenerateOrder))
                     .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
 
-                LogUtil.Error("TTS", "Unable to generate TTS audio.", ex.Message);
+                AresLogger.Error("TTS", "Unable to generate TTS audio.", ex.Message);
             }
         }
 

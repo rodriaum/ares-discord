@@ -71,7 +71,7 @@ internal class ChatButtonListener
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();
 
-                LogUtil.Log("Chat", $"Chat ID \"{info.Id}\" has been disabled by \"{user.Username}#{user.Discriminator}\"");
+                AresLogger.Log("Chat", $"Chat ID \"{info.Id}\" has been disabled by \"{user.Username}#{user.Discriminator}\"");
             }
             else
             {
@@ -81,7 +81,7 @@ internal class ChatButtonListener
         catch (Exception e)
         {
             await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
-            await LogUtil.ErrorAsync("ButtonException", "Unable to close chat.", e.Message);
+            await AresLogger.ErrorAsync("ButtonException", "Unable to close chat.", e.Message);
         }
     }
 }

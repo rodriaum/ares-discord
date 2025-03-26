@@ -2,7 +2,7 @@
 
 namespace Ares.src.Util;
 
-internal class LogUtil
+internal class AresLogger
 {
     /* Variables */
 

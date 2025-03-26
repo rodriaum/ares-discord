@@ -40,7 +40,7 @@ public class AiUtil
 
             if (choiceDeepSeek == null || choiceDeepSeek.Message == null || choiceDeepSeek.Message.Content == null)
             {
-                LogUtil.Error(nameof(ConvertToChatHistoric), $"The choice or content of the message is missing.\nPrompt: {prompt}");
+                AresLogger.Error(nameof(ConvertToChatHistoric), $"The choice or content of the message is missing.\nPrompt: {prompt}");
                 return historics;
             }
 
@@ -105,7 +105,7 @@ public class AiUtil
             }
             catch (ArgumentException e)
             {
-                LogUtil.Error(nameof(ConvertToImageGenOptions), "Could not convert a class to ImageGenOptions.", e.Message);
+                AresLogger.Error(nameof(ConvertToImageGenOptions), "Could not convert a class to ImageGenOptions.", e.Message);
             }
         }
 

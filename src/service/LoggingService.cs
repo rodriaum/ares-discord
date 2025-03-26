@@ -20,7 +20,7 @@ internal class LoggingService
     {
         if (message.Exception is CommandException ex)
         {
-            LogUtil.Error(
+            AresLogger.Error(
                 $"Command", 
                 $"{ex.Command.Aliases.First()} failed to execute in {ex.Context.Channel}.",
                 ex.Message,
@@ -29,7 +29,7 @@ internal class LoggingService
         }
         else
         {
-            LogUtil.Error($"General", message.Message, severity: message.Severity);
+            AresLogger.Error($"General", message.Message, severity: message.Severity);
         }
 
         return Task.CompletedTask;

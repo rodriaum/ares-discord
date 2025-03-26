@@ -269,7 +269,7 @@ internal class SelectedChatListener
         catch (Exception e)
         {
             await args.FollowupAsync(Constant.UNABLE_PERFORM_TASK);
-            await LogUtil.ErrorAsync("SelectException", "Unable to process chat model choice.", e.Message);
+            await AresLogger.ErrorAsync("SelectException", "Unable to process chat model choice.", e.Message);
         }
     }
 }

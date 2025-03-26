@@ -133,7 +133,7 @@ public class AiService
 
             if (info == null)
             {
-                LogUtil.Error(nameof(GenerateImageUrlAsync), "It looks like the information could not be accessed.");
+                AresLogger.Error(nameof(GenerateImageUrlAsync), "It looks like the information could not be accessed.");
                 return guild.GetTranslation(LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})";
             }
 
@@ -146,7 +146,7 @@ public class AiService
         }
         catch (Exception e)
         {
-            LogUtil.Error("Generation", "Unable to generate an image.", e.Message);
+            AresLogger.Error("Generation", "Unable to generate an image.", e.Message);
             LangCategory lang = guild.LangCategory() ?? Program.LangManager.GetLanguages().First();
             return GetMessageByErrorKey(lang, e.Message);
         }
@@ -221,10 +221,10 @@ public class AiService
         {
             if (user != null && channel != 0 && historic != null && !await guild.RemoveConversationAsync(user, channel, historic))
             {
-                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue");
+                AresLogger.Error("Generation", "Unable to remove user conversation after internal issue");
             }
 
-            LogUtil.Error("Generation", "Unable to generate an conversation.", e.Message);
+            AresLogger.Error("Generation", "Unable to generate an conversation.", e.Message);
 
             LangCategory lang = guild.LangCategory() ?? Program.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
@@ -322,10 +322,10 @@ public class AiService
         {
             if (user != null && channel != 0 && historic != null && !await guild.RemoveConversationAsync(user, channel, historic))
             {
-                LogUtil.Error("Generation", "Unable to remove user conversation after internal issue");
+                AresLogger.Error("Generation", "Unable to remove user conversation after internal issue");
             }
 
-            LogUtil.Error("Generation", "Unable to generate an conversation.", e.Message);
+            AresLogger.Error("Generation", "Unable to generate an conversation.", e.Message);
             return GetMessageByErrorKey(guild.LangCategory(), e.Message);
         }
     }
@@ -382,7 +382,7 @@ public class AiService
 
         if (info == null)
         {
-            LogUtil.Error(nameof(HandleOpenAiStreamingResponse), "It looks like the information could not be accessed.");
+            AresLogger.Error(nameof(HandleOpenAiStreamingResponse), "It looks like the information could not be accessed.");
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
@@ -436,7 +436,7 @@ public class AiService
     {
         if (completion == null)
         {
-            LogUtil.Error("OpenAI", "Unable to get response.", "");
+            AresLogger.Error("OpenAI", "Unable to get response.", "");
             return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAiConversation)})";
         }
 
@@ -444,7 +444,7 @@ public class AiService
 
         if (info == null)
         {
-            LogUtil.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
+            AresLogger.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
@@ -515,7 +515,7 @@ public class AiService
 
         if (response == null)
         {
-            LogUtil.Error
+            AresLogger.Error
                 (
                     "Anthropic",
                     "Unable to get response.",
@@ -529,7 +529,7 @@ public class AiService
 
         if (info == null)
         {
-            LogUtil.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
+            AresLogger.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
@@ -579,7 +579,7 @@ public class AiService
 
         if (response == null)
         {
-            LogUtil.Error
+            AresLogger.Error
                 (
                     "DeepSeek",
                     "Unable to get response.",
@@ -600,7 +600,7 @@ public class AiService
 
         if (info == null)
         {
-            LogUtil.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
+            AresLogger.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 

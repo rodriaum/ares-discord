@@ -19,7 +19,7 @@ public class AiManager
 
     private static List<ChatModel> InitializeModels()
     {
-        LogUtil.Log("AI", "Starting AI model registration...");
+        AresLogger.Log("AI", "Starting AI model registration...");
 
         List<ChatModel> models = new List<ChatModel>
         {
@@ -264,7 +264,7 @@ public class AiManager
 
         foreach (var model in models)
         {
-            LogUtil.Log(
+            AresLogger.Log(
                 $"AI: {FormatterUtil.CapitalizeFirstLetter(model.Category.ToString())}",
                 $"Engine type \"{model.Type}\" with model \"{model.Model}\" registered."
             );
@@ -273,7 +273,7 @@ public class AiManager
         // Empty Message
         Console.WriteLine();
 
-        LogUtil.Log("AI", "Registered AI models.");
+        AresLogger.Log("AI", "Registered AI models.");
 
         return models;
     }

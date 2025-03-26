@@ -18,13 +18,18 @@ internal class MongoDatabase : DatabaseTemplate
 
     public MongoDatabase(DatabaseCredentials credential)
     {
-        url = IP_PATTERN.Match(credential.Host).Success
-                ? "mongodb://" + (credential.User == null ? "" : credential.User + ":" + credential.Password + "@")
-                + credential.Host + "/" + credential.Database
-                + "?retryWrites=true&w=majority"
-                : "mongodb+srv://" + (credential.User == null || string.IsNullOrEmpty(credential.User) ? "" : credential.User + ":" + credential.Password + "@")
-                + credential.Host + "/"
-                + credential.Database + "?retryWrites=true&w=majority";
+        if (credential.Host == null)
+        {
+            throw new ArgumentException($"Host cannot be null ({nameof(MongoDatabase)})");
+        }
+
+        this.url = IP_PATTERN.Match(credential.Host).Success
+            ? "mongodb://" + (credential.User == null ? "" : credential.User + ":" + credential.Password + "@")
+            + credential.Host + "/" + credential.Database
+            + "?retryWrites=true&w=majority"
+            : "mongodb+srv://" + (credential.User == null || string.IsNullOrEmpty(credential.User) ? "" : credential.User + ":" + credential.Password + "@")
+            + credential.Host + "/"
+            + credential.Database + "?retryWrites=true&w=majority";
 
         credentials = credential;
     }
@@ -33,29 +38,29 @@ internal class MongoDatabase : DatabaseTemplate
     {
         long start = TimeUtil.CurrentTimeMillis();
 
-        LogUtil.Log("MongoDB", "Connecting...");
+        AresLogger.Log("MongoDB", "Connecting...");
 
         try
         {
-            // ConnectionString connectionString = new ConnectionString(url);
-
             MongoClientSettings settings = MongoClientSettings.FromConnectionString(url);
 
             client = new MongoClient(settings);
             mongoDatabase = client.GetDatabase(credentials.Database);
 
-            LogUtil.Log("MongoDB", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
+            AresLogger.Log("MongoDB", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
         }
         catch (Exception e)
         {
-            LogUtil.Error("MongoDB", "Unable to connect...", e.Message);
+            AresLogger.Error("MongoDB", "Unable to connect...", e.Message);
         }
     }
 
     public void Close()
     {
         if (client != null)
-            client.Cluster.Dispose();
+        {
+            client = null;
+        }
     }
 
     public bool IsConnected()

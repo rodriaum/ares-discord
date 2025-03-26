@@ -39,11 +39,11 @@ public class LangManager
                 }
 
                 _translation[category] = messages;
-                LogUtil.Log("Lang", $"Registered lang \"{category.Code}\" with {messages.Count} translations.");
+                AresLogger.Log("Lang", $"Registered lang \"{category.Code}\" with {messages.Count} translations.");
             }
             catch (Exception e)
             {
-                LogUtil.Error(nameof(LangManager), $"Can't load language {category.Name}: {e.Message}");
+                AresLogger.Error(nameof(LangManager), $"Can't load language {category.Name}: {e.Message}");
             }
         }
     }

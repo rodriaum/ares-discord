@@ -2,6 +2,7 @@
 using Ares.src.Database;
 using Ares.src.Database.Collection;
 using Ares.src.Database.Mongo;
+using Ares.src.Database.Redis;
 using Ares.src.Listener;
 using Ares.src.Listener.Chat;
 using Ares.src.Manager;
@@ -23,7 +24,12 @@ internal class Program
     /// <summary>
     /// Gets or sets the MongoDB database instance.
     /// </summary>
-    public static MongoDatabase? Database { get; private set; }
+    public static MongoDatabase? MongoDatabase { get; private set; }
+
+    /// <summary>
+    /// Gets or sets the Redis database instance.
+    /// </summary>
+    public static RedisDatabase? RedisDatabase { get; private set; }
 
     /// <summary>
     /// Gets or sets the guild collection for database operations.
@@ -104,7 +110,7 @@ internal class Program
         _client.Ready += RegisterCommands;
         _client.Ready += () =>
         {
-            LogUtil.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"");
+            AresLogger.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"");
             return Task.CompletedTask;
         };
 
@@ -117,17 +123,38 @@ internal class Program
     /// </summary>
     private static void InitDatabase()
     {
-        MongoDatabase database = new MongoDatabase(new DatabaseCredentials
+        /*
+         * MongoDB connection 
+         */
+
+        MongoDatabase mongoDatabase = new MongoDatabase(new DatabaseCredentials
         {
             Host = "127.0.0.1",
             Database = "ares",
             Port = 27017
         });
 
-        database.Connect();
+        mongoDatabase.Connect();
+        MongoDatabase = mongoDatabase;
 
-        Database = database;
-        GuildCollection = new GuildCollection(database);
+        /*
+         * Redis connection
+         */
+
+        RedisDatabase redisDatabase = new RedisDatabase(new DatabaseCredentials
+        {
+            Host = "127.0.0.1",
+            Port = 6379
+        });
+
+        redisDatabase.Connect();
+        RedisDatabase = redisDatabase;
+
+        /*
+         * Database collections
+         */
+
+        GuildCollection = new GuildCollection(mongoDatabase);
     }
 
     /// <summary>
@@ -312,14 +339,14 @@ internal class Program
             foreach (SlashCommandBuilder command in commands)
             {
                 var build = command.Build();
-                LogUtil.Log("Commands", $"Command \"{build.Name}\" registered.");
+                AresLogger.Log("Commands", $"Command \"{build.Name}\" registered.");
             }
         }
         catch (HttpException e)
         {
             // Handle and log any errors during command registration
             string json = JsonConvert.SerializeObject(e.Errors, Formatting.Indented);
-            LogUtil.Log("Commands", "Unable to register commands.\n -> " +
+            AresLogger.Log("Commands", "Unable to register commands.\n -> " +
                         (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message));
         }
     }

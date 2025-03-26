@@ -58,7 +58,7 @@ internal class GuildCollection
             }
             catch (Exception ex)
             {
-                LogUtil.Error("ConnectionError", $"Failed to connect to MongoDB. Retrying in 15 seconds...", ex.Message);
+                AresLogger.Error("ConnectionError", $"Failed to connect to MongoDB. Retrying in 15 seconds...", ex.Message);
                 await Task.Delay(15000);
             }
         }
@@ -71,12 +71,12 @@ internal class GuildCollection
     /// </summary>
     public async void CreateIndexes()
     {
-        await LogUtil.LogAsync("MongoDB", "Creating indexes in the database...");
+        await AresLogger.LogAsync("MongoDB", "Creating indexes in the database...");
 
         // Check if the collection was initialized before trying to create indexes.
         if (_collection == null)
         {
-            LogUtil.Error("CollectionNull", "Collection returned null when creating guild data indexes.");
+            AresLogger.Error("CollectionNull", "Collection returned null when creating guild data indexes.");
             return;
         }
 
@@ -93,11 +93,11 @@ internal class GuildCollection
 
                 await _collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
 
-                await LogUtil.LogAsync("MongoDB", "Indexes created.");
+                await AresLogger.LogAsync("MongoDB", "Indexes created.");
             }
             catch (Exception ex)
             {
-                LogUtil.Error("IndexCreationError", $"Error creating indexes: {ex.Message}");
+                AresLogger.Error("IndexCreationError", $"Error creating indexes: {ex.Message}");
             }
         }
     }
@@ -111,7 +111,7 @@ internal class GuildCollection
     {
         if (_collection == null)
         {
-            LogUtil.Error("CollectionNull", "Collection returned null when save guild data.");
+            AresLogger.Error("CollectionNull", "Collection returned null when save guild data.");
             return null;
         }
 
@@ -132,7 +132,7 @@ internal class GuildCollection
             }
             catch (JsonReaderException ex)
             {
-                await LogUtil.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
+                await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
             }
         }
         else
@@ -182,7 +182,7 @@ internal class GuildCollection
                 }
                 catch (JsonReaderException ex)
                 {
-                    await LogUtil.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
+                    await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
                 }
             }
         }
@@ -210,7 +210,7 @@ internal class GuildCollection
     {
         if (_collection == null)
         {
-            LogUtil.Error("CollectionNull", "Collection returned null when update guild data.");
+            AresLogger.Error("CollectionNull", "Collection returned null when update guild data.");
             return false;
         }
 
@@ -241,7 +241,7 @@ internal class GuildCollection
         {
             string? src = e.Source;
 
-            LogUtil.Error(string.IsNullOrEmpty(src) ? "Exception" : src, "Unable to save data.", e.Message);
+            AresLogger.Error(string.IsNullOrEmpty(src) ? "Exception" : src, "Unable to save data.", e.Message);
         }
 
         return false;
@@ -276,7 +276,7 @@ internal class GuildCollection
 
         if (_collection == null)
         {
-            LogUtil.Error("CollectionNull", "Collection returned null when get all guilds.");
+            AresLogger.Error("CollectionNull", "Collection returned null when get all guilds.");
             return accounts;
         }
 
@@ -298,7 +298,7 @@ internal class GuildCollection
             }
             catch (JsonReaderException ex)
             {
-                await LogUtil.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
+                await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
             }
         });
 

@@ -1,6 +1,5 @@
 ﻿namespace Ares.src.Database;
-
-internal partial class DatabaseCredentials
+public partial class DatabaseCredentials
 {
     public string? Host { get; set; }
     public string? User { get; set; }

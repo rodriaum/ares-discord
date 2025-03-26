@@ -44,13 +44,13 @@ public class Guild
     {
         if (fields == null || fields.Count == 0)
         {
-            LogUtil.Error(nameof(SaveAsync), "The field list is null or empty.");
+            AresLogger.Error(nameof(SaveAsync), "The field list is null or empty.");
             return false;
         }
 
         if (Program.GuildCollection is not { } guildData)
         {
-            LogUtil.Error(nameof(SaveAsync), "Guild data is null. Unable to save fields.");
+            AresLogger.Error(nameof(SaveAsync), "Guild data is null. Unable to save fields.");
             return false;
         }
 
@@ -60,7 +60,7 @@ public class Guild
             {
                 if (string.IsNullOrWhiteSpace(field))
                 {
-                    LogUtil.Error(nameof(SaveAsync), "The field list contains a null or empty value.");
+                    AresLogger.Error(nameof(SaveAsync), "The field list contains a null or empty value.");
                     continue;
                 }
 
@@ -71,7 +71,7 @@ public class Guild
         }
         catch (Exception ex)
         {
-            LogUtil.Error(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message);
+            AresLogger.Error(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message);
             return false;
         }
     }
@@ -95,7 +95,7 @@ public class Guild
     {
         if (information == null)
         {
-            LogUtil.Error(nameof(SaveInformation), "Unable to get guild information.");
+            AresLogger.Error(nameof(SaveInformation), "Unable to get guild information.");
             return false;
         }
 
@@ -277,7 +277,7 @@ public class Guild
         var infos = ChatInfos(user);
         if (infos == null)
         {
-            LogUtil.Error(nameof(ToggleChatInfo), "Unable to change the status of a chat information.");
+            AresLogger.Error(nameof(ToggleChatInfo), "Unable to change the status of a chat information.");
             return Task.FromResult(false);
         }
 
@@ -336,7 +336,7 @@ public class Guild
 
         if (HasActiveUserConversation(user))
         {
-            LogUtil.Log(nameof(CreateChatData), "User already has a conversation or template. No action required.");
+            AresLogger.Log(nameof(CreateChatData), "User already has a conversation or template. No action required.");
             return await Task.FromResult(false);
         }
 
@@ -344,7 +344,7 @@ public class Guild
 
         if (chat == null)
         {
-            LogUtil.Error(nameof(CreateChatData), "Guild chat data is null. Unable to create chat data for the user.");
+            AresLogger.Error(nameof(CreateChatData), "Guild chat data is null. Unable to create chat data for the user.");
             return await Task.FromResult(false);
         }
 
@@ -367,14 +367,14 @@ public class Guild
 
             if (success)
             {
-                LogUtil.Log("Chat", $"Chat ID \"{info.Id}\" successfully created by \"{user.Username}#{user.Discriminator}\"");
+                AresLogger.Log("Chat", $"Chat ID \"{info.Id}\" successfully created by \"{user.Username}#{user.Discriminator}\"");
             }
 
             return success;
         }
         catch (Exception ex)
         {
-            LogUtil.Error(nameof(CreateChatData), "Error trying to create a chat history for the user.", ex.Message);
+            AresLogger.Error(nameof(CreateChatData), "Error trying to create a chat history for the user.", ex.Message);
             return await Task.FromResult(false);
         }
     }
@@ -399,7 +399,7 @@ public class Guild
 
         if (info == null)
         {
-            LogUtil.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
+            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
             return false;
         }
 
@@ -422,7 +422,7 @@ public class Guild
 
         if (info == null)
         {
-            LogUtil.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
+            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
             return false;
         }
 
@@ -430,7 +430,7 @@ public class Guild
 
         if (historics == null)
         {
-            LogUtil.Error(nameof(this.UpdateChatHistoricsAsync), "Conversation historics are null.");
+            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), "Conversation historics are null.");
             return false;
         }
 
@@ -452,7 +452,7 @@ public class Guild
 
         if (info == null)
         {
-            LogUtil.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
+            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
             return false;
         }
 
@@ -460,7 +460,7 @@ public class Guild
 
         if (historics == null)
         {
-            LogUtil.Error(nameof(this.RemoveConversationAsync), "Conversation historics are null.");
+            AresLogger.Error(nameof(this.RemoveConversationAsync), "Conversation historics are null.");
             return false;
         }
 
@@ -483,7 +483,7 @@ public class Guild
 
         if (infos == null)
         {
-            LogUtil.Error(nameof(HasActiveUserConversation), "Unable to get historical information.");
+            AresLogger.Error(nameof(HasActiveUserConversation), "Unable to get historical information.");
             return false;
         }
 
