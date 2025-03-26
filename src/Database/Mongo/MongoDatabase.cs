@@ -1,8 +1,8 @@
-﻿using Ares.src.Util;
+﻿using Ares.Util;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
 
-namespace Ares.src.Database.Mongo;
+namespace Ares.Database.Mongo;
 
 internal class MongoDatabase : DatabaseTemplate
 {

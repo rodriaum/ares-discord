@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Objects.Chat;
+﻿namespace Ares.Objects.Chat;
 
 /// <summary>
 /// Representa estatísticas computadas de consumo de tokens para uma solicitação de conclusão de chat.

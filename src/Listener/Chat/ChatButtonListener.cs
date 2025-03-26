@@ -1,12 +1,12 @@
-﻿using Ares.src.Database.Collection;
-using Ares.src.Database.Model;
-using Ares.src.Database.Model.Chat.Sub;
-using Ares.src.Objects.Language;
-using Ares.src.Util;
+﻿using Ares.Database.Collection;
+using Ares.Database.Model;
+using Ares.Database.Model.Chat.Sub;
+using Ares.Objects.Language;
+using Ares.Util;
 using Discord;
 using Discord.WebSocket;
 
-namespace Ares.src.Listener.Chat;
+namespace Ares.Listener.Chat;
 
 internal class ChatButtonListener
 {

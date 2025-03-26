@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Objects.Chat.Image;
+﻿namespace Ares.Objects.Chat.Image;
 
 public class ImageGenOptions
 {

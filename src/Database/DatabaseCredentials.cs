@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Database;
+﻿namespace Ares.Database;
 public partial class DatabaseCredentials
 {
     public string? Host { get; set; }

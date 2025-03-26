@@ -1,6 +1,6 @@
-﻿using Ares.src.Objects.Chat.Image;
+﻿using Ares.Objects.Chat.Image;
 
-namespace Ares.src.Objects.Chat.Price;
+namespace Ares.Objects.Chat.Price;
 
 /// <summary>
 /// Representa o preço por algo exato (ex: imagem) usado no pedido.

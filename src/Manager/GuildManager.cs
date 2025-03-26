@@ -1,6 +1,6 @@
-﻿using Ares.src.Database.Model;
+﻿using Ares.Database.Model;
 
-namespace Ares.src.Manager;
+namespace Ares.Manager;
 
 internal class GuildManager
 {

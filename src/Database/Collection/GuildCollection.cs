@@ -1,14 +1,14 @@
-﻿using Ares.src.Database.Model;
-using Ares.src.Database.Mongo;
-using Ares.src.Manager;
-using Ares.src.Util;
+﻿using Ares.Database.Model;
+using Ares.Database.Mongo;
+using Ares.Manager;
+using Ares.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 
 using System.Collections.Concurrent;
 
-namespace Ares.src.Database.Collection;
+namespace Ares.Database.Collection;
 
 /// <summary>
 /// Class responsible for managing guild data in MongoDB database.

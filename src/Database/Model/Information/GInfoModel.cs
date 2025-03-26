@@ -1,8 +1,8 @@
-﻿using Ares.src.Database.Model.Chat;
-using Ares.src.Database.Model.Config;
-using Ares.src.Database.Model.Token;
+﻿using Ares.Database.Model.Chat;
+using Ares.Database.Model.Config;
+using Ares.Database.Model.Token;
 
-namespace Ares.src.Database.Model.Information;
+namespace Ares.Database.Model.Information;
 
 public class GInfoModel
 {

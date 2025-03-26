@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Objects.Chat.Price;
+﻿namespace Ares.Objects.Chat.Price;
 
 /// <summary>
 /// Representa o preço em dólar por token usado no pedido e resposta.

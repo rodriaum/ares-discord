@@ -1,14 +1,14 @@
-﻿using Ares.src.Database.Collection;
-using Ares.src.Database.Model;
-using Ares.src.Database.Model.Config;
-using Ares.src.Database.Model.Information;
-using Ares.src.Database.Model.Token;
-using Ares.src.Objects.Language;
+﻿using Ares.Database.Collection;
+using Ares.Database.Model;
+using Ares.Database.Model.Config;
+using Ares.Database.Model.Information;
+using Ares.Database.Model.Token;
+using Ares.Objects.Language;
 using Discord;
 using Discord.WebSocket;
 using System.Text;
 
-namespace Ares.src.Commands;
+namespace Ares.Commands;
 
 internal class ConfigCommand
 {

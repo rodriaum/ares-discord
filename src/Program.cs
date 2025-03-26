@@ -1,20 +1,20 @@
-﻿using Ares.src.Commands;
-using Ares.src.Database;
-using Ares.src.Database.Collection;
-using Ares.src.Database.Mongo;
-using Ares.src.Database.Redis;
-using Ares.src.Listener;
-using Ares.src.Listener.Chat;
-using Ares.src.Manager;
-using Ares.src.Service;
-using Ares.src.Util;
+﻿using Ares.Commands;
+using Ares.Database;
+using Ares.Database.Collection;
+using Ares.Database.Mongo;
+using Ares.Database.Redis;
+using Ares.Listener;
+using Ares.Listener.Chat;
+using Ares.Manager;
+using Ares.Service;
+using Ares.Util;
 using Discord;
 using Discord.Net;
 using Discord.WebSocket;
 using DotNetEnv;
 using Newtonsoft.Json;
 
-namespace Ares.src;
+namespace Ares;
 
 /// <summary>
 /// Main application class that initializes and manages the Discord bot.

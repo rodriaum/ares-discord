@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Objects.Model;
+﻿namespace Ares.Objects.Model;
 
 public enum ModelCategory
 {

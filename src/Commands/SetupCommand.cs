@@ -1,10 +1,10 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Ares.src.Manager;
-using Ares.src.Objects.Model;
-using Ares.src.Util;
+using Ares.Manager;
+using Ares.Objects.Model;
+using Ares.Util;
 
-namespace Ares.src.Commands;
+namespace Ares.Commands;
 
 internal class SetupCommand
 {

@@ -1,8 +1,8 @@
-﻿using Ares.src.Manager;
-using Ares.src.Objects.Chat.Price;
+﻿using Ares.Manager;
+using Ares.Objects.Chat.Price;
 using MongoDB.Driver.Linq;
 
-namespace Ares.src.Objects.Model;
+namespace Ares.Objects.Model;
 
 public class ChatModel
 {

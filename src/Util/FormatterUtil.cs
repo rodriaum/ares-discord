@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace Ares.src.Util;
+namespace Ares.Util;
 
 public class FormatterUtil
 {

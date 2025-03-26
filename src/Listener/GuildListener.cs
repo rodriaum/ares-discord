@@ -1,9 +1,9 @@
 ﻿using Discord.WebSocket;
 using Discord;
-using Ares.src.Database.Collection;
-using Ares.src.Database.Model;
+using Ares.Database.Collection;
+using Ares.Database.Model;
 
-namespace Ares.src.Listener;
+namespace Ares.Listener;
 
 class GuildListener
 {

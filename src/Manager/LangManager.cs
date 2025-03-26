@@ -1,9 +1,9 @@
-﻿using Ares.src.Objects.Language;
-using Ares.src.Util;
+﻿using Ares.Objects.Language;
+using Ares.Util;
 using Newtonsoft.Json.Linq;
 using System.Text;
 
-namespace Ares.src.Manager;
+namespace Ares.Manager;
 
 /// <summary>
 /// Inspired by a legacy, complex Minecraft network design.

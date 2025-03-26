@@ -1,9 +1,9 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
-using Ares.src.Util;
+using Ares.Util;
 
-namespace Ares.src.Service;
+namespace Ares.Service;
 
 internal class LoggingService
 {

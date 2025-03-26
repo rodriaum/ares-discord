@@ -1,10 +1,10 @@
-﻿using Ares.src.Objects.Chat.Image;
-using Ares.src.Objects.Chat.Price;
-using Ares.src.Objects.Model;
-using Ares.src.Util;
+﻿using Ares.Objects.Chat.Image;
+using Ares.Objects.Chat.Price;
+using Ares.Objects.Model;
+using Ares.Util;
 using System.Collections.ObjectModel;
 
-namespace Ares.src.Manager;
+namespace Ares.Manager;
 
 public class AiManager
 {

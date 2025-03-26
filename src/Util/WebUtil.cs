@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace Ares.src.Util;
+namespace Ares.Util;
 
 public class WebUtil
 {

@@ -1,6 +1,6 @@
 ﻿using Discord;
 
-namespace Ares.src.Util;
+namespace Ares.Util;
 
 internal class AresLogger
 {

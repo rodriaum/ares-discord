@@ -1,18 +1,18 @@
 ﻿using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using Ares.src.Objects.Model;
+using Ares.Objects.Model;
 using MongoDB.Driver;
-using Ares.src.Objects.Language;
-using Ares.src.Database.Collection;
-using Ares.src.Objects.Chat.Image;
-using Ares.src.Database.Model;
-using Ares.src.Database.Model.Config;
-using Ares.src.Database.Model.Information;
-using Ares.src.Database.Model.Chat.Sub;
-using Ares.src.Util;
+using Ares.Objects.Language;
+using Ares.Database.Collection;
+using Ares.Objects.Chat.Image;
+using Ares.Database.Model;
+using Ares.Database.Model.Config;
+using Ares.Database.Model.Information;
+using Ares.Database.Model.Chat.Sub;
+using Ares.Util;
 
-namespace Ares.src.Listener.Chat;
+namespace Ares.Listener.Chat;
 
 internal class SelectedChatListener
 {

@@ -1,4 +1,4 @@
-﻿namespace Ares.src;
+﻿namespace Ares;
 
 internal class Constant
 {

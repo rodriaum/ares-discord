@@ -1,19 +1,19 @@
-﻿using Ares.src.Database.Collection;
-using Ares.src.Database.Model;
-using Ares.src.Database.Model.Chat.Sub;
-using Ares.src.Objects.Chat;
-using Ares.src.Objects.Chat.Image;
-using Ares.src.Objects.Chat.Price;
-using Ares.src.Objects.Language;
-using Ares.src.Objects.Model;
-using Ares.src.Service;
-using Ares.src.Util;
+﻿using Ares.Database.Collection;
+using Ares.Database.Model;
+using Ares.Database.Model.Chat.Sub;
+using Ares.Objects.Chat;
+using Ares.Objects.Chat.Image;
+using Ares.Objects.Chat.Price;
+using Ares.Objects.Language;
+using Ares.Objects.Model;
+using Ares.Service;
+using Ares.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 using MongoDB.Bson;
 
-namespace Ares.src.Listener.Chat;
+namespace Ares.Listener.Chat;
 
 internal class ReceivedContentListener
 {

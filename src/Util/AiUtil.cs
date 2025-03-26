@@ -1,12 +1,12 @@
 ﻿using Anthropic.SDK.Messaging;
-using Ares.src.Database.Model.Chat.Sub;
-using Ares.src.Objects.Chat;
-using Ares.src.Objects.Chat.Image;
+using Ares.Database.Model.Chat.Sub;
+using Ares.Objects.Chat;
+using Ares.Objects.Chat.Image;
 using DeepSeek.Core.Models;
 using OpenAI.Chat;
 using OpenAI.Images;
 
-namespace Ares.src.Util;
+namespace Ares.Util;
 
 public class AiUtil
 {

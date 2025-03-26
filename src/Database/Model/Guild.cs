@@ -1,14 +1,14 @@
-﻿using Ares.src.Database.Model.Chat;
-using Ares.src.Database.Model.Chat.Sub;
-using Ares.src.Database.Model.Config;
-using Ares.src.Database.Model.Information;
-using Ares.src.Database.Model.Token;
-using Ares.src.Objects.Language;
-using Ares.src.Objects.Model;
-using Ares.src.Util;
+﻿using Ares.Database.Model.Chat;
+using Ares.Database.Model.Chat.Sub;
+using Ares.Database.Model.Config;
+using Ares.Database.Model.Information;
+using Ares.Database.Model.Token;
+using Ares.Objects.Language;
+using Ares.Objects.Model;
+using Ares.Util;
 using Discord;
 
-namespace Ares.src.Database.Model;
+namespace Ares.Database.Model;
 
 /// <summary>
 /// Represents a Discord guild (server) with its associated data and operations.

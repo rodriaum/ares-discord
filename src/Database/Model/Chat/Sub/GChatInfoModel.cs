@@ -1,6 +1,6 @@
-﻿using Ares.src.Objects.Chat.Image;
+﻿using Ares.Objects.Chat.Image;
 
-namespace Ares.src.Database.Model.Chat.Sub;
+namespace Ares.Database.Model.Chat.Sub;
 
 public class GChatInfoModel
 {

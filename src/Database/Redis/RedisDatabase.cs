@@ -1,9 +1,9 @@
-﻿using Ares.src.Util;
+﻿using Ares.Util;
 using MongoDB.Driver.Linq;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
-namespace Ares.src.Database.Redis;
+namespace Ares.Database.Redis;
 
 /// <summary>
 /// Represents a Redis database connection and provides methods for interacting with Redis.

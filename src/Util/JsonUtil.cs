@@ -3,7 +3,7 @@ using MongoDB.Bson;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace Ares.src.Util;
+namespace Ares.Util;
 
 internal class JsonUtil
 {

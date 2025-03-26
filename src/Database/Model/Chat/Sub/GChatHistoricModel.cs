@@ -1,7 +1,7 @@
-﻿using Ares.src.Objects.Chat;
-using Ares.src.Util;
+﻿using Ares.Objects.Chat;
+using Ares.Util;
 
-namespace Ares.src.Database.Model.Chat.Sub;
+namespace Ares.Database.Model.Chat.Sub;
 
 /// <summary>
 /// Representa o histórico de conversas.

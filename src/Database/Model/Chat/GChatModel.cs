@@ -1,6 +1,6 @@
-﻿using Ares.src.Database.Model.Chat.Sub;
+﻿using Ares.Database.Model.Chat.Sub;
 
-namespace Ares.src.Database.Model.Chat;
+namespace Ares.Database.Model.Chat;
 
 public class GChatModel
 {

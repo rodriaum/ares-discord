@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Database.Model.Config;
+﻿namespace Ares.Database.Model.Config;
 
 public partial class GuildConfigData
 {

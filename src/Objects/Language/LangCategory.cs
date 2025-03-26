@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Objects.Language;
+﻿namespace Ares.Objects.Language;
 
 public class LangCategory
 {

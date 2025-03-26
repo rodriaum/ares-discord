@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Objects.Chat;
+﻿namespace Ares.Objects.Chat;
 
 /// <summary>
 /// Representa os diferentes papéis das mensagens no chat.

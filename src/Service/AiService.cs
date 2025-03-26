@@ -1,14 +1,14 @@
 ﻿using Anthropic.SDK;
 using Anthropic.SDK.Messaging;
-using Ares.src.Database.Model;
-using Ares.src.Database.Model.Chat.Sub;
-using Ares.src.Database.Model.Information;
-using Ares.src.Database.Model.Token;
-using Ares.src.Manager;
-using Ares.src.Objects.Chat.Image;
-using Ares.src.Objects.Language;
-using Ares.src.Objects.Model;
-using Ares.src.Util;
+using Ares.Database.Model;
+using Ares.Database.Model.Chat.Sub;
+using Ares.Database.Model.Information;
+using Ares.Database.Model.Token;
+using Ares.Manager;
+using Ares.Objects.Chat.Image;
+using Ares.Objects.Language;
+using Ares.Objects.Model;
+using Ares.Util;
 using DeepSeek.Core;
 using DeepSeek.Core.Models;
 using Discord;
@@ -21,7 +21,7 @@ using OpenAI.Images;
 using System.ClientModel;
 using System.Text;
 
-namespace Ares.src.Service;
+namespace Ares.Service;
 
 public class AiService
 {

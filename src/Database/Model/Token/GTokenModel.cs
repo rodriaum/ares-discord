@@ -1,4 +1,4 @@
-﻿namespace Ares.src.Database.Model.Token;
+﻿namespace Ares.Database.Model.Token;
 
 public class GTokenModel
 {

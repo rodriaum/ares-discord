@@ -1,6 +1,6 @@
 ﻿using StackExchange.Redis;
 
-namespace Ares.src.Database.Redis.Channel;
+namespace Ares.Database.Redis.Channel;
 
 public class RedisChannelMessage
 {
