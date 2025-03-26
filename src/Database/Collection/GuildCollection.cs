@@ -271,7 +271,8 @@ internal class GuildCollection
              * Update the local cache with the new data.
              */
 
-            tree.TryGetValue("Value", out BsonValue fieldValue);
+            /*
+            BsonValue a = tree[field];
 
             JObject message = new JObject
             {
@@ -289,6 +290,7 @@ internal class GuildCollection
             }
 
             _redisDatabase.Update(GuildKey + guild.Id, guild);
+            */
 
             return true;
         }
