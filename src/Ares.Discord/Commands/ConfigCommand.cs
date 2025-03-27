@@ -1,0 +1,252 @@
+﻿using Ares.Core;
+using Ares.Core.Database.Collection;
+using Ares.Core.Database.Model;
+using Ares.Core.Database.Model.Config;
+using Ares.Core.Database.Model.Information;
+using Ares.Core.Database.Model.Token;
+using Ares.Core.Objects.Language;
+using Discord;
+using Discord.Rest;
+using Discord.WebSocket;
+using System.Text;
+
+namespace Ares.Discord.Commands;
+
+internal class ConfigCommand
+{
+    private readonly DiscordSocketClient? _client;
+
+    public ConfigCommand(DiscordSocketClient client)
+    {
+        client.SlashCommandExecuted += SlashCommandHandler;
+        _client = client;
+    }
+
+    private async Task SlashCommandHandler(SocketSlashCommand command)
+    {
+        if (_client == null || !(command.Data.Name.Equals("config-token") || command.Data.Name.Equals("config-id") || command.Data.Name.Equals("config-lang"))) return;
+
+        EmbedBuilder embed = new EmbedBuilder()
+            .WithTitle("Config")
+            .WithDescription("Aguarde...")
+            .WithColor(Color.Gold)
+            .WithFooter($"{DateTime.Now.Year} - Ares");
+
+        await command.RespondAsync(ephemeral: true, embed: embed.Build());
+        RestInteractionMessage message = await command.GetOriginalResponseAsync();
+
+        GuildCollection? data = AresCore.GuildCollection;
+        if (data == null)
+        {
+            await message.ModifyAsync(msg =>
+                msg.Embed = embed
+                    .WithDescription("Não foi possível acessar as informações do servidor atual.")
+                    .WithColor(Color.Red)
+                    .Build()
+            );
+            return;
+        }
+
+        ulong? guildId = command.GuildId;
+
+        if (guildId == null)
+        {
+            await message.ModifyAsync(msg =>
+                msg.Embed = embed
+                    .WithDescription("Não foi possível encontrar o ID do servidor atual.")
+                    .WithColor(Color.Red)
+                    .Build()
+            );
+            return;
+        }
+
+        Guild? guild = await data.FetchAsync(guildId.Value);
+        const int maxAttempts = 3;
+
+        for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
+        {
+            await message.ModifyAsync(msg =>
+                msg.Embed = embed
+                    .WithDescription($"Servidor não foi encontrado no banco de dados! A criar... ({attempts}/{maxAttempts})")
+                    .WithColor(Color.Red)
+                    .Build());
+
+            await Task.Delay(1500);
+            guild = await data.SaveAsync(guildId.Value);
+        }
+
+        if (guild == null)
+        {
+            await message.ModifyAsync(msg =>
+                msg.Embed = embed
+                    .WithDescription("Não foi possível criar esse servidor no banco de dados! Tente novamente mais tarde.")
+                    .WithColor(Color.Red)
+                    .Build());
+            return;
+        }
+
+        IReadOnlyCollection<SocketSlashCommandDataOption> options = command.Data.Options;
+
+        GInfoModel information = guild.Information;
+
+        GTokenModel tokenData = information.Token;
+        GuildConfigData configData = information.Config;
+
+        StringBuilder sb = new StringBuilder();
+
+        bool tokenChange = false, configChange = false;
+
+        foreach (var option in options)
+        {
+            if (option == null)
+            {
+                await message.ModifyAsync(msg =>
+                    msg.Embed = embed
+                        .WithDescription(guild.GetTranslation(LangKeys.InvalidOptions))
+                        .WithColor(Color.Red)
+                        .Build()
+                );
+                return;
+            }
+
+            string optionName = option.Name;
+            string? optionValue = option.Value.ToString();
+
+            if (optionValue == null)
+            {
+                await message.ModifyAsync(msg =>
+                    msg.Embed = embed
+                        .WithDescription(guild.GetTranslation(LangKeys.InvalidOptionValue))
+                        .WithColor(Color.Red)
+                        .Build()
+                );
+                return;
+            }
+
+            switch (optionName)
+            {
+
+                /*
+                 * Token Configuration
+                 */
+
+                case "openai":
+                    tokenData.OpenAi = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.OpenAi != optionValue;
+                    break;
+
+                case "anthropic":
+                    tokenData.Anthropic = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.Anthropic != optionValue;
+                    break;
+
+                case "deepseek":
+                    tokenData.Deepseek = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.Deepseek != optionValue;
+                    break;
+
+                case "imgur":
+                    tokenData.Imgur = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.Imgur != optionValue;
+                    break;
+
+                /*
+                 * IDs Configuration
+                 */
+
+                case "role-member":
+                    configData.MemberRoleId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "role-usage":
+                    configData.UsageRoleId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "role-exclusive":
+                    configData.ExclusiveRoleId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "channel-setup":
+                    configData.SetupChannelId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "channel-log":
+                    configData.LogChannelId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                case "category-chats":
+                    configData.ChatsCategoryId = ulong.Parse(optionValue);
+                    configChange = true;
+                    break;
+
+                /*
+                 * Lang Configuration
+                 */
+
+                case "lang":
+                    configData.Lang = optionValue;
+                    configChange = true;
+                    break;
+
+                /*
+                 * Default Option
+                 */
+
+                default:
+                    await message.ModifyAsync(msg =>
+                        msg.Embed = embed
+                            .WithDescription(guild.GetTranslation(LangKeys.InvalidOption))
+                            .WithColor(Color.Red)
+                            .Build()
+                    );
+                    return;
+            }
+
+            sb.AppendLine(guild
+                .GetTranslation(LangKeys.ConfigUpdateSuccess)
+                .Replace("{0}", optionName ?? "N/A")
+                .Replace("{1}", optionValue ?? "N/A"));
+        }
+
+        // Só uma opção pode ser alterada por comando, por isso o uso de uma variável booleana apenas.
+        bool success = false;
+
+        if (tokenChange)
+        {
+            success = await guild.SaveGuildTokenDataAsync(tokenData);
+        }
+
+        if (configChange)
+        {
+            success = await guild.SaveGuildConfigDataAsync(configData);
+        }
+
+        if (success)
+        {
+            await message.ModifyAsync(msg =>
+                msg.Embed = embed
+                    .WithDescription(sb.ToString())
+                    .WithColor(Color.Green)
+                    .Build()
+            );
+        }
+        else
+        {
+            await message.ModifyAsync(msg =>
+                msg.Embed = embed
+                    .WithDescription(guild.GetTranslation(LangKeys.ConfigUpdateUnSuccess))
+                    .WithColor(Color.Red)
+                    .Build()
+                );
+        }
+    }
+}
