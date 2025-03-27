@@ -153,7 +153,7 @@ internal class GuildCollection
             // Insert the document in the database if it doesn't exist.
             await _collection.InsertOneAsync(document);
 
-            _redisDatabase.Save(GRedisKey + id, guild);
+            _redisDatabase.SaveAsync(GRedisKey + id, guild);
             _manager.Save(guild);
         }
 
@@ -183,7 +183,7 @@ internal class GuildCollection
 
         if (guild == null)
         {
-            guild = _redisDatabase.Load<Guild>(GRedisKey + id);
+            guild = await _redisDatabase.LoadAsync<Guild>(GRedisKey + id);
 
             if (guild == null)
             {
@@ -195,7 +195,7 @@ internal class GuildCollection
 
                     if (saveInRedis && guild != null)
                     {
-                        _redisDatabase.Save(GRedisKey + id, guild);
+                        await _redisDatabase.SaveAsync(GRedisKey + id, guild);
                     }
                 }
             }
@@ -243,7 +243,7 @@ internal class GuildCollection
             await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
 
             // Update Redis
-            _redisDatabase.Update(GRedisKey + guild.Id, guild);
+            _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
 
             return true;
         }
@@ -260,7 +260,7 @@ internal class GuildCollection
     /// <param name="id">Unique ID of the guild to be removed from the cache.</param>
     public void DeleteCache(string id)
     {
-        _redisDatabase.Cache(GRedisKey + id, 300);
+        _redisDatabase.CacheAsync(GRedisKey + id, 300);
         _manager?.Delete(id);
     }
 
@@ -279,7 +279,7 @@ internal class GuildCollection
     /// <param name="id">The unique identifier for the key to be persisted.</param>
     public void Persist(string id)
     {
-        _redisDatabase.Persist(GRedisKey + id);
+        _redisDatabase.PersistAsync(GRedisKey + id);
     }
 
     /// <summary>

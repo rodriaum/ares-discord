@@ -50,11 +50,11 @@ public class RedisDatabase : DatabaseTemplate
     /// Configures connection options including timeout settings and authentication.
     /// Logs successful connection or any connection errors.
     /// </remarks>
-    public void Connect()
+    public async Task ConnectAsync()
     {
         long start = TimeUtil.CurrentTimeMillis();
 
-        AresLogger.Log("DB: Redis", "Starting connection to Redis...");
+        await AresLogger.LogAsync("DB: Redis", "Starting connection to Redis...");
 
         try
         {
@@ -67,14 +67,14 @@ public class RedisDatabase : DatabaseTemplate
                 AsyncTimeout = 5000
             };
 
-            this._connection = ConnectionMultiplexer.Connect(options);
+            this._connection = await ConnectionMultiplexer.ConnectAsync(options);
             this._database = _connection.GetDatabase();
 
-            AresLogger.Log("DB: Redis", $"Redis connection successfully established. ({FormatterUtil.FormatSeconds(start)})");
+            await AresLogger.LogAsync("DB: Redis", $"Redis connection successfully established. ({FormatterUtil.FormatSeconds(start)})");
         }
         catch (Exception ex)
         {
-            AresLogger.Error("DB: Redis", "Could not connect to Redis...", error: ex.Message);
+            await AresLogger.ErrorAsync("DB: Redis", "Could not connect to Redis...", error: ex.Message);
         }
     }
 
@@ -84,12 +84,12 @@ public class RedisDatabase : DatabaseTemplate
     /// <remarks>
     /// Only closes the connection if it is currently established.
     /// </remarks>
-    public void Close()
+    public async Task CloseAsync()
     {
         if (this.IsConnected())
         {
-            this._connection?.Close();
-            this._connection?.Dispose();
+            await this._connection.CloseAsync();
+            await this._connection.DisposeAsync();
         }
     }
 
@@ -105,9 +105,9 @@ public class RedisDatabase : DatabaseTemplate
     /// <summary>
     /// Completely clears all data from the current Redis database.
     /// </summary>
-    public void Flush()
+    public async Task<RedisResult> FlushAsync()
     {
-        this._database.Execute("FLUSHDB");
+        return await this._database.ExecuteAsync("FLUSHDB");
     }
 
     /// <summary>
@@ -115,9 +115,9 @@ public class RedisDatabase : DatabaseTemplate
     /// </summary>
     /// <param name="key">The key to check for existence.</param>
     /// <returns>True if the key exists, false otherwise.</returns>
-    public bool Exists(string key)
+    public async Task<bool> ExistsAsync(string key)
     {
-        return this._database.KeyExists(key);
+        return await this._database.KeyExistsAsync(key);
     }
 
     /// <summary>
@@ -125,12 +125,12 @@ public class RedisDatabase : DatabaseTemplate
     /// </summary>
     /// <param name="key">The key under which to store the object.</param>
     /// <param name="obj">The object to be saved.</param>
-    public void Save(string key, object obj)
+    public async Task SaveAsync(string key, object obj)
     {
-        if (this.Exists(key)) return;
+        if (await this.ExistsAsync(key)) return;
 
-        HashEntry[] fields = ConvertToHashEntries(obj);
-        this._database.HashSet(key, fields);
+        HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
+        await this._database.HashSetAsync(key, fields);
     }
 
     /// <summary>
@@ -138,12 +138,12 @@ public class RedisDatabase : DatabaseTemplate
     /// </summary>
     /// <param name="key">The key of the object to update.</param>
     /// <param name="obj">The updated object.</param>
-    public void Update(string key, object obj)
+    public async Task UpdateAsync(string key, object obj)
     {
-        if (Exists(key))
+        if (await ExistsAsync(key))
         {
-            var fields = ConvertToHashEntries(obj);
-            this._database.HashSet(key, fields);
+            var fields = await ConvertToHashEntriesAsync(obj);
+            await this._database.HashSetAsync(key, fields);
         }
     }
 
@@ -152,9 +152,9 @@ public class RedisDatabase : DatabaseTemplate
     /// </summary>
     /// <param name="channel">The channel to publish to.</param>
     /// <param name="message">The message to publish.</param>
-    public void Publish(string channel, string message)
+    public async Task<long> PublishAsync(string channel, string message)
     {
-        this._connection.GetSubscriber().Publish(RedisChannel.Pattern(channel), message);
+        return await this._connection.GetSubscriber().PublishAsync(RedisChannel.Pattern(channel), message);
     }
 
     /// <summary>
@@ -163,19 +163,19 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="key">The key under which to store the object.</param>
     /// <param name="obj">The object to be saved.</param>
     /// <param name="expire">The number of seconds before the key expires.</param>
-    public void Save(string key, object obj, int expire)
+    public async Task SaveAsync(string key, object obj, int expire)
     {
-        this.Save(key, obj);
-        this.Cache(key, expire);
+        await this.SaveAsync(key, obj);
+        await this.CacheAsync(key, expire);
     }
 
     /// <summary>
     /// Deletes a key from the Redis database.
     /// </summary>
-    /// <param name="key">The key to delete.</param>
-    public void Delete(string key)
+    /// <param name="key">The key to delete.</param
+    public async Task<bool> DeleteAsync(string key)
     {
-        this._database.KeyDelete(key);
+        return await this._database.KeyDeleteAsync(key);
     }
 
     /// <summary>
@@ -183,21 +183,23 @@ public class RedisDatabase : DatabaseTemplate
     /// </summary>
     /// <param name="key">The key to set expiration for.</param>
     /// <param name="seconds">The number of seconds until expiration.</param>
-    public void Cache(string key, int seconds)
+    public async Task CacheAsync(string key, int seconds)
     {
-        this._database.KeyExpire(key, TimeSpan.FromSeconds(seconds));
+        await this._database.KeyExpireAsync(key, TimeSpan.FromSeconds(seconds));
     }
 
     /// <summary>
     /// Removes the expiration time from a key, making it permanent.
     /// </summary>
     /// <param name="key">The key to make persistent.</param>
-    public void Persist(string key)
+    public async Task<bool> PersistAsync(string key)
     {
-        if (this._database.KeyTimeToLive(key).HasValue)
+        if (await this._database.KeyTimeToLiveAsync(key) != null)
         {
-            this._database.KeyPersist(key);
+            return await this._database.KeyPersistAsync(key);
         }
+
+        return false;
     }
 
     /// <summary>
@@ -205,9 +207,9 @@ public class RedisDatabase : DatabaseTemplate
     /// </summary>
     /// <param name="key">The key of the hash.</param>
     /// <param name="fields">The fields to delete.</param>
-    public void Delete(string key, params string[] fields)
+    public async Task<long> DeleteAsync(string key, params string[] fields)
     {
-        this._database.HashDelete(key, fields.Select(f => (RedisValue)f).ToArray());
+        return await this._database.HashDeleteAsync(key, fields.Select(f => (RedisValue)f).ToArray());
     }
 
     /// <summary>
@@ -216,14 +218,14 @@ public class RedisDatabase : DatabaseTemplate
     /// <typeparam name="T">The type of object to load.</typeparam>
     /// <param name="key">The key of the object.</param>
     /// <returns>The loaded object, or null if not found.</returns>
-    public T? Load<T>(string key) where T : class
+    public async Task<T?> LoadAsync<T>(string key) where T : class
     {
-        HashEntry[] fields = this._database.HashGetAll(key);
+        HashEntry[] fields = await this._database.HashGetAllAsync(key);
 
         if (fields.Length == 0)
             return null;
 
-        return this.ConvertFromHashEntries<T>(fields);
+        return await this.ConvertFromHashEntriesAsync<T>(fields);
     }
 
     /// <summary>
@@ -232,18 +234,18 @@ public class RedisDatabase : DatabaseTemplate
     /// <typeparam name="T">The type of objects to load.</typeparam>
     /// <param name="key">The key pattern to match.</param>
     /// <returns>A list of matching objects.</returns>
-    public List<T> LoadAll<T>(string key) where T : class
+    public async Task<List<T>> LoadAllAsync<T>(string key) where T : class
     {
-        RedisResult keys = this._database.Execute("KEYS", $"{key}*");
+        RedisResult keys = await this._database.ExecuteAsync("KEYS", $"{key}*");
         List<T> results = new List<T>();
 
         foreach (var value in keys.ToDictionary())
         {
-            HashEntry[] fields = this._database.HashGetAll(value.Key);
+            HashEntry[] fields = await this._database.HashGetAllAsync(value.Key);
 
             if (fields.Length > 0)
             {
-                var obj = ConvertFromHashEntries<T>(fields);
+                var obj = await ConvertFromHashEntriesAsync<T>(fields);
                 if (obj != null)
                     results.Add(obj);
             }
@@ -256,13 +258,13 @@ public class RedisDatabase : DatabaseTemplate
     /// Removes all keys matching a specific pattern.
     /// </summary>
     /// <param name="key">The key pattern to match and remove.</param>
-    public void RemoveAll(string key)
+    public async Task RemoveAllAsync(string key)
     {
-        RedisResult keys = this._database.Execute("KEYS", $"{key}*");
+        RedisResult keys = await this._database.ExecuteAsync("KEYS", $"{key}*");
 
         foreach (var value in keys.ToDictionary())
         {
-            this._database.KeyDelete(value.Key);
+            await this._database.KeyDeleteAsync(value.Key);
         }
     }
 
@@ -271,48 +273,52 @@ public class RedisDatabase : DatabaseTemplate
     /// </summary>
     /// <param name="key">The key of the set.</param>
     /// <returns>The number of elements in the set.</returns>
-    public int GetTotalCount(string key)
+    public async Task<int> GetTotalCountAsync(string key)
     {
-        return (int)_database.SetLength(key);
+        long lenght = await _database.SetLengthAsync(key);
+        return (int)lenght;
     }
 
     /// <summary>
-    /// Converts an object to Redis hash entries.
+    /// Converts an object to Redis hash entries asynchronously.
     /// </summary>
     /// <param name="obj">The object to convert.</param>
-    /// <returns>An array of hash entries.</returns>
-    private HashEntry[] ConvertToHashEntries(object obj)
+    /// <returns>A Task representing a HashEntry array.</returns>
+    private async Task<HashEntry[]> ConvertToHashEntriesAsync(object obj)
     {
-        string json = JsonConvert.SerializeObject(obj);
-        Dictionary<string, string>? dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-
-        if (dictionary == null)
+        return await Task.Run(() =>
         {
-            AresLogger.Error("DB: Redis", "Could not convert object to hash entries.");
-            return Array.Empty<HashEntry>();
-        }
+            Dictionary<string, string>? dictionary = JsonUtil.ObjectToMap(obj);
 
-        return dictionary
-            .Where(kvp => kvp.Value != null)
-            .Select(kvp => new HashEntry(kvp.Key, kvp.Value))
-            .ToArray();
+            if (dictionary == null)
+            {
+                AresLogger.Error("DB: Redis", "Could not convert object to hash entries.");
+                return Array.Empty<HashEntry>();
+            }
+
+            return dictionary
+                .Where(kvp => kvp.Value != null)
+                .Select(kvp => new HashEntry(kvp.Key, kvp.Value))
+                .ToArray();
+        });
     }
 
     /// <summary>
-    /// Converts Redis hash entries to an object of specified type.
+    /// Converts Redis hash entries to an object of specified type asynchronously.
     /// </summary>
     /// <typeparam name="T">The type of object to convert to.</typeparam>
     /// <param name="entries">The hash entries to convert.</param>
-    /// <returns>The converted object, or null if conversion fails.</returns>
-    private T? ConvertFromHashEntries<T>(HashEntry[] entries) where T : class
+    /// <returns>A Task representing the converted object, or null if conversion fails.</returns>
+    private async Task<T?> ConvertFromHashEntriesAsync<T>(HashEntry[] entries) where T : class
     {
-        var dictionary = entries.ToDictionary(
-            entry => entry.Name.ToString(),
-            entry => entry.Value.ToString()
-        );
+        return await Task.Run(() =>
+        {
+            var dictionary = entries.ToDictionary(
+                entry => entry.Name.ToString(),
+                entry => entry.Value.ToString()
+            );
 
-        string json = JsonConvert.SerializeObject(dictionary);
-
-        return JsonConvert.DeserializeObject<T>(json);
+            return JsonUtil.MapToObject<T?>(dictionary);
+        });
     }
 }

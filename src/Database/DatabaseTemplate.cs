@@ -2,7 +2,7 @@
 
 internal interface DatabaseTemplate
 {
-    void Connect();
-    void Close();
+    Task ConnectAsync();
+    Task CloseAsync();
     bool IsConnected();
 }

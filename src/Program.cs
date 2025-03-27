@@ -134,7 +134,7 @@ internal class Program
             Port = 27017
         });
 
-        mongoDatabase.Connect();
+        mongoDatabase.ConnectAsync();
         MongoDatabase = mongoDatabase;
 
         /*
@@ -147,7 +147,7 @@ internal class Program
             Port = 6379
         });
 
-        redisDatabase.Connect();
+        redisDatabase.ConnectAsync();
         RedisDatabase = redisDatabase;
 
         /*

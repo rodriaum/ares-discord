@@ -34,11 +34,11 @@ internal class MongoDatabase : DatabaseTemplate
         credentials = credential;
     }
 
-    public void Connect()
+    public async Task ConnectAsync()
     {
         long start = TimeUtil.CurrentTimeMillis();
 
-        AresLogger.Log("DB: Mongo", "Connecting...");
+        await AresLogger.LogAsync("DB: Mongo", "Connecting...");
 
         try
         {
@@ -47,20 +47,23 @@ internal class MongoDatabase : DatabaseTemplate
             client = new MongoClient(settings);
             mongoDatabase = client.GetDatabase(credentials.Database);
 
-            AresLogger.Log("DB: Mongo", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
+            await AresLogger.LogAsync("DB: Mongo", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
         }
         catch (Exception e)
         {
-            AresLogger.Error("DB: Mongo", "Unable to connect...", e.Message);
+            await AresLogger.ErrorAsync("DB: Mongo", "Unable to connect...", e.Message);
         }
     }
 
-    public void Close()
+    public Task CloseAsync()
     {
         if (client != null)
         {
-            client = null;
+            client.Dispose();
+            return Task.CompletedTask;
         }
+
+        return Task.FromResult(false);
     }
 
     public bool IsConnected()
