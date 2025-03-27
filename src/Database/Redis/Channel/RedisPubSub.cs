@@ -38,7 +38,7 @@ public class RedisPubSub
                 }
                 catch (Exception ex)
                 {
-                    AresLogger.Error("Redis", $"Unable to register Redis channel \"{channel}\".", ex.Message);
+                    AresLogger.Error("DB: Redis", $"Unable to register Redis channel \"{channel}\".", ex.Message);
                 }
 
                 try
@@ -50,7 +50,7 @@ public class RedisPubSub
         }
         catch (Exception ex)
         {
-            AresLogger.Error("Redis", $"Failed to register Redis channels.", ex.Message);
+            AresLogger.Error("DB: Redis", $"Failed to register Redis channels.", ex.Message);
             RegisterChannels();
         }
     }

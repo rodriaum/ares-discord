@@ -38,7 +38,7 @@ internal class MongoDatabase : DatabaseTemplate
     {
         long start = TimeUtil.CurrentTimeMillis();
 
-        AresLogger.Log("MongoDB", "Connecting...");
+        AresLogger.Log("DB: Mongo", "Connecting...");
 
         try
         {
@@ -47,11 +47,11 @@ internal class MongoDatabase : DatabaseTemplate
             client = new MongoClient(settings);
             mongoDatabase = client.GetDatabase(credentials.Database);
 
-            AresLogger.Log("MongoDB", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
+            AresLogger.Log("DB: Mongo", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
         }
         catch (Exception e)
         {
-            AresLogger.Error("MongoDB", "Unable to connect...", e.Message);
+            AresLogger.Error("DB: Mongo", "Unable to connect...", e.Message);
         }
     }
 

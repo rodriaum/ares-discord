@@ -6,9 +6,7 @@ using Ares.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
-using System.Text.Json.Nodes;
 
 namespace Ares.Database.Collection;
 
@@ -35,7 +33,7 @@ internal class GuildCollection
     /// <summary>
     /// Key prefix used for guild data in Redis.
     /// </summary>
-    private readonly String GuildKey = "guild:";
+    private readonly String GRedisKey = "guild:";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GuildCollection"/> class with the guilds collection and guild manager.
@@ -86,7 +84,7 @@ internal class GuildCollection
     /// </summary>
     public async void CreateIndexes()
     {
-        await AresLogger.LogAsync("MongoDB", "Creating indexes in the database...");
+        await AresLogger.LogAsync("DB: Mongo", "Creating indexes in the database...");
 
         // Check if the collection was initialized before trying to create indexes.
         if (_collection == null)
@@ -108,7 +106,7 @@ internal class GuildCollection
 
                 await _collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
 
-                await AresLogger.LogAsync("MongoDB", "Indexes created.");
+                await AresLogger.LogAsync("DB: Mongo", "Indexes created.");
             }
             catch (Exception ex)
             {
@@ -156,7 +154,7 @@ internal class GuildCollection
             var document = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
             await _collection.InsertOneAsync(document);
 
-            _redisDatabase.Save(GuildKey + id, guild);
+            _redisDatabase.Save(GRedisKey + id, guild);
 
             _manager.Save(guild);
         }
@@ -187,7 +185,7 @@ internal class GuildCollection
 
         if (guild == null)
         {
-            guild = _redisDatabase.Load<Guild>(GuildKey + id);
+            guild = _redisDatabase.Load<Guild>(GRedisKey + id);
 
             if (guild == null)
             {
@@ -210,7 +208,7 @@ internal class GuildCollection
 
                     if (saveInRedis)
                     {
-                        _redisDatabase.Save(GuildKey + id, guild);
+                        _redisDatabase.Save(GRedisKey + id, guild);
                     }
                 }
             }
@@ -310,7 +308,7 @@ internal class GuildCollection
     /// <param name="id">Unique ID of the guild to be removed from the cache.</param>
     public void DeleteCache(string id)
     {
-        _redisDatabase.Cache(GuildKey + id, 300);
+        _redisDatabase.Cache(GRedisKey + id, 300);
         _manager?.Delete(id);
     }
 
@@ -329,7 +327,7 @@ internal class GuildCollection
     /// <param name="id">The unique identifier for the key to be persisted.</param>
     public void Persist(string id)
     {
-        _redisDatabase.Persist(GuildKey + id);
+        _redisDatabase.Persist(GRedisKey + id);
     }
 
     /// <summary>

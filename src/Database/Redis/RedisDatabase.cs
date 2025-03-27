@@ -54,7 +54,7 @@ public class RedisDatabase : DatabaseTemplate
     {
         long start = TimeUtil.CurrentTimeMillis();
 
-        AresLogger.Log("Redis", "Starting connection to Redis...");
+        AresLogger.Log("DB: Redis", "Starting connection to Redis...");
 
         try
         {
@@ -70,11 +70,11 @@ public class RedisDatabase : DatabaseTemplate
             this._connection = ConnectionMultiplexer.Connect(options);
             this._database = _connection.GetDatabase();
 
-            AresLogger.Log("Redis", $"Redis connection successfully established. ({FormatterUtil.FormatSeconds(start)})");
+            AresLogger.Log("DB: Redis", $"Redis connection successfully established. ({FormatterUtil.FormatSeconds(start)})");
         }
         catch (Exception ex)
         {
-            AresLogger.Error("Redis", "Could not connect to Redis...", error: ex.Message);
+            AresLogger.Error("DB: Redis", "Could not connect to Redis...", error: ex.Message);
         }
     }
 
@@ -288,7 +288,7 @@ public class RedisDatabase : DatabaseTemplate
 
         if (dictionary == null)
         {
-            AresLogger.Error("Redis", "Could not convert object to hash entries.");
+            AresLogger.Error("DB: Redis", "Could not convert object to hash entries.");
             return Array.Empty<HashEntry>();
         }
 

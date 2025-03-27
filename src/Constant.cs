@@ -13,5 +13,5 @@ internal class Constant
      * Redis Channels
      */
 
-    public static readonly string GuildChannel = "guild_channel";
+    public static readonly string GRedisChannel = "guild_channel";
 }
