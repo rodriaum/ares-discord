@@ -32,10 +32,10 @@ class GuildListener
 
         foreach (IGuild iguild in guilds)
         {
-            Guild? guild = await data.Fetch(iguild.Id, saveInRedis: true);
+            Guild? guild = await data.FetchAsync(iguild.Id, saveInRedis: true);
             if (guild != null) continue;
 
-            await data.Save(iguild.Id.ToString());
+            await data.SaveAsync(iguild.Id.ToString());
         }
     }
 
@@ -46,7 +46,7 @@ class GuildListener
         GuildCollection? data = Program.GuildCollection;
         if (data == null) return;
 
-        await data.Save(guild.Id);
+        await data.SaveAsync(guild.Id);
     }
 
     private Task GuildUnavailable(SocketGuild guild)

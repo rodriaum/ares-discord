@@ -58,7 +58,7 @@ internal class ConfigCommand
             return;
         }
 
-        Guild? guild = await data.Fetch(guildId.Value);
+        Guild? guild = await data.FetchAsync(guildId.Value);
         const int maxAttempts = 3;
 
         for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
@@ -70,7 +70,7 @@ internal class ConfigCommand
                     .Build());
 
             await Task.Delay(1500);
-            guild = await data.Save(guildId.Value);
+            guild = await data.SaveAsync(guildId.Value);
         }
 
         if (guild == null)

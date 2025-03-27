@@ -60,7 +60,7 @@ internal class ReceivedContentListener
                 return;
             }
 
-            Guild? guild = await data.Fetch(socketGuild.Id);
+            Guild? guild = await data.FetchAsync(socketGuild.Id);
             if (guild == null)
                 return;
 

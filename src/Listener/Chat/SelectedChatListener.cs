@@ -49,14 +49,14 @@ internal class SelectedChatListener
                 return;
             }
 
-            Guild? guild = await data.Fetch(guildId);
+            Guild? guild = await data.FetchAsync(guildId);
             const int maxAttempts = 3;
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
             {
                 await args.FollowupAsync($"Tentando criar servidor no banco de dados... {attempts}/{maxAttempts}");
                 await Task.Delay(1500);
-                guild = await data.Save(guildId);
+                guild = await data.SaveAsync(guildId);
             }
 
             if (guild == null)

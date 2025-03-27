@@ -35,6 +35,10 @@ internal class GuildCollection
     /// </summary>
     private readonly String GRedisKey = "guild:";
 
+    /*
+     * Constructors and initialization methods.
+     */
+
     /// <summary>
     /// Initializes a new instance of the <see cref="GuildCollection"/> class with the guilds collection and guild manager.
     /// </summary>
@@ -48,7 +52,7 @@ internal class GuildCollection
         _manager = Program.GuildManager;
 
         // Create indexes in the collection to optimize queries.
-        CreateIndexes();
+        CreateIndexesAsync();
     }
 
     /// <summary>
@@ -71,7 +75,7 @@ internal class GuildCollection
             }
             catch (Exception ex)
             {
-                AresLogger.Error("ConnectionError", $"Failed to connect to MongoDB. Retrying in 15 seconds...", ex.Message);
+                await AresLogger.ErrorAsync("ConnectionError", $"Failed to connect to MongoDB. Retrying in 15 seconds...", ex.Message);
                 await Task.Delay(15000);
             }
         }
@@ -82,14 +86,14 @@ internal class GuildCollection
     /// <summary>
     /// Creates indexes in the "guilds" collection to improve query performance.
     /// </summary>
-    public async void CreateIndexes()
+    public async void CreateIndexesAsync()
     {
         await AresLogger.LogAsync("DB: Mongo", "Creating indexes in the database...");
 
         // Check if the collection was initialized before trying to create indexes.
         if (_collection == null)
         {
-            AresLogger.Error("CollectionNull", "Collection returned null when creating guild data indexes.");
+            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when creating guild data indexes.");
             return;
         }
 
@@ -110,21 +114,25 @@ internal class GuildCollection
             }
             catch (Exception ex)
             {
-                AresLogger.Error("IndexCreationError", $"Error creating indexes: {ex.Message}");
+                await AresLogger.ErrorAsync("IndexCreationError", $"Error creating indexes: {ex.Message}");
             }
         }
     }
+
+    /*
+     * Database operations.
+     */
 
     /// <summary>
     /// Saves or updates a guild in the database, returning the updated object.
     /// </summary>
     /// <param name="id">Unique ID of the guild.</param>
     /// <returns>A <see cref="Model.Guild"/> object representing the saved or updated guild.</returns>
-    public async Task<Guild?> Save(string id)
+    public async Task<Guild?> SaveAsync(string id)
     {
         if (_collection == null)
         {
-            AresLogger.Error("CollectionNull", "Collection returned null when save guild data.");
+            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when save guild data.");
             return null;
         }
 
@@ -135,27 +143,17 @@ internal class GuildCollection
 
         if (element != null)
         {
-            try
-            {
-                // Convert the BSON document to JSON and deserialize to the Guild object.
-                var document = BsonTypeMapper.MapToDotNetValue(element);
-                var json = JsonConvert.SerializeObject(document);
-
-                guild = JsonConvert.DeserializeObject<Model.Guild>(json);
-            }
-            catch (JsonReaderException ex)
-            {
-                await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
-            }
+            guild = await DeserializeGuildAsync(element) ?? guild;
         }
         else
         {
+            string guildJson = await SerializeGuildAsync(guild);
+            BsonDocument document = BsonDocument.Parse(guildJson);
+
             // Insert the document in the database if it doesn't exist.
-            var document = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
             await _collection.InsertOneAsync(document);
 
             _redisDatabase.Save(GRedisKey + id, guild);
-
             _manager.Save(guild);
         }
 
@@ -167,9 +165,9 @@ internal class GuildCollection
     /// </summary>
     /// <param name="id">Ulong of the guild.</param>
     /// <returns>A <see cref="Model.Guild"/> object representing the saved or updated guild.</returns>
-    public async Task<Guild?> Save(ulong id)
+    public async Task<Guild?> SaveAsync(ulong id)
     {
-        return await Save(id.ToString());
+        return await SaveAsync(id.ToString());
     }
 
     /// <summary>
@@ -178,8 +176,8 @@ internal class GuildCollection
     /// <param name="id">Unique ID of the guild.</param>
     /// <returns>A <see cref="Model.Guild"/> object representing the retrieved guild, or null if not found.</returns>
     /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
-    /// <seealso cref="Fetch(ulong, bool)"/>
-    public async Task<Model.Guild?> Fetch(string id, bool saveInRedis = false)
+    /// <seealso cref="FetchAsync(ulong, bool)"/>
+    public async Task<Model.Guild?> FetchAsync(string id, bool saveInRedis = false)
     {
         Model.Guild? guild = _manager.Fetch(id);
 
@@ -193,20 +191,9 @@ internal class GuildCollection
 
                 if (element != null)
                 {
-                    try
-                    {
-                        // Convert the BSON document to JSON and deserialize to the Guild object.
-                        var document = BsonTypeMapper.MapToDotNetValue(element);
-                        var json = JsonConvert.SerializeObject(document);
+                    guild = await DeserializeGuildAsync(element);
 
-                        guild = JsonConvert.DeserializeObject<Model.Guild>(json);
-                    }
-                    catch (JsonReaderException ex)
-                    {
-                        await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
-                    }
-
-                    if (saveInRedis)
+                    if (saveInRedis && guild != null)
                     {
                         _redisDatabase.Save(GRedisKey + id, guild);
                     }
@@ -223,10 +210,10 @@ internal class GuildCollection
     /// <param name="id">Numeric ID of the guild.</param>
     /// <returns>A <see cref="Model.Guild"/> object representing the retrieved guild, or null if not found.</returns>
     /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
-    /// <seealso cref="Fetch(string, bool)"/>
-    public async Task<Model.Guild?> Fetch(ulong id, bool saveInRedis = false)
+    /// <seealso cref="FetchAsync(string, bool)"/>
+    public async Task<Model.Guild?> FetchAsync(ulong id, bool saveInRedis = false)
     {
-        return await Fetch(id.ToString(), saveInRedis);
+        return await FetchAsync(id.ToString(), saveInRedis);
     }
 
     /// <summary>
@@ -235,71 +222,36 @@ internal class GuildCollection
     /// <param name="guild">A <see cref="Model.Guild"/> object representing the guild to be updated.</param>
     /// <param name="field">Name of the field to be updated.</param>
     /// <returns>True if the update was successful, false otherwise.</returns>
-    public async Task<bool> Update(Model.Guild guild, string field)
+    public async Task<bool> UpdateAsync(Guild guild, string field)
     {
-        if (_collection == null)
-        {
-            AresLogger.Error("CollectionNull", "Collection returned null when update guild data.");
-            return false;
-        }
+        if (_collection == null) return false;
 
         try
         {
-            // Convert the guild to BSON for MongoDB manipulation.
-            BsonDocument tree = BsonDocument.Parse(JsonConvert.SerializeObject(guild));
-            BsonElement valueElement;
+            string serialized = await SerializeGuildAsync(guild);
+            BsonDocument tree = BsonDocument.Parse(serialized);
 
-            // Get the value of the specified field, if it exists.
-            BsonValue? value = tree.TryGetElement(field, out valueElement) ? valueElement.Value : null;
+            if (!tree.TryGetValue(field, out var value))
+                value = null;
 
-            // Create a filter to locate the guild in the database.
             FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
 
-            BsonDocument element = await _collection.Find(filter).FirstOrDefaultAsync();
+            UpdateDefinition<BsonDocument> update = value != null
+                ? Builders<BsonDocument>.Update.Set(field, value)
+                : Builders<BsonDocument>.Update.Unset(field);
 
-            if (element != null)
-            {
-                // Set or remove the field in the database document.
-                var update = value != null ? Builders<BsonDocument>.Update.Set(field, value) : Builders<BsonDocument>.Update.Unset(field);
-                await _collection.UpdateOneAsync(filter, update);
-            }
+            await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
 
-            /*
-             * Redis
-             * Update the local cache with the new data.
-             */
-
-            /*
-            BsonValue a = tree[field];
-
-            JObject message = new JObject
-            {
-                ["id"] = guild.Id,
-                ["field"] = field,
-                ["value"] = tree[field].AsString
-            };
-
-            _redisDatabase.Publish(Constant.GuildChannel, message.ToString());
-
-            if (value == null)
-            {
-                _redisDatabase.Delete(GuildKey + guild.Id);
-                return false;
-            }
-
-            _redisDatabase.Update(GuildKey + guild.Id, guild);
-            */
+            // Update Redis
+            _redisDatabase.Update(GRedisKey + guild.Id, guild);
 
             return true;
         }
         catch (Exception e)
         {
-            string? src = e.Source;
-
-            AresLogger.Error(string.IsNullOrEmpty(src) ? "Exception" : src, "Unable to save data.", e.Message);
+            await AresLogger.ErrorAsync(e.Source ?? "Exception", "Unable to update guild data.", e.Message);
+            return false;
         }
-
-        return false;
     }
 
     /// <summary>
@@ -335,13 +287,13 @@ internal class GuildCollection
     /// </summary>
     /// <param name="limit">Maximum number of guilds to retrieve (0 for no limit).</param>
     /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved guilds.</returns>
-    public async Task<ConcurrentBag<Model.Guild>> GetGuilds(int limit = 0)
+    public async Task<ConcurrentBag<Model.Guild>> GetGuildsAsync(int limit = 0)
     {
         var accounts = new ConcurrentBag<Model.Guild>();
 
         if (_collection == null)
         {
-            AresLogger.Error("CollectionNull", "Collection returned null when get all guilds.");
+            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when get all guilds.");
             return accounts;
         }
 
@@ -368,5 +320,43 @@ internal class GuildCollection
         });
 
         return accounts;
+    }
+
+    /*
+     * Serialization and deserialization methods.
+     */
+
+    /// <summary>
+    /// Serializes a guild object to a JSON string.
+    /// </summary>
+    /// <param name="guild"></param>
+    /// <returns></returns>
+    private async Task<string> SerializeGuildAsync(Guild guild)
+    {
+        return await Task.Run(() => JsonConvert.SerializeObject(guild));
+    }
+
+    /// <summary>
+    /// Deserializes a BSON document to a guild object.
+    /// </summary>
+    /// <param name="bsonDoc"></param>
+    /// <returns></returns>
+    private async Task<Guild?> DeserializeGuildAsync(BsonDocument bsonDoc)
+    {
+        return await Task.Run(() =>
+        {
+            try
+            {
+                object mappedDoc = BsonTypeMapper.MapToDotNetValue(bsonDoc);
+                string json = JsonConvert.SerializeObject(mappedDoc);
+
+                return JsonConvert.DeserializeObject<Guild>(json);
+            }
+            catch (JsonReaderException ex)
+            {
+                AresLogger.Error("JsonReaderException", "Error deserializing guild document.", ex.Message);
+                return null;
+            }
+        });
     }
 }

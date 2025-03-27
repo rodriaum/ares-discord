@@ -64,7 +64,7 @@ public class Guild
                     continue;
                 }
 
-                await guildData.Update(this, field);
+                await guildData.UpdateAsync(this, field);
             }
 
             return true;

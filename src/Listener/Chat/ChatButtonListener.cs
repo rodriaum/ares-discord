@@ -40,7 +40,7 @@ internal class ChatButtonListener
                 return;
             }
 
-            Guild? guild = await data.Fetch(args.GuildId.GetValueOrDefault());
+            Guild? guild = await data.FetchAsync(args.GuildId.GetValueOrDefault());
 
             if (guild == null)
             {
