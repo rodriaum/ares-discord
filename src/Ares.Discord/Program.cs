@@ -37,11 +37,7 @@ internal class Program
         Env.Load();
 
         // Initialize Core
-        if (await AresCore.Init())
-        {
-            AresLogger.Log("Database", "Core initialized successfully.");
-        }
-        else
+        if (!await AresCore.Init())
         {
             AresLogger.Error("Database", "Core initialization failed.");
             return;
