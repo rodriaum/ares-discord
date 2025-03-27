@@ -21,14 +21,14 @@ https://github.com/user-attachments/assets/4adcdaf8-8a5a-4a45-ac0b-68eb1518bc1f
 
 ### Armazenamento de Dados
 - **MongoDB**: Armazene extenso histórico de conversas, URLs de imagens e usos de tokens com segurança no MongoDB.
-- - **Redis**: Atua como um cache rápido para otimizar a recuperação de dados armazenados no MongoDB, acelerando as interações.
+- **Redis**: Atua como um cache rápido para otimizar a recuperação de dados armazenados no MongoDB, acelerando as interações.
 
 ## Pré-requisitos
 Para usar o Ares, certifique-se de ter o seguinte configurado:
 1. **Discord.Net**: A plataforma principal para interagir com o Ares.
 2. **Serviços de IA**: Acesso aos modelos OpenAI, Anthropic, DeepSeek, etc.
 3. **Driver MongoDB**: Para armazenar grandes conjuntos de dados eficientemente.
-4. 3. **Driver Redis**: Para otimização e caching de dados, tornando as consultas mais rápidas.
+4. **Driver Redis**: Para otimização e caching de dados, tornando as consultas mais rápidas.
 
 ## Instalação
 Siga estes passos para configurar seu ambiente:
