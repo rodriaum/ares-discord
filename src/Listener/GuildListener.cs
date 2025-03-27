@@ -49,14 +49,13 @@ class GuildListener
         await data.SaveAsync(guild.Id);
     }
 
-    private Task GuildUnavailable(SocketGuild guild)
+    private async Task GuildUnavailable(SocketGuild guild)
     {
-        if (guild == null) return Task.FromResult(false);
+        if (guild == null) return;
 
         GuildCollection? data = Program.GuildCollection;
-        if (data == null) return Task.FromResult(false);
+        if (data == null) return;
 
-        data.DeleteCache(guild.Id);
-        return Task.CompletedTask;
+        await data.DeleteCache(guild.Id);
     }
 }

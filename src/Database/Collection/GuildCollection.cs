@@ -153,7 +153,7 @@ internal class GuildCollection
             // Insert the document in the database if it doesn't exist.
             await _collection.InsertOneAsync(document);
 
-            _redisDatabase.SaveAsync(GRedisKey + id, guild);
+            await _redisDatabase.SaveAsync(GRedisKey + id, guild);
             _manager.Save(guild);
         }
 
@@ -243,7 +243,7 @@ internal class GuildCollection
             await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
 
             // Update Redis
-            _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
+            await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
 
             return true;
         }
@@ -258,9 +258,10 @@ internal class GuildCollection
     /// Removes a guild from the local cache.
     /// </summary>
     /// <param name="id">Unique ID of the guild to be removed from the cache.</param>
-    public void DeleteCache(string id)
+    public async Task DeleteCache(string id)
     {
-        _redisDatabase.CacheAsync(GRedisKey + id, 300);
+        await _redisDatabase.CacheAsync(GRedisKey + id, 300);
+        // Maybe not much lag. It may change in the future.
         _manager?.Delete(id);
     }
 
@@ -268,18 +269,18 @@ internal class GuildCollection
     /// Removes a guild from the local cache.
     /// </summary>
     /// <param name="id">Ulong of the guild to be removed from the cache.</param>
-    public void DeleteCache(ulong id)
+    public async Task DeleteCache(ulong id)
     {
-        DeleteCache(id.ToString());
+        await DeleteCache(id.ToString());
     }
 
     /// <summary>
     /// Removes the expiration time from the specified key, making it persistent.
     /// </summary>
     /// <param name="id">The unique identifier for the key to be persisted.</param>
-    public void Persist(string id)
+    public async Task<bool> PersistAsync(string id)
     {
-        _redisDatabase.PersistAsync(GRedisKey + id);
+        return await _redisDatabase.PersistAsync(GRedisKey + id);
     }
 
     /// <summary>
@@ -304,11 +305,8 @@ internal class GuildCollection
         {
             try
             {
-                // Convert the BSON document to JSON and deserialize to the Guild object.
-                var json = document.ToJson();
-                var bsonDocument = BsonTypeMapper.MapToDotNetValue(document);
-                var jsonString = JsonConvert.SerializeObject(bsonDocument);
-                var guild = JsonConvert.DeserializeObject<Model.Guild>(jsonString);
+                string jsonString = document.ToJson();
+                Guild? guild = JsonConvert.DeserializeObject<Model.Guild>(jsonString);
 
                 if (guild != null)
                     accounts.Add(guild);
