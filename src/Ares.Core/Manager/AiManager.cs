@@ -262,7 +262,7 @@ public class AiManager
         // Empty Message
         Console.WriteLine();
 
-        foreach (var model in models)
+        foreach (ChatModel model in models)
         {
             AresLogger.Log(
                 $"AI: {FormatterUtil.CapitalizeFirstLetter(model.Category.ToString())}",

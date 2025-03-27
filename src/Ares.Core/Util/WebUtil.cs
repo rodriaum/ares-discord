@@ -13,7 +13,7 @@ public class WebUtil
         {
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Client-ID", token);
 
-            var content = new MultipartFormDataContent
+            MultipartFormDataContent content = new MultipartFormDataContent
             {
                 { new StringContent(imageUrl), "image" }
             };

@@ -33,7 +33,7 @@ public class LangManager
 
                 Dictionary<string, string> messages = new Dictionary<string, string>();
 
-                foreach (var entry in language)
+                foreach (KeyValuePair<string, JToken?> entry in language)
                 {
                     messages[entry.Key.ToLower()] = GetJsonMessage(entry.Value);
                 }

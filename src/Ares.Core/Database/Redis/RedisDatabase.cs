@@ -142,7 +142,7 @@ public class RedisDatabase : DatabaseTemplate
     {
         if (await ExistsAsync(key))
         {
-            var fields = await ConvertToHashEntriesAsync(obj);
+            HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
             await this._database.HashSetAsync(key, fields);
         }
     }
@@ -239,13 +239,13 @@ public class RedisDatabase : DatabaseTemplate
         RedisResult keys = await this._database.ExecuteAsync("KEYS", $"{key}*");
         List<T> results = new List<T>();
 
-        foreach (var value in keys.ToDictionary())
+        foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
             HashEntry[] fields = await this._database.HashGetAllAsync(value.Key);
 
             if (fields.Length > 0)
             {
-                var obj = await ConvertFromHashEntriesAsync<T>(fields);
+                T? obj = await ConvertFromHashEntriesAsync<T>(fields);
                 if (obj != null)
                     results.Add(obj);
             }
@@ -262,7 +262,7 @@ public class RedisDatabase : DatabaseTemplate
     {
         RedisResult keys = await this._database.ExecuteAsync("KEYS", $"{key}*");
 
-        foreach (var value in keys.ToDictionary())
+        foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
             await this._database.KeyDeleteAsync(value.Key);
         }
@@ -313,7 +313,7 @@ public class RedisDatabase : DatabaseTemplate
     {
         return await Task.Run(() =>
         {
-            var dictionary = entries.ToDictionary(
+            Dictionary<string, string> dictionary = entries.ToDictionary(
                 entry => entry.Name.ToString(),
                 entry => entry.Value.ToString()
             );

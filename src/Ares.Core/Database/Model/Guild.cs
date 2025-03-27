@@ -57,7 +57,7 @@ public class Guild
 
         try
         {
-            foreach (var field in fields)
+            foreach (string field in fields)
             {
                 if (string.IsNullOrWhiteSpace(field))
                 {
@@ -163,7 +163,7 @@ public class Guild
             await SaveInfoAsync(user, infos, onlyCached: true);
         }
 
-        var existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
+        GChatInfoModel? existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
 
         if (existingInfo != null)
         {
@@ -275,7 +275,7 @@ public class Guild
     /// <returns>Returns true if status was successfully changed, false otherwise.</returns>
     public Task<bool> ToggleChatInfo(IUser user, ulong channel, bool active)
     {
-        var infos = ChatInfos(user);
+        List<GChatInfoModel>? infos = ChatInfos(user);
         if (infos == null)
         {
             AresLogger.Error(nameof(ToggleChatInfo), "Unable to change the status of a chat information.");
@@ -351,7 +351,7 @@ public class Guild
 
         try
         {
-            if (!chat.Infos.TryGetValue(user.Id, out var infos))
+            if (!chat.Infos.TryGetValue(user.Id, out List<GChatInfoModel>? infos))
             {
                 infos = new List<GChatInfoModel>();
                 chat.Infos[user.Id] = infos;
@@ -480,7 +480,7 @@ public class Guild
     {
         if (user == null) throw new ArgumentNullException(nameof(user));
 
-        var infos = Infos();
+        Dictionary<ulong, List<GChatInfoModel>>? infos = Infos();
 
         if (infos == null)
         {
@@ -488,7 +488,7 @@ public class Guild
             return false;
         }
 
-        var info = infos.TryGetValue(user.Id, out var value);
+        infos.TryGetValue(user.Id, out List<GChatInfoModel>? value);
 
         return value != null && value.Count > 0 && value[value.Count - 1].Active;
     }
@@ -504,10 +504,10 @@ public class Guild
     {
         if (user == null) throw new ArgumentNullException(nameof(user));
 
-        var info = LastChatInfo(user, channel: channel);
+        GChatInfoModel? info = LastChatInfo(user, channel: channel);
         if (info == null) return null;
 
-        var model = info.Model;
+        string model = info.Model;
         if (string.IsNullOrWhiteSpace(model)) return null;
 
         return ChatModel.GetByNearestModel(model);

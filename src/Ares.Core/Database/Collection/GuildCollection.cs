@@ -62,7 +62,7 @@ internal class GuildCollection
     /// <returns>Returns true when the connection to MongoDB is successfully established.</returns>
     public async Task<bool> WaitForMongoConnectionAsync()
     {
-        var isConnected = false;
+        bool isConnected = false;
 
         while (!isConnected)
         {
@@ -105,8 +105,8 @@ internal class GuildCollection
             // After the connection is successful, create the indexes.
             try
             {
-                var indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
-                var indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+                IndexKeysDefinition<BsonDocument> indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
+                CreateIndexModel<BsonDocument> indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
 
                 await _collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
 
@@ -136,8 +136,8 @@ internal class GuildCollection
             return null;
         }
 
-        var filter = Builders<BsonDocument>.Filter.Eq("Id", id);
-        var element = await _collection.Find(filter).FirstOrDefaultAsync();
+        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", id);
+        BsonDocument element = await _collection.Find(filter).FirstOrDefaultAsync();
 
         Guild? guild = new Guild(id);
 
@@ -231,7 +231,7 @@ internal class GuildCollection
             string serialized = await SerializeGuildAsync(guild);
             BsonDocument tree = BsonDocument.Parse(serialized);
 
-            if (!tree.TryGetValue(field, out var value))
+            if (!tree.TryGetValue(field, out BsonValue value))
                 value = null;
 
             FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
@@ -290,7 +290,7 @@ internal class GuildCollection
     /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved guilds.</returns>
     public async Task<ConcurrentBag<Model.Guild>> GetGuildsAsync(int limit = 0)
     {
-        var accounts = new ConcurrentBag<Model.Guild>();
+        ConcurrentBag<Guild> accounts = new ConcurrentBag<Model.Guild>();
 
         if (_collection == null)
         {
@@ -298,8 +298,8 @@ internal class GuildCollection
             return accounts;
         }
 
-        var options = new FindOptions<BsonDocument> { Limit = limit };
-        var documents = await _collection.FindAsync(new BsonDocument(), options);
+        FindOptions<BsonDocument> options = new FindOptions<BsonDocument> { Limit = limit };
+        IAsyncCursor<BsonDocument> documents = await _collection.FindAsync(new BsonDocument(), options);
 
         await documents.ForEachAsync(async document =>
         {

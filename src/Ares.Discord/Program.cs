@@ -44,7 +44,7 @@ internal class Program
         }
 
         // Configure Discord client with appropriate intents
-        var config = new DiscordSocketConfig()
+        DiscordSocketConfig config = new DiscordSocketConfig()
         {
             GatewayIntents = GatewayIntents.Guilds |
                              GatewayIntents.GuildMembers |
