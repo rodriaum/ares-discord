@@ -21,12 +21,14 @@ https://github.com/user-attachments/assets/4adcdaf8-8a5a-4a45-ac0b-68eb1518bc1f
 
 ### Armazenamento de Dados
 - **MongoDB**: Armazene extenso histórico de conversas, URLs de imagens e usos de tokens com segurança no MongoDB.
+- - **Redis**: Atua como um cache rápido para otimizar a recuperação de dados armazenados no MongoDB, acelerando as interações.
 
 ## Pré-requisitos
 Para usar o Ares, certifique-se de ter o seguinte configurado:
 1. **Discord.Net**: A plataforma principal para interagir com o Ares.
 2. **Serviços de IA**: Acesso aos modelos OpenAI, Anthropic, DeepSeek, etc.
 3. **Driver MongoDB**: Para armazenar grandes conjuntos de dados eficientemente.
+4. 3. **Driver Redis**: Para otimização e caching de dados, tornando as consultas mais rápidas.
 
 ## Instalação
 Siga estes passos para configurar seu ambiente:
@@ -43,6 +45,7 @@ Siga estes passos para configurar seu ambiente:
    dotnet add package DotNetEnv
    dotnet add package Lombok.Nte
    dotnet add package MongoDB.Driver
+   dotnet add package StackExchange.Redis
    dotnet add package OpenAI
    ```
 3. Crie um arquivo `.env` na pasta de compilação (Release ou Build) do projeto com base no `.env.example`:
@@ -53,7 +56,7 @@ Siga estes passos para configurar seu ambiente:
 ## Arquitetura
 Ares é construído com uma arquitetura modular que permite fácil integração de novos modelos e serviços de IA. A plataforma utiliza:
 - Serviços de IA: SDKs OpenAI, Anthropic e DeepSeek.
-- Armazenamento de Dados: MongoDB para manipulação eficiente de dados.
+- Armazenamento de Dados:  MongoDB para gerenciamento eficiente e Redis para caching otimizado.
 - Integração com Discord: Suporte completo à API do Discord para criação e gerenciamento de bots.
 
 ## Licença
