@@ -99,8 +99,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.ModelUnavailable);
         }
 
-        GInfoModel information = guild.Information;
-        GTokenModel? tokenData = information.Token;
+        GTokenModel? tokenData = guild.Token;
 
         if (tokenData == null)
         {
@@ -196,8 +195,7 @@ public class AiService
             return (guild.GetTranslation(LangKeys.ModelUnavailable), false);
         }
 
-        GInfoModel information = guild.Information;
-        GTokenModel? tokenData = information.Token;
+        GTokenModel? tokenData = guild.Token;
 
         if (tokenData == null)
         {
@@ -290,8 +288,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.ModelUnavailable);
         }
 
-        GInfoModel information = guild.Information;
-        GTokenModel? tokenData = information.Token;
+        GTokenModel? tokenData = guild.Token;
 
         if (tokenData == null)
         {

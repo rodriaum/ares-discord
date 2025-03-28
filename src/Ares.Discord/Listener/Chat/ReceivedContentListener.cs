@@ -66,7 +66,7 @@ internal class ReceivedContentListener
 
             // Check if the channel is in the correct category and the user has an active conversation
             // Alert: This code must be right here, if you move it to another place there may be problems.
-            if (!(channel.CategoryId.Equals(guild.Information?.Config?.ChatsCategoryId) &&
+            if (!(channel.CategoryId.Equals(guild.Config?.ChatsCategoryId) &&
                   guild.HasActiveUserConversation(user)))
                 return;
 
@@ -335,7 +335,7 @@ internal class ReceivedContentListener
             .AddField("Tokens", usage.OutputTokens, true)
             .AddField(guild.GetTranslation(LangKeys.Response), $"$ {FormatterUtil.FormatPrice(outputPrice)}", true)
             // Broke Line
-            .AddField("\u200B", "u200B", false)
+            .AddField("\u200B", "\u200B", false)
             // Total Field
             .AddField("Tokens", usage.TotalTokens(), true)
             .AddField(guild.GetTranslation(LangKeys.Total), $"$ {FormatterUtil.FormatPrice(inputPrice + outputPrice)}", true)

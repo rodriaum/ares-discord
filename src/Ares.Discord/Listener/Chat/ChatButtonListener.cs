@@ -72,7 +72,7 @@ internal class ChatButtonListener
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();
 
-                AresLogger.Log("Chat", $"Chat ID \"{info.Id}\" has been disabled by \"{user.Username}#{user.Discriminator}\"");
+                AresLogger.Log("Chat", $"Chat \"{info.Id}\" has been disabled by \"{user.Username}#{user.Discriminator}\"");
             }
             else
             {

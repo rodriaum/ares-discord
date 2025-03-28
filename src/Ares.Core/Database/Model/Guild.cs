@@ -1,12 +1,10 @@
 ﻿using Ares.Core.Database.Model.Chat;
 using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Database.Model.Config;
-using Ares.Core.Database.Model.Information;
 using Ares.Core.Database.Model.Token;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
-using Ares.Discord;
 using Discord;
 
 namespace Ares.Core.Database.Model;
@@ -22,9 +20,19 @@ public class Guild
     public readonly string Id;
 
     /// <summary>
-    /// Contains all information related to the guild.
+    /// Token data for the guild.
     /// </summary>
-    public GInfoModel Information;
+    public GTokenModel Token;
+
+    /// <summary>
+    /// Config data for the guild.
+    /// </summary>
+    public GuildConfigData Config;
+
+    /// <summary>
+    /// Chat data for the guild.
+    /// </summary>
+    public GChatModel Chat;
 
     /// <summary>
     /// Initializes a new instance of the Guild class.
@@ -33,7 +41,10 @@ public class Guild
     public Guild(string id)
     {
         this.Id = id;
-        this.Information = new GInfoModel();
+
+        this.Token = new GTokenModel();
+        this.Config = new GuildConfigData();
+        this.Chat = new GChatModel();
     }
 
     /// <summary>
@@ -88,21 +99,35 @@ public class Guild
     }
 
     /// <summary>
-    /// Saves general information about the guild to the database.
+    /// Saves token data about the guild to the database.
     /// </summary>
-    /// <param name="information">Object containing guild information.</param>
+    /// <param name="token">Object containing guild token data.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public async Task<bool> SaveInformation(GInfoModel information)
+    public async Task<bool> SaveTokenDataAsync(GTokenModel? token = null)
     {
-        if (information == null)
+        // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
+        if (token != null)
         {
-            AresLogger.Error(nameof(SaveInformation), "Unable to get guild information.");
-            return false;
+            this.Token = token;
         }
 
-        Information = information;
+        return await SaveAsync("Token");
+    }
 
-        return await SaveAsync("Information");
+    /// <summary>
+    /// Saves token data about the guild to the database.
+    /// </summary>
+    /// <param name="config">Object containing guild token data.</param>
+    /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
+    public async Task<bool> SaveConfigDataAsync(GuildConfigData? config = null)
+    {
+        // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
+        if (config != null)
+        {
+            this.Config = config;
+        }
+
+        return await SaveAsync("Config");
     }
 
     /// <summary>
@@ -110,10 +135,15 @@ public class Guild
     /// </summary>
     /// <param name="chatData">Object containing the guild's chat data.</param>
     /// <returns>Returns true if data was successfully updated, false otherwise.</returns>
-    public async Task<bool> SaveChatDataAsync(GChatModel chatData)
+    public async Task<bool> SaveChatDataAsync(GChatModel? chat = null)
     {
-        Information.Chat = chatData;
-        return await SaveInformation(Information);
+        // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
+        if (chat != null)
+        {
+            this.Chat = chat;
+        }
+
+        return await SaveAsync("Chat");
     }
 
     /// <summary>
@@ -125,8 +155,8 @@ public class Guild
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public async Task<bool> SaveInfoAsync(IUser user, List<GChatInfoModel> infos, bool onlyCached = false)
     {
-        Information.Chat.Infos[user.Id] = infos;
-        return !onlyCached ? await SaveInformation(Information) : true;
+        this.Chat.Infos[user.Id] = infos;
+        return !onlyCached ? await SaveChatDataAsync() : true;
     }
 
     /// <summary>
@@ -143,8 +173,7 @@ public class Guild
 
         list.Add(info);
 
-        await SaveInfoAsync(user, list);
-        return await SaveInformation(Information);
+        return await SaveInfoAsync(user, list);
     }
 
     /// <summary>
@@ -167,35 +196,11 @@ public class Guild
 
         if (existingInfo != null)
         {
-            Information.Chat.Infos[user.Id].Remove(existingInfo);
+            this.Chat.Infos[user.Id].Remove(existingInfo);
         }
 
-        Information.Chat.Infos[user.Id].Add(info);
-        return await SaveInformation(Information);
-    }
-
-    /// <summary>
-    /// Updates the guild configuration data in the database.
-    /// </summary>
-    /// <param name="configData">Object containing the guild configuration data.</param>
-    /// <returns>Returns true if data was successfully updated, false otherwise.</returns>
-    public async Task<bool> SaveGuildConfigDataAsync(GuildConfigData configData)
-    {
-        Information.Config = configData;
-
-        return await SaveInformation(Information);
-    }
-
-    /// <summary>
-    /// Updates the guild token data in the database.
-    /// </summary>
-    /// <param name="tokenData">Object containing the guild token data.</param>
-    /// <returns>Returns true if data was successfully updated, false otherwise.</returns>
-    public async Task<bool> SaveGuildTokenDataAsync(GTokenModel tokenData)
-    {
-        Information.Token = tokenData;
-
-        return await SaveInformation(Information);
+        this.Chat.Infos[user.Id].Add(info);
+        return await SaveChatDataAsync();
     }
 
     /** Conversation System **/
@@ -206,7 +211,7 @@ public class Guild
     /// <returns>Dictionary containing conversation histories or null if they don't exist.</returns>
     public Dictionary<ulong, List<GChatInfoModel>>? Infos()
     {
-        return Information.Chat.Infos;
+        return this.Chat.Infos;
     }
 
     /// <summary>
@@ -340,7 +345,7 @@ public class Guild
             return await Task.FromResult(false);
         }
 
-        GChatModel chat = Information.Chat;
+        GChatModel chat = this.Chat;
 
         if (chat == null)
         {
@@ -367,7 +372,7 @@ public class Guild
 
             if (success)
             {
-                AresLogger.Log("Chat", $"Chat ID \"{info.Id}\" successfully created by \"{user.Username}#{user.Discriminator}\"");
+                AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{user.Username}#{user.Discriminator}\"");
             }
 
             return success;
@@ -392,7 +397,7 @@ public class Guild
         if (user == null) throw new ArgumentNullException(nameof(user));
         if (historics == null) throw new ArgumentNullException(nameof(historics));
 
-        if (Information.Chat is not { } chat)
+        if (this.Chat is not { } chat)
             return false;
 
         GChatInfoModel? info = ChatInfoByChannel(user, channel);
@@ -405,8 +410,8 @@ public class Guild
 
         info.Historics = historics;
 
-        Information.Chat = chat;
-        return await SaveInformation(Information);
+        this.Chat = chat;
+        return await SaveChatDataAsync();
     }
 
     /// <summary>
@@ -518,7 +523,7 @@ public class Guild
     /// <returns>The language code string.</returns>
     public string Language()
     {
-        return Information.Config.Lang;
+        return this.Config.Lang;
     }
 
     /// <summary>

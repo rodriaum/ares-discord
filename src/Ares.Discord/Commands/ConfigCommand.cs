@@ -87,10 +87,8 @@ internal class ConfigCommand
 
         IReadOnlyCollection<SocketSlashCommandDataOption> options = command.Data.Options;
 
-        GInfoModel information = guild.Information;
-
-        GTokenModel tokenData = information.Token;
-        GuildConfigData configData = information.Config;
+        GTokenModel tokenData = guild.Token;
+        GuildConfigData configData = guild.Config;
 
         StringBuilder sb = new StringBuilder();
 
@@ -222,12 +220,12 @@ internal class ConfigCommand
 
         if (tokenChange)
         {
-            success = await guild.SaveGuildTokenDataAsync(tokenData);
+            success = await guild.SaveTokenDataAsync(tokenData);
         }
 
         if (configChange)
         {
-            success = await guild.SaveGuildConfigDataAsync(configData);
+            success = await guild.SaveConfigDataAsync(configData);
         }
 
         if (success)

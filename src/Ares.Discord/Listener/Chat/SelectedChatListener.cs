@@ -74,15 +74,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            GInfoModel information = guild.Information;
-
-            if (information == null)
-            {
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.CouldNotFindInfo));
-                return;
-            }
-
-            GuildConfigData? gid = information.Config;
+            GuildConfigData? gid = guild.Config;
 
             if (gid == null)
             {
