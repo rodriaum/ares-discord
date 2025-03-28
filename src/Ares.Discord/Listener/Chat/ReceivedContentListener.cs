@@ -93,11 +93,19 @@ internal class ReceivedContentListener
                 return;
             }
 
-            // Process message based on template type
-            SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
             string prompt = message.Content;
+
+            // Future: Compatibility with files, etc.
+            if (string.IsNullOrWhiteSpace(prompt))
+            {
+                await ModifyMessageWithError(botMessage, embed, "Atualmente o sistema de chat só está disponível por mensagem.");
+                return;
+            }
+
+            SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
             List<GChatHistoricModel>? historics = guild.ChatHistoricsByChannel(user, channel.Id);
 
+            // Process message based on template type
             switch (model.Type)
             {
                 case ModelType.Chat:
@@ -173,6 +181,9 @@ internal class ReceivedContentListener
                 .WithColor(color)
                 .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
         }
+
+        // Atualiza o historico de chat apos a geracao.
+        historics = guild.ChatHistorics(guildUser, channel: channelId);
 
         // Process pricing information
         EmbedBuilder? priceEmbed = CreatePriceEmbedForChat(guild, model, historics);
@@ -324,7 +335,7 @@ internal class ReceivedContentListener
             .AddField("Tokens", usage.OutputTokens, true)
             .AddField(guild.GetTranslation(LangKeys.Response), $"$ {FormatterUtil.FormatPrice(outputPrice)}", true)
             // Broke Line
-            .AddField("\u200B", "\u200B", false)
+            .AddField("\u200B", "u200B", false)
             // Total Field
             .AddField("Tokens", usage.TotalTokens(), true)
             .AddField(guild.GetTranslation(LangKeys.Total), $"$ {FormatterUtil.FormatPrice(inputPrice + outputPrice)}", true)

@@ -5,6 +5,7 @@ using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Database.Model.Information;
 using Ares.Core.Database.Model.Token;
 using Ares.Core.Manager;
+using Ares.Core.Objects.Chat;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
@@ -18,6 +19,7 @@ using OpenAI;
 using OpenAI.Audio;
 using OpenAI.Chat;
 using OpenAI.Images;
+using OpenAI.Models;
 using System.ClientModel;
 using System.Text;
 
@@ -63,11 +65,10 @@ public class AiService
         }
     }
 
-    /// <summary>
-    /// <b>General</b> - Image Generation
-    /// </summary>
-    /// 
-
+    /*
+     * General - Image Generation
+     */
+    
     /// <summary>
     /// Asynchronously generates an image URL based on the provided parameters.
     /// </summary>
@@ -116,7 +117,7 @@ public class AiService
 
         try
         {
-            ImageGenerationOptions openAiOptions = AiUtil.GetImageGenerationOptions(options);
+            ImageGenerationOptions openAiOptions = options.ToImageGenerationOptions();
             GeneratedImage? image = await GenerateImageAsync(model, openAiToken, prompt, openAiOptions);
 
             if (image == null)
@@ -137,7 +138,7 @@ public class AiService
                 return guild.GetTranslation(LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})";
             }
 
-            GChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, imageUrl: imageUrl, imageOpenAi: image)[0];
+            GChatHistoricModel historic = GChatHistoricModel.From(prompt, imageUrl: imageUrl, imageOpenAi: image)[0];
             info.Historics.Add(historic);
 
             await guild.UpdateChatInfoAsync(user, info);
@@ -349,7 +350,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindToken);
 
         UserChatMessage userMessage = new UserChatMessage(prompt) { ParticipantName = user.GlobalName };
-        List<ChatMessage> messages = AiUtil.GetChatOpenAiMessages(historics);
+        List<ChatMessage> messages = GChatHistoricModel.ToChatOpenAiMessages(historics);
 
         messages.Add(userMessage);
 
@@ -396,7 +397,8 @@ public class AiService
 
         StringBuilder sb = new StringBuilder();
 
-        await foreach (var response in client.CompleteChatStreamingAsync(messages, options))
+        ChatTokenUsage? lastTokenUsage = null;
+        await foreach (StreamingChatCompletionUpdate response in client.CompleteChatStreamingAsync(messages, options))
         {
             if (response.ContentUpdate.Count > 0)
             {
@@ -419,9 +421,19 @@ public class AiService
                     lastEditDate = DateTime.UtcNow;
                 }
             }
+
+            // Alert: As it is a streaming method, the total value of tokens is always in the last item in the list.
+            lastTokenUsage = response.Usage;
         }
 
-        info.Historics.Add(new GChatHistoricModel(prompt, sb.ToString()));
+        ChatValueUsage usage = new ChatValueUsage();
+
+        if (lastTokenUsage != null)
+        {
+            usage = new ChatValueUsage(lastTokenUsage.OutputTokenCount, lastTokenUsage.InputTokenCount);
+        }
+
+        info.Historics.Add(new GChatHistoricModel(prompt, sb.ToString(), usage: usage));
         await guild.UpdateChatInfoAsync(user, info);
 
         return sb.ToString();
@@ -448,7 +460,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        GChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, responseOpenAi: completion)[0];
+        GChatHistoricModel historic = GChatHistoricModel.From(prompt, responseOpenAi: completion)[0];
         info.Historics.Add(historic);
 
         await guild.UpdateChatInfoAsync(user, info);
@@ -498,7 +510,7 @@ public class AiService
         }
 
         Anthropic.SDK.Messaging.Message userMessage = new Anthropic.SDK.Messaging.Message(RoleType.User, prompt);
-        List<Anthropic.SDK.Messaging.Message> messages = AiUtil.GetChatAnthropicMessages(historics);
+        List<Anthropic.SDK.Messaging.Message> messages = GChatHistoricModel.ToChatAnthropicMessages(historics);
         messages.Add(userMessage);
 
         APIAuthentication auth = new APIAuthentication(token);
@@ -533,7 +545,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        GChatHistoricModel historic = AiUtil.ConvertToChatHistoric(prompt, responseAnthropic: response)[0];
+        GChatHistoricModel historic = GChatHistoricModel.From(prompt, responseAnthropic: response)[0];
         info.Historics.Add(historic);
 
         await guild.UpdateChatInfoAsync(user, info);
@@ -563,7 +575,7 @@ public class AiService
         }
 
         DeepSeek.Core.Models.Message userMessage = DeepSeek.Core.Models.Message.NewUserMessage(prompt);
-        List<DeepSeek.Core.Models.Message> messages = AiUtil.GetChatDeepSeekMessages(historics);
+        List<DeepSeek.Core.Models.Message> messages = GChatHistoricModel.ToChatDeepSeekMessages(historics);
         messages.Add(userMessage);
 
         DeepSeekClient client = new DeepSeekClient(token);
@@ -604,7 +616,7 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
-        GChatHistoricModel? historic = AiUtil.ConvertToChatHistoric(prompt, responseDeepSeek: response)[0];
+        GChatHistoricModel? historic = GChatHistoricModel.From(prompt, responseDeepSeek: response)[0];
 
         if (historic != null)
         {

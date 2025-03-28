@@ -1,17 +1,17 @@
-﻿using Discord;
-using Discord.Rest;
-using Discord.WebSocket;
-using Ares.Core.Objects.Model;
-using MongoDB.Driver;
-using Ares.Core.Objects.Language;
+﻿using Ares.Core;
 using Ares.Core.Database.Collection;
-using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Database.Model;
+using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Database.Model.Config;
 using Ares.Core.Database.Model.Information;
-using Ares.Core.Database.Model.Chat.Sub;
+using Ares.Core.Objects.Chat.Image;
+using Ares.Core.Objects.Language;
+using Ares.Core.Objects.Model;
 using Ares.Core.Util;
-using Ares.Core;
+using Discord;
+using Discord.Rest;
+using Discord.WebSocket;
+using MongoDB.Driver;
 
 namespace Ares.Discord.Listener.Chat;
 

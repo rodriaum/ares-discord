@@ -218,7 +218,6 @@ public class Guild
     public List<GChatHistoricModel>? ChatHistorics(IUser user, ulong channel = 0)
     {
         List<GChatInfoModel>? infos = Infos()?[user.Id];
-
         if (infos == null) return null;
 
         if (channel != 0)

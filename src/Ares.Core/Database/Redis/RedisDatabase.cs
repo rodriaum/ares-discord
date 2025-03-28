@@ -77,6 +77,7 @@ public class RedisDatabase : DatabaseTemplate
                 this._database = _connection.GetDatabase();
 
                 await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({tries}x/{FormatterUtil.FormatSeconds(start)})");
+                connected = true;
             }
             catch (Exception ex)
             {
