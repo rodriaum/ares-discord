@@ -40,18 +40,32 @@ internal class MongoDatabase : DatabaseTemplate
 
         await AresLogger.LogAsync("DB: Mongo", "Connecting...");
 
-        try
-        {
-            MongoClientSettings settings = MongoClientSettings.FromConnectionString(url);
+        int time = 15;
+        int tries = 1;
+        bool connected = false;
 
-            client = new MongoClient(settings);
-            mongoDatabase = client.GetDatabase(credentials.Database);
-
-            await AresLogger.LogAsync("DB: Mongo", $"Connection established successfully. ({FormatterUtil.FormatSeconds(start)})");
-        }
-        catch (Exception e)
+        while (!connected)
         {
-            await AresLogger.ErrorAsync("DB: Mongo", "Unable to connect...", e.Message);
+            try
+            {
+                MongoClientSettings settings = MongoClientSettings.FromConnectionString(url);
+
+                client = new MongoClient(settings);
+                mongoDatabase = client.GetDatabase(credentials.Database);
+
+                await AresLogger.LogAsync("DB: Mongo", $"Connection established. ({tries}x/{FormatterUtil.FormatSeconds(start)})");
+                connected = true;
+            }
+            catch (Exception e)
+            {
+                await AresLogger.ErrorAsync("DB: Mongo", "Unable to connect.", e.Message);
+                
+                connected = false;
+                tries++;
+
+                await AresLogger.ErrorAsync("DB: Mongo", $"Trying to connect in {time}s...");
+                await Task.Delay(time);
+            }
         }
     }
 

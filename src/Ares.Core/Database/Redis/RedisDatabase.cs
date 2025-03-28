@@ -56,25 +56,38 @@ public class RedisDatabase : DatabaseTemplate
 
         await AresLogger.LogAsync("DB: Redis", "Starting connection to Redis...");
 
-        try
+        int time = 15;
+        int tries = 1;
+        bool connected = false;
+
+        while (!connected)
         {
-            ConfigurationOptions options = new ConfigurationOptions
+            try
             {
-                EndPoints = { $"{_credentials.Host}:{_credentials.Port}" },
-                Password = _credentials.Password,
-                ConnectTimeout = 5000,
-                SyncTimeout = 5000,
-                AsyncTimeout = 5000
-            };
+                ConfigurationOptions options = new ConfigurationOptions
+                {
+                    EndPoints = { $"{_credentials.Host}:{_credentials.Port}" },
+                    Password = _credentials.Password,
+                    ConnectTimeout = 5000,
+                    SyncTimeout = 5000,
+                    AsyncTimeout = 5000
+                };
 
-            this._connection = await ConnectionMultiplexer.ConnectAsync(options);
-            this._database = _connection.GetDatabase();
+                this._connection = await ConnectionMultiplexer.ConnectAsync(options);
+                this._database = _connection.GetDatabase();
 
-            await AresLogger.LogAsync("DB: Redis", $"Redis connection successfully established. ({FormatterUtil.FormatSeconds(start)})");
-        }
-        catch (Exception ex)
-        {
-            await AresLogger.ErrorAsync("DB: Redis", "Could not connect to Redis...", error: ex.Message);
+                await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({tries}x/{FormatterUtil.FormatSeconds(start)})");
+            }
+            catch (Exception ex)
+            {
+                await AresLogger.ErrorAsync("DB: Redis", "Could not connect to Redis.", error: ex.Message);
+
+                connected = false;
+                tries++;
+
+                await AresLogger.ErrorAsync("DB: Redis", $"Trying to connect in {time}s...");
+                await Task.Delay(time);
+            }
         }
     }
 
@@ -288,7 +301,7 @@ public class RedisDatabase : DatabaseTemplate
     {
         return await Task.Run(() =>
         {
-            Dictionary<string, string>? dictionary = JsonUtil.ObjectToMap(obj);
+            Dictionary<string, string>? dictionary = JsonUtil.ObjectToDictionary(obj);
 
             if (dictionary == null)
             {
@@ -318,7 +331,7 @@ public class RedisDatabase : DatabaseTemplate
                 entry => entry.Value.ToString()
             );
 
-            return JsonUtil.MapToObject<T?>(dictionary);
+            return JsonUtil.DictionaryToObject<T?>(dictionary);
         });
     }
 }

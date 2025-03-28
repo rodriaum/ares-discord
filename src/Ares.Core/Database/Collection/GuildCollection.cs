@@ -68,8 +68,8 @@ internal class GuildCollection
         {
             try
             {
-                // Try to send a ping command to verify the connection.
                 if (_collection == null) continue;
+                // Try to send a ping command to verify the connection.
                 await _collection.Database.RunCommandAsync((Command<BsonDocument>)"{ ping: 1 }");
                 isConnected = true;
             }

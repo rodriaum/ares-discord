@@ -1,19 +1,15 @@
-﻿using Ares.Discord.Commands;
-using Ares.Core.Database;
-using Ares.Core.Database.Collection;
-using Ares.Core.Database.Mongo;
-using Ares.Core.Database.Redis;
-using Ares.Discord.Listener;
-using Ares.Discord.Listener.Chat;
+﻿using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Service;
 using Ares.Core.Util;
+using Ares.Discord.Commands;
+using Ares.Discord.Listener;
+using Ares.Discord.Listener.Chat;
 using Discord;
 using Discord.Net;
 using Discord.WebSocket;
 using DotNetEnv;
 using Newtonsoft.Json;
-using Ares.Core;
 
 namespace Ares.Discord;
 
@@ -68,8 +64,15 @@ internal class Program
 
         _client = new DiscordSocketClient(config);
 
+        string discordToken = Env.GetString("DISCORD_TOKEN");
+        if (string.IsNullOrWhiteSpace(discordToken))
+        {
+            await AresLogger.ErrorAsync("Token", "Could not find application token.");
+            return;
+        }
+
         // Connect to Discord
-        await _client.LoginAsync(TokenType.Bot, Env.GetString("DISCORD_TOKEN"));
+        await _client.LoginAsync(TokenType.Bot, discordToken);
         await _client.StartAsync();
 
         new LoggingService(client: _client);

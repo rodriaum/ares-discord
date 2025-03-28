@@ -12,8 +12,6 @@ using Ares.Core.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using MongoDB.Bson;
-using System.Reflection.Metadata;
 
 namespace Ares.Discord.Listener.Chat;
 

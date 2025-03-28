@@ -50,7 +50,7 @@ internal class JsonUtil
         return element.ToString(Formatting.None);
     }
 
-    public static T? MapToObject<T>(Dictionary<string, string> map)
+    public static T? DictionaryToObject<T>(Dictionary<string, string> map)
     {
         var obj = new JObject();
 
@@ -69,7 +69,7 @@ internal class JsonUtil
         return obj.ToObject<T>();
     }
 
-    public static Dictionary<string, string> ObjectToMap(object src)
+    public static Dictionary<string, string> ObjectToDictionary(object src)
     {
         var map = new Dictionary<string, string>();
 
@@ -90,7 +90,7 @@ internal class JsonUtil
         return map;
     }
 
-    public static Dictionary<string, List<string>> ObjectToMapList(object src)
+    public static Dictionary<string, List<string>> ObjectToDictionaryList(object src)
     {
         var map = new Dictionary<string, List<string>>();
 
