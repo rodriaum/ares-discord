@@ -1,4 +1,10 @@
-﻿using Ares.Core.Database.Model.Chat;
+﻿/*
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+
+using Ares.Core.Database.Model.Chat;
 using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Database.Model.Config;
 using Ares.Core.Database.Model.Token;

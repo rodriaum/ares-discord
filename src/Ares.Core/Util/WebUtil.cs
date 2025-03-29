@@ -1,4 +1,10 @@
-﻿using System.Net.Http.Headers;
+﻿/*
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace Ares.Core.Util;

@@ -1,4 +1,10 @@
-﻿namespace Ares.Core.Objects.Chat.Price;
+﻿/*
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+
+namespace Ares.Core.Objects.Chat.Price;
 
 /// <summary>
 /// Representa o preço em dólar por token usado no pedido e resposta.

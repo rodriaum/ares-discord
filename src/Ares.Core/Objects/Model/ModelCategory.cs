@@ -1,4 +1,10 @@
-﻿using System.Reflection;
+﻿/*
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+
+using System.Reflection;
 
 namespace Ares.Core.Objects.Model;
 

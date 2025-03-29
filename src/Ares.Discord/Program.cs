@@ -1,4 +1,10 @@
-﻿using Ares.Core;
+﻿/*
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+
+using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Service;
 using Ares.Core.Util;
