@@ -1,5 +1,4 @@
-﻿using Anthropic.SDK.Messaging;
-using Ares.Core.Database.Model.Chat.Sub;
+﻿using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Objects.Chat;
 using OpenAI.Chat;
 
@@ -7,19 +6,6 @@ namespace Ares.Core.Util;
 
 public class AiUtil
 {
-    /// <summary>
-    /// <b>Anthropic</b> - Converte um <see cref="RoleType"/> da Anthropic para um <see cref="ChatRole"/>.
-    /// </summary>
-    public static ChatRole ConvertAnthropicRole(RoleType role)
-    {
-        return role switch
-        {
-            RoleType.User => ChatRole.User,
-            RoleType.Assistant => ChatRole.Assistant,
-            _ => ChatRole.None
-        };
-    }
-
     /// <summary>
     /// <b>OpenAI</b> - Cria uma mensagem de usuário a partir do histórico.
     /// </summary>
@@ -48,13 +34,5 @@ public class AiUtil
             ChatMessageRole.Assistant => ChatRole.Assistant,
             _ => ChatRole.None
         };
-    }
-
-    /// <summary>
-    /// <b>DeepSeek</b> - Converte um <see cref="?"/> da DeepSeek para um <see cref="ChatRole"/>.
-    /// </summary>
-    public static ChatRole ConvertDeepSeekRole()
-    {
-        return ChatRole.None;
     }
 }

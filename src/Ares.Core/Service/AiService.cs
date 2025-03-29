@@ -1,8 +1,5 @@
-﻿using Anthropic.SDK;
-using Anthropic.SDK.Messaging;
-using Ares.Core.Database.Model;
+﻿using Ares.Core.Database.Model;
 using Ares.Core.Database.Model.Chat.Sub;
-using Ares.Core.Database.Model.Information;
 using Ares.Core.Database.Model.Token;
 using Ares.Core.Manager;
 using Ares.Core.Objects.Chat;
@@ -10,8 +7,6 @@ using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
-using DeepSeek.Core;
-using DeepSeek.Core.Models;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -19,7 +14,6 @@ using OpenAI;
 using OpenAI.Audio;
 using OpenAI.Chat;
 using OpenAI.Images;
-using OpenAI.Models;
 using System.ClientModel;
 using System.Text;
 
@@ -27,48 +21,47 @@ namespace Ares.Core.Service;
 
 public class AiService
 {
+    /// <summary>
+    /// Dictionary mapping error keys to language keys for error messages
+    /// </summary>
+    private static readonly Dictionary<string, string> ErrorKeyMapping = new()
+    {
+        { "content_policy_violation", LangKeys.ContentPolityViolation },
+        { "rate_limit_exceeded", LangKeys.RateLimitExceeded },
+        { "invalid_request", LangKeys.InvalidRequest },
+        { "authentication_error", LangKeys.AuthenticationError },
+        { "server_error", LangKeys.ServerError },
+        { "timeout", LangKeys.Timeout },
+        { "model_not_found", LangKeys.ModelNotFound }
+    };
+
+    /// <summary>
+    /// Gets a localized error message based on the error key
+    /// </summary>
+    /// <param name="category">Language category</param>
+    /// <param name="key">Error key</param>
+    /// <returns>Localized error message</returns>
     private static string GetMessageByErrorKey(LangCategory category, string key)
     {
         LangManager manager = AresCore.LangManager;
 
-        if (key.Contains("content_policy_violation"))
+        // Search for any matching error keys
+        foreach (var mapping in ErrorKeyMapping)
         {
-            return manager.GetTranslation(category, LangKeys.ContentPolityViolation);
+            if (key.Contains(mapping.Key))
+            {
+                return manager.GetTranslation(category, mapping.Value);
+            }
         }
-        else if (key.Contains("rate_limit_exceeded"))
-        {
-            return manager.GetTranslation(category, LangKeys.RateLimitExceeded);
-        }
-        else if (key.Contains("invalid_request"))
-        {
-            return manager.GetTranslation(category, LangKeys.InvalidRequest);
-        }
-        else if (key.Contains("authentication_error"))
-        {
-            return manager.GetTranslation(category, LangKeys.AuthenticationError);
-        }
-        else if (key.Contains("server_error"))
-        {
-            return manager.GetTranslation(category, LangKeys.ServerError);
-        }
-        else if (key.Contains("timeout"))
-        {
-            return manager.GetTranslation(category, LangKeys.Timeout);
-        }
-        else if (key.Contains("model_not_found"))
-        {
-            return manager.GetTranslation(category, LangKeys.ModelNotFound);
-        }
-        else
-        {
-            return manager.GetTranslation(category, LangKeys.UnablePerformTask);
-        }
+
+        // Default error message if no specific match is found
+        return manager.GetTranslation(category, LangKeys.UnablePerformTask);
     }
 
     /*
      * General - Image Generation
      */
-    
+
     /// <summary>
     /// Asynchronously generates an image URL based on the provided parameters.
     /// </summary>
@@ -92,7 +85,10 @@ public class AiService
         ulong channel,
         string prompt)
     {
-        HandleVerifyParameters(guild, user, model, prompt);
+        if (!ValidateParameters(guild, user, model, prompt, out string errorMessage))
+        {
+            return errorMessage;
+        }
 
         if (model.Type != ModelType.Image)
         {
@@ -124,34 +120,31 @@ public class AiService
                 return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(GenerateConversationAsync)})";
             }
 
-            // Usa a URL original se não houver um token Imgur.
+            // Use original URL if no Imgur token is available
             string imageUrl = string.IsNullOrWhiteSpace(imgurToken)
                 ? image.ImageUri.OriginalString
                 : await WebUtil.UploadMediaFromUrl(imgurToken, image.ImageUri.OriginalString) ?? image.ImageUri.OriginalString;
 
-            GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
-
-            if (info == null)
+            // Save the image generation to chat history
+            if (!await SaveToHistoryAsync(guild, user, channel, prompt, imageUrl: imageUrl, imageOpenAi: image))
             {
-                AresLogger.Error(nameof(GenerateImageUrlAsync), "It looks like the information could not be accessed.");
                 return guild.GetTranslation(LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})";
             }
-
-            GChatHistoricModel historic = GChatHistoricModel.From(prompt, imageUrl: imageUrl, imageOpenAi: image)[0];
-            info.Historics.Add(historic);
-
-            await guild.UpdateChatInfoAsync(user, info);
 
             return imageUrl;
         }
         catch (Exception e)
         {
             AresLogger.Error("Generation", "Unable to generate an image.", e.Message);
+
             LangCategory lang = guild.LangCategory() ?? AresCore.LangManager.GetLanguages().First();
             return GetMessageByErrorKey(lang, e.Message);
         }
     }
 
+    /// <summary>
+    /// Generates an image using the specified model
+    /// </summary>
     private static async Task<GeneratedImage> GenerateImageAsync(
         ChatModel model,
         string token,
@@ -159,13 +152,12 @@ public class AiService
         ImageGenerationOptions options)
     {
         ImageClient client = new ImageClient(model.Model, token);
-
         return await client.GenerateImageAsync(prompt, options);
     }
 
-    /// <summary>
-    /// <b>General</b> - TTS Generation
-    /// </summary>
+    /*
+     * General - TTS Generation
+     */
 
     /// <summary>
     /// Asynchronously generates a TTS based on the provided parameters.
@@ -176,11 +168,8 @@ public class AiService
     /// <param name="channel">The ID of the channel chat.</param>
     /// <param name="prompt">The initial input or message.</param>
     /// <returns>
-    /// A string representing the generated conversation text and a check saying whether the content is the audio string or an error message..
+    /// A tuple with a string representing the generated audio or error message, and a boolean indicating success.
     /// </returns>
-    /// <remarks>
-    /// Future: Modify the function to return both the generated text and a boolean indicating whether the operation was successful.
-    /// </remarks>
     public async static Task<(string, bool)> GenerateTTSAsync(
         Guild guild,
         SocketGuildUser user,
@@ -188,7 +177,10 @@ public class AiService
         ulong channel,
         string prompt)
     {
-        HandleVerifyParameters(guild, user, model, prompt);
+        if (!ValidateParameters(guild, user, model, prompt, out string errorMessage))
+        {
+            return (errorMessage, false);
+        }
 
         if (model.Type != ModelType.TTS)
         {
@@ -202,13 +194,9 @@ public class AiService
             return (guild.GetTranslation(LangKeys.CouldNotFindToken), false);
         }
 
-        GChatHistoricModel? historic = null;
-
         try
         {
-            List<GChatHistoricModel>? historics = guild.ChatHistorics(user, channel: channel);
-
-            switch (model.Category) 
+            switch (model.Category)
             {
                 case ModelCategory.OpenAI:
                     return await HandleOpenAiTTS(guild, user, model, prompt, tokenData);
@@ -218,12 +206,7 @@ public class AiService
         }
         catch (Exception e)
         {
-            if (user != null && channel != 0 && historic != null && !await guild.RemoveConversationAsync(user, channel, historic))
-            {
-                AresLogger.Error("Generation", "Unable to remove user conversation after internal issue");
-            }
-
-            AresLogger.Error("Generation", "Unable to generate an conversation.", e.Message);
+            AresLogger.Error("Generation", "Unable to generate TTS.", e.Message);
 
             LangCategory lang = guild.LangCategory() ?? AresCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
@@ -231,9 +214,8 @@ public class AiService
     }
 
     /// <summary>
-    /// <b>OpenAI</b> - TTS Generation
+    /// Handles text-to-speech generation using OpenAI
     /// </summary>
-
     private static async Task<(string, bool)> HandleOpenAiTTS(
         Guild guild,
         SocketGuildUser user,
@@ -254,9 +236,9 @@ public class AiService
         return (result.Value.ToString(), true);
     }
 
-    /// <summary>
-    /// <b>General</b> - Conversation Generation
-    /// </summary>
+    /*
+     * General - Conversation Generation
+     */
 
     /// <summary>
     /// Asynchronously generates a conversation based on the provided parameters.
@@ -270,9 +252,6 @@ public class AiService
     /// <returns>
     /// A string representing the generated conversation text.
     /// </returns>
-    /// <remarks>
-    /// Future: Modify the function to return both the generated text and a boolean indicating whether the operation was successful.
-    /// </remarks>
     public async static Task<string> GenerateConversationAsync(
         Guild guild,
         SocketGuildUser user,
@@ -281,7 +260,10 @@ public class AiService
         string prompt,
         RestUserMessage? botMessage = null)
     {
-        HandleVerifyParameters(guild, user, model, prompt);
+        if (!ValidateParameters(guild, user, model, prompt, out string errorMessage))
+        {
+            return errorMessage;
+        }
 
         if (model.Type != ModelType.Chat)
         {
@@ -295,41 +277,22 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindToken);
         }
 
-        GChatHistoricModel? historic = null;
-
         try
         {
             List<GChatHistoricModel>? historics = guild.ChatHistorics(user, channel: channel);
-
-            switch (model.Category)
-            {
-                case ModelCategory.OpenAI:
-                    return await HandleOpenAiConversation(guild, user, model, channel, prompt, tokenData, historics, botMessage);
-
-                case ModelCategory.Anthropic:
-                    return await HandleAnthropicConversation(guild, user, model, channel, prompt, tokenData, historics, botMessage);
-
-                case ModelCategory.DeepSeek:
-                    return await HandleDeepSeekConversation(guild, user, model, channel, prompt, tokenData, historics, botMessage);
-
-                default:
-                    return guild.GetTranslation(LangKeys.ModelNotFound);
-            }
+            return await HandleOpenAiConversation(guild, user, model, channel, prompt, tokenData, historics, botMessage);
         }
         catch (Exception e)
         {
-            if (user != null && channel != 0 && historic != null && !await guild.RemoveConversationAsync(user, channel, historic))
-            {
-                AresLogger.Error("Generation", "Unable to remove user conversation after internal issue");
-            }
+            AresLogger.Error("Generation", "Unable to generate a conversation.", e.Message);
 
-            AresLogger.Error("Generation", "Unable to generate an conversation.", e.Message);
-            return GetMessageByErrorKey(guild.LangCategory(), e.Message);
+            LangCategory lang = guild.LangCategory() ?? AresCore.LangManager.GetLanguages().First();
+            return GetMessageByErrorKey(lang, e.Message);
         }
     }
 
     /// <summary>
-    /// <b>OpenAI</b> - Conversation Generation
+    /// Handles conversation generation using OpenAI
     /// </summary>
     private static async Task<string> HandleOpenAiConversation(
         Guild guild,
@@ -341,30 +304,53 @@ public class AiService
         List<GChatHistoricModel>? historics,
         RestUserMessage? restBotMessage = null)
     {
-        string? token = tokenData.OpenAi;
+        string? token = model.Category switch
+        {
+            ModelCategory.OpenAI => tokenData.OpenAi,
+            ModelCategory.Anthropic => tokenData.Anthropic,
+            ModelCategory.DeepSeek => tokenData.Deepseek,
+            _ => null
+        };
 
         if (string.IsNullOrWhiteSpace(token))
             return guild.GetTranslation(LangKeys.CouldNotFindToken);
 
+        // Prepare chat messages
         UserChatMessage userMessage = new UserChatMessage(prompt) { ParticipantName = user.GlobalName };
-        List<ChatMessage> messages = GChatHistoricModel.ToChatOpenAiMessages(historics);
 
+        List<ChatMessage> messages = GChatHistoricModel.ToChatOpenAiMessages(historics);
         messages.Add(userMessage);
 
-        ChatClient client = new ChatClient(model.Model, token);
-        ChatCompletionOptions options = new ChatCompletionOptions { MaxOutputTokenCount = 2048 };
+        ModelCategory modelCategory = model.Category;
 
-        if (restBotMessage != null)
+        // Create client options
+        OpenAIClientOptions clientOptions = new OpenAIClientOptions { Endpoint = modelCategory.GetEndpoint() };
+
+        // Create chat client
+        ChatClient client = new ChatClient
+            (
+                model: model.Model, 
+                credential: new ApiKeyCredential(token), 
+                options: clientOptions
+            );
+
+        ChatCompletionOptions chatOptions = new ChatCompletionOptions { MaxOutputTokenCount = 2048 };
+
+        // Use streaming or non-streaming based on whether we have a message to update
+        if (restBotMessage != null && modelCategory.HasStreamingResponses())
         {
-            return await HandleOpenAiStreamingResponse(guild, user, channel, prompt, model, restBotMessage, client, messages, options);
+            return await HandleOpenAiStreamingResponse(guild, user, channel, prompt, model, restBotMessage, client, messages, chatOptions);
         }
         else
         {
-            ChatCompletion completion = await client.CompleteChatAsync(messages, options: options);
+            ChatCompletion completion = await client.CompleteChatAsync(messages, options: chatOptions);
             return await HandleOpenAiCompletionResponse(guild, user, channel, prompt, completion);
         }
     }
 
+    /// <summary>
+    /// Handles streaming response from OpenAI
+    /// </summary>
     private static async Task<string> HandleOpenAiStreamingResponse(
         Guild guild,
         SocketGuildUser user,
@@ -384,34 +370,38 @@ public class AiService
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
+        // Create embed message
         EmbedBuilder embed = new EmbedBuilder()
             .WithTitle(guild.GetTranslation(LangKeys.AI))
             .WithColor(Color.Gold)
             .WithFooter(guild.GetTranslation(LangKeys.TakeUpMinutes));
 
+        // Set cooldown to avoid updating too frequently
         DateTime lastEditDate = DateTime.UtcNow;
         TimeSpan editCooldownTime = TimeSpan.FromSeconds(1);
 
         StringBuilder sb = new StringBuilder();
-
         ChatTokenUsage? lastTokenUsage = null;
+
+        // Process streaming response
         await foreach (StreamingChatCompletionUpdate response in client.CompleteChatStreamingAsync(messages, options))
         {
             if (response.ContentUpdate.Count > 0)
             {
                 ChatMessageContentPart content = response.ContentUpdate[0];
-
                 sb.Append(content.Text);
                 string text = sb.ToString();
 
+                // Limit text length for embed
                 if (text.Length > 4096)
                 {
                     text = text.Substring(0, 4095);
-                    embed.WithFooter($"{DateTime.Now.Year} - Ares | {model.DisplayName} (Limite de caracteres alcançado)");
+                    embed.WithFooter($"{DateTime.Now.Year} - Ares | {model.DisplayName} (Character limit reached)");
                 }
 
                 embed.WithDescription(text);
 
+                // Update message if cooldown has passed
                 if ((DateTime.UtcNow - lastEditDate) > editCooldownTime)
                 {
                     await restBotMessage.ModifyAsync(message => message.Embed = embed.Build());
@@ -419,23 +409,27 @@ public class AiService
                 }
             }
 
-            // Alert: As it is a streaming method, the total value of tokens is always in the last item in the list.
+            // Save the latest token usage information
             lastTokenUsage = response.Usage;
         }
 
+        // Create usage stats
         ChatValueUsage usage = new ChatValueUsage();
-
         if (lastTokenUsage != null)
         {
             usage = new ChatValueUsage(lastTokenUsage.OutputTokenCount, lastTokenUsage.InputTokenCount);
         }
 
+        // Save to history
         info.Historics.Add(new GChatHistoricModel(prompt, sb.ToString(), usage: usage));
         await guild.UpdateChatInfoAsync(user, info);
 
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Handles non-streaming response from OpenAI
+    /// </summary>
     private static async Task<string> HandleOpenAiCompletionResponse(
         Guild guild,
         SocketGuildUser user,
@@ -449,22 +443,25 @@ public class AiService
             return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleOpenAiConversation)})";
         }
 
+        // Get chat info for this channel
         GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
-
         if (info == null)
         {
             AresLogger.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
             return guild.GetTranslation(LangKeys.CouldNotFindInfo);
         }
 
+        // Save to history
         GChatHistoricModel historic = GChatHistoricModel.From(prompt, responseOpenAi: completion)[0];
         info.Historics.Add(historic);
-
         await guild.UpdateChatInfoAsync(user, info);
 
         return ProcessOpenAiResponse(guild, completion);
     }
 
+    /// <summary>
+    /// Processes OpenAI response and handles different finish reasons
+    /// </summary>
     private static string ProcessOpenAiResponse(Guild guild, ChatCompletion response)
     {
         ChatMessageContentPart? content = response.Content.FirstOrDefault();
@@ -485,158 +482,81 @@ public class AiService
     }
 
     /// <summary>
-    /// <b>Anthropic</b> - Conversation Generation
+    /// Validates input parameters and returns appropriate error message if invalid
     /// </summary>
-
-    private static async Task<string> HandleAnthropicConversation(
-        Guild guild,
-        SocketGuildUser user,
-        ChatModel model,
-        ulong channel,
-        string prompt,
-        GTokenModel tokenData,
-        List<GChatHistoricModel>? historics,
-        RestUserMessage?
-        botMessage = null)
+    /// <returns>True if parameters are valid, false otherwise with error message</returns>
+    private static bool ValidateParameters(Guild guild, IGuildUser user, ChatModel model, string prompt, out string errorMessage)
     {
-        string? token = tokenData.Anthropic;
+        errorMessage = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(token))
+        // Parameter validation
+        if (guild == null)
         {
-            return guild.GetTranslation(LangKeys.CouldNotFindToken);
+            errorMessage = "There was an internal issue identifying the guild. Please check if the guild was provided correctly.";
+            return false;
         }
 
-        Anthropic.SDK.Messaging.Message userMessage = new Anthropic.SDK.Messaging.Message(RoleType.User, prompt);
-        List<Anthropic.SDK.Messaging.Message> messages = GChatHistoricModel.ToChatAnthropicMessages(historics);
-        messages.Add(userMessage);
-
-        APIAuthentication auth = new APIAuthentication(token);
-        AnthropicClient client = new AnthropicClient(auth);
-
-        MessageParameters parameters = new MessageParameters()
+        if (user == null)
         {
-            Messages = messages,
-            MaxTokens = 2048, // Adjustment to avoid exceeding the 4096-character limit imposed by Discord, preventing resource waste, as any text sent beyond this limit will be truncated.
-            Model = model.Model
-        };
-
-        MessageResponse? response = await client.Messages.GetClaudeMessageAsync(parameters);
-
-        if (response == null)
-        {
-            AresLogger.Error
-                (
-                    "Anthropic",
-                    "Unable to get response.",
-                    ""
-                );
-
-            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleAnthropicConversation)})";
+            errorMessage = "There was an internal issue identifying the user. Please check if the user was provided correctly.";
+            return false;
         }
 
-        GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
-
-        if (info == null)
+        if (model == null)
         {
-            AresLogger.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
-            return guild.GetTranslation(LangKeys.CouldNotFindInfo);
+            errorMessage = "There was an internal issue identifying the model. Please check if the model was provided correctly.";
+            return false;
         }
 
-        GChatHistoricModel historic = GChatHistoricModel.From(prompt, responseAnthropic: response)[0];
-        info.Historics.Add(historic);
+        if (string.IsNullOrWhiteSpace(prompt))
+        {
+            errorMessage = "There was an internal issue identifying the prompt. Please check if the prompt was provided correctly.";
+            return false;
+        }
 
-        await guild.UpdateChatInfoAsync(user, info);
-
-        return response.Message.ToString();
+        return true;
     }
 
     /// <summary>
-    /// <b>DeepSeek</b> - Conversation Generation
+    /// Helper method to save chat or image response to history
     /// </summary>
-
-    private static async Task<string> HandleDeepSeekConversation(
+    private static async Task<bool> SaveToHistoryAsync(
         Guild guild,
         SocketGuildUser user,
-        ChatModel model,
         ulong channel,
         string prompt,
-        GTokenModel tokenData,
-        List<GChatHistoricModel>? historics,
-        RestUserMessage? botMessage = null)
+        string? response = null,
+        string? imageUrl = null,
+        GeneratedImage? imageOpenAi = null,
+        ChatCompletion? responseOpenAi = null,
+        ChatValueUsage? usage = null)
     {
-        string? token = tokenData.Deepseek;
-
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return guild.GetTranslation(LangKeys.CouldNotFindToken);
-        }
-
-        DeepSeek.Core.Models.Message userMessage = DeepSeek.Core.Models.Message.NewUserMessage(prompt);
-        List<DeepSeek.Core.Models.Message> messages = GChatHistoricModel.ToChatDeepSeekMessages(historics);
-        messages.Add(userMessage);
-
-        DeepSeekClient client = new DeepSeekClient(token);
-
-        var request = new ChatRequest
-        {
-            Messages = messages,
-            Model = model.Model,
-            MaxTokens = 2048 // Adjustment to avoid exceeding the 4096-character limit imposed by Discord, preventing resource waste, as any text sent beyond this limit will be truncated.
-        };
-
-        ChatResponse? response = await client.ChatAsync(request, new CancellationToken());
-
-        if (response == null)
-        {
-            AresLogger.Error
-                (
-                    "DeepSeek",
-                    "Unable to get response.",
-                    (client.ErrorMsg != null ? client.ErrorMsg : "Unknown")
-                );
-
-            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleDeepSeekConversation)})";
-        }
-
-        Choice? choice = response.Choices.FirstOrDefault();
-
-        if (choice == null || choice.Message == null || choice.Message.Content == null)
-        {
-            return guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(HandleDeepSeekConversation)})";
-        }
-
         GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
 
         if (info == null)
         {
-            AresLogger.Error(nameof(HandleOpenAiConversation), "It looks like the information could not be accessed.");
-            return guild.GetTranslation(LangKeys.CouldNotFindInfo);
+            AresLogger.Error(nameof(SaveToHistoryAsync), "It looks like the information could not be accessed.");
+            return false;
         }
 
-        GChatHistoricModel? historic = GChatHistoricModel.From(prompt, responseDeepSeek: response)[0];
+        GChatHistoricModel historic;
 
-        if (historic != null)
+        if (imageOpenAi != null)
         {
-            info.Historics.Add(historic);
-            await guild.UpdateChatInfoAsync(user, info);
+            historic = GChatHistoricModel.From(prompt, imageUrl: imageUrl, imageOpenAi: imageOpenAi)[0];
+        }
+        else if (responseOpenAi != null)
+        {
+            historic = GChatHistoricModel.From(prompt, responseOpenAi: responseOpenAi)[0];
+        }
+        else
+        {
+            historic = new GChatHistoricModel(prompt, response ?? string.Empty, usage: usage);
         }
 
-        return choice.Message.Content;
-    }
+        info.Historics.Add(historic);
+        await guild.UpdateChatInfoAsync(user, info);
 
-    private static void HandleVerifyParameters(Guild guild, IGuildUser user, ChatModel model, string prompt)
-    {
-        // Parameter validation
-        if (guild == null)
-            throw new ArgumentNullException(nameof(guild), "There was an internal issue identifying the guild. Please check if the guild was provided correctly.");
-
-        if (user == null)
-            throw new ArgumentNullException(nameof(user), "There was an internal issue identifying the user. Please check if the user was provided correctly.");
-
-        if (model == null)
-            throw new ArgumentNullException(nameof(model), "There was an internal issue identifying the model. Please check if the model was provided correctly.");
-
-        if (string.IsNullOrWhiteSpace(prompt))
-            throw new ArgumentNullException(nameof(prompt), "There was an internal issue identifying the prompt. Please check if the prompt was provided correctly.");
+        return true;
     }
 }
