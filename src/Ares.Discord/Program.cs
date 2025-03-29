@@ -190,6 +190,13 @@ internal class Program
                     new SlashCommandOptionBuilder
                     {
                         Type = ApplicationCommandOptionType.String,
+                        Name = "xai",
+                        Description = "Access: https://console.x.ai/team/api-keys",
+                        IsRequired = false
+                    },
+                    new SlashCommandOptionBuilder
+                    {
+                        Type = ApplicationCommandOptionType.String,
                         Name = "imgur",
                         Description = "Access: https://api.imgur.com/oauth2/addclient",
                         IsRequired = false

@@ -151,6 +151,12 @@ internal class ConfigCommand
                     tokenChange = tokenData.Deepseek != optionValue;
                     break;
 
+                case "xai":
+                    tokenData.xAI = optionValue;
+                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
+                    tokenChange = tokenData.xAI != optionValue;
+                    break;
+
                 case "imgur":
                     tokenData.Imgur = optionValue;
                     // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
