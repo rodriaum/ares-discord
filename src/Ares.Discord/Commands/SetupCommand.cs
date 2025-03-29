@@ -9,42 +9,44 @@ using Discord.WebSocket;
 using Ares.Core.Manager;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
+using Discord.Rest;
 
 namespace Ares.Discord.Commands;
 
 internal class SetupCommand
 {
-    private static DiscordSocketClient? Client;
+    private static DiscordSocketClient? _client;
 
     public SetupCommand(DiscordSocketClient client)
     {
         client.SlashCommandExecuted += SlashCommandHandler;
-        Client = client;
+        _client = client;
     }
 
     private async Task SlashCommandHandler(SocketSlashCommand command)
     {
-        if (Client == null || !command.Data.Name.Equals("setup")) return;
+        if (_client == null || !command.Data.Name.Equals("setup")) return;
 
-        await command.DeferAsync();
         ulong? guildId = command.GuildId;
 
         EmbedBuilder embed = new EmbedBuilder()
+            .WithDescription(":hourglass:")
             .WithCurrentTimestamp();
+
+        await command.RespondAsync(embed: embed.Build());
+        RestInteractionMessage message = await command.GetOriginalResponseAsync();
 
         if (guildId is null)
         {
-            await command.FollowupAsync(embed: embed.WithColor(Color.Red).Build());
+            await message.ModifyAsync(it => it.Embed = embed.WithDescription("Não foi possível encontrar a guilda atual.").Build());
             return;
         }
 
         if (command.Data.Options.Count == 0)
         {
-            await command.FollowupAsync("Nenhuma opção fornecida.", ephemeral: true);
+            await message.ModifyAsync(it => it.Embed = embed.WithDescription("Nenhuma opção fornecida.").Build());
             return;
         }
-
-        await command.FollowupAsync(":hourglass:");
 
         switch (command.Data.Options.First().Value)
         {
@@ -61,7 +63,7 @@ internal class SetupCommand
 
                 if (AiManager.Models == null || !AiManager.Models.Any())
                 {
-                    await command.FollowupAsync("Nenhum modelo de IA disponível.", ephemeral: true);
+                    await message.ModifyAsync(it => it.Embed = embed.WithDescription("Nenhum modelo de IA disponível.").Build());
                     return;
                 }
 
@@ -103,7 +105,11 @@ internal class SetupCommand
                     }
                 }
 
-                await command.FollowupAsync(embed: embed.Build(), components: builder.Build());
+                await message.ModifyAsync(it =>
+                {
+                    it.Embed = embed.Build();
+                    it.Components = builder.Build();
+                });
                 break;
         }
     }

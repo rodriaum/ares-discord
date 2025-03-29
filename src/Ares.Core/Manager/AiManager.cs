@@ -273,14 +273,9 @@ public class AiManager
                 available: true
             ),
 
-            new(
-                category: ModelCategory.xAI,
-                type: ModelType.Chat,
-                display: "Grok 2 Latest",
-                model: "grok-2-latest",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000015m, inputPricePerToken: 0.000003m),
-                available: true
-            ),
+            /*
+             * xAI Models
+             */
 
             new(
                 category: ModelCategory.xAI,
@@ -302,8 +297,8 @@ public class AiManager
 
             new(
                 category: ModelCategory.xAI,
-                type: ModelType.Vision,
-                display: "Grok 2 Vision Latest",
+                type: ModelType.Image,
+                display: "Grok 2 Image",
                 model: "grok-2-image",
                 price: new ChatPriceUsage(),
                 available: false
