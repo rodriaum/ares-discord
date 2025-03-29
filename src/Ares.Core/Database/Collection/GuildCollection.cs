@@ -52,41 +52,13 @@ internal class GuildCollection
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
     public GuildCollection(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
     {
-        _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("guilds");
+        this._collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("guilds");
         this._redisDatabase = redisDatabase;
 
-        _manager = AresCore.GuildManager;
+        this._manager = AresCore.GuildManager;
 
         // Create indexes in the collection to optimize queries.
-        CreateIndexesAsync();
-    }
-
-    /// <summary>
-    /// Attempts to establish a connection with MongoDB, checking the connection every 15 seconds
-    /// if the connection fails. The function will continue trying until the connection is successful.
-    /// </summary>
-    /// <returns>Returns true when the connection to MongoDB is successfully established.</returns>
-    public async Task<bool> WaitForMongoConnectionAsync()
-    {
-        bool isConnected = false;
-
-        while (!isConnected)
-        {
-            try
-            {
-                if (_collection == null) continue;
-                // Try to send a ping command to verify the connection.
-                await _collection.Database.RunCommandAsync((Command<BsonDocument>)"{ ping: 1 }");
-                isConnected = true;
-            }
-            catch (Exception ex)
-            {
-                await AresLogger.ErrorAsync("ConnectionError", $"Failed to connect to MongoDB. Retrying in 15 seconds...", ex.Message);
-                await Task.Delay(15000);
-            }
-        }
-
-        return isConnected;
+        this.CreateIndexesAsync();
     }
 
     /// <summary>
@@ -97,31 +69,24 @@ internal class GuildCollection
         await AresLogger.LogAsync("DB: Mongo", "Creating indexes in the database...");
 
         // Check if the collection was initialized before trying to create indexes.
-        if (_collection == null)
+        if (this._collection == null)
         {
             await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when creating guild data indexes.");
             return;
         }
 
-        // Call the function to wait for MongoDB connection.
-        bool isConnected = await WaitForMongoConnectionAsync();
-
-        if (isConnected)
+        try
         {
-            // After the connection is successful, create the indexes.
-            try
-            {
-                IndexKeysDefinition<BsonDocument> indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
-                CreateIndexModel<BsonDocument> indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+            IndexKeysDefinition<BsonDocument> indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("Id");
+            CreateIndexModel<BsonDocument> indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
 
-                await _collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel });
+            await _collection.Indexes.CreateManyAsync(new List<CreateIndexModel<BsonDocument>> { indexModel }).ConfigureAwait(false);
 
-                await AresLogger.LogAsync("DB: Mongo", "Indexes created.");
-            }
-            catch (Exception ex)
-            {
-                await AresLogger.ErrorAsync("IndexCreationError", $"Error creating indexes: {ex.Message}");
-            }
+            await AresLogger.LogAsync("DB: Mongo", "Indexes created.");
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.ErrorAsync("IndexCreationError", $"Error creating indexes: {ex.Message}");
         }
     }
 
