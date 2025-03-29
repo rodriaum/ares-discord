@@ -9,7 +9,6 @@ using Ares.Core.Database.Collection;
 using Ares.Core.Database.Model;
 using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Database.Model.Config;
-using Ares.Core.Database.Model.Information;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
