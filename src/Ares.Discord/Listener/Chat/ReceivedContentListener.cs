@@ -309,6 +309,7 @@ internal class ReceivedContentListener
             ModelCategory.OpenAI => Color.Green,
             ModelCategory.Anthropic => Color.Orange,
             ModelCategory.DeepSeek => Color.Blue,
+            ModelCategory.xAI => Color.Orange,
             _ => Color.Default
         };
     }

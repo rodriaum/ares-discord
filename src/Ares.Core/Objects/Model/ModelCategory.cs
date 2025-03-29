@@ -17,7 +17,10 @@ public enum ModelCategory
     Anthropic,
 
     [WebApi(endpoint: "https://api.deepseek.com", streamingResponses: true)]
-    DeepSeek
+    DeepSeek,
+
+    [WebApi(endpoint: "https://api.x.ai/v1", streamingResponses: true)]
+    xAI
 }
 
 [AttributeUsage(AttributeTargets.Field)]

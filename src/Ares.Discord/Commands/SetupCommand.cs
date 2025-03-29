@@ -27,7 +27,6 @@ internal class SetupCommand
         if (Client == null || !command.Data.Name.Equals("setup")) return;
 
         await command.DeferAsync();
-
         ulong? guildId = command.GuildId;
 
         EmbedBuilder embed = new EmbedBuilder()
@@ -35,15 +34,17 @@ internal class SetupCommand
 
         if (guildId is null)
         {
-            await command.RespondAsync(embed: embed.WithColor(Color.Red).Build());
+            await command.FollowupAsync(embed: embed.WithColor(Color.Red).Build());
             return;
         }
 
         if (command.Data.Options.Count == 0)
         {
-            await command.RespondAsync("Nenhuma opção fornecida.", ephemeral: true);
+            await command.FollowupAsync("Nenhuma opção fornecida.", ephemeral: true);
             return;
         }
+
+        await command.FollowupAsync(":hourglass:");
 
         switch (command.Data.Options.First().Value)
         {
@@ -60,7 +61,7 @@ internal class SetupCommand
 
                 if (AiManager.Models == null || !AiManager.Models.Any())
                 {
-                    await command.RespondAsync("Nenhum modelo de IA disponível.", ephemeral: true);
+                    await command.FollowupAsync("Nenhum modelo de IA disponível.", ephemeral: true);
                     return;
                 }
 
@@ -70,7 +71,7 @@ internal class SetupCommand
 
                     SelectMenuBuilder menu = new SelectMenuBuilder()
                         .WithPlaceholder(FormatterUtil.CapitalizeFirstLetter(name))
-                        .WithCustomId($"chat-menu-{name}");
+                        .WithCustomId($"chat-menu-{name.ToLower()}");
 
                     foreach (ChatModel model in AiManager.Models)
                     {
@@ -82,6 +83,7 @@ internal class SetupCommand
                             ModelType.Question => "Questão",
                             ModelType.Image => "Imagem",
                             ModelType.TTS => "Audio",
+                            ModelType.Vision => "Visão",
                             _ => "Desconhecido"
                         };
 
@@ -95,7 +97,7 @@ internal class SetupCommand
                         });
                     }
 
-                    if (menu.Options.Count > 1)
+                    if (menu.Options.Count >= 1)
                     {
                         builder.WithSelectMenu(menu);
                     }

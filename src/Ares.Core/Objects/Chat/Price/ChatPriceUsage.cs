@@ -7,32 +7,49 @@
 namespace Ares.Core.Objects.Chat.Price;
 
 /// <summary>
-/// Representa o preço em dólar por token usado no pedido e resposta.
+/// Represents the price in dollars per token used in the request and response.
 /// </summary>
 /// <remarks>
-/// Inspirado no código-fonte disponível em: 
+/// Inspired by the source code available at:
 /// <see href="https://github.com/openai/openai-dotnet/blob/main/src/Custom/Chat/ChatTokenUsage.cs" />
 /// </remarks>
 public class ChatPriceUsage
 {
-    /// <summary> Preço por token na conclusão gerada. </summary>
+    /// <summary> 
+    /// Price per token at completion generated.
+    /// </summary>
     public decimal OutputPricePerToken { get; }
 
-    /// <summary> Preço de token no prompt. </summary>
+    /// <summary> 
+    /// Token price in prompt.
+    /// </summary>
     public decimal InputPricePerToken { get; }
 
-    /// <summary> Preço de forma detalhista. (Opcional) </summary>
+    /// <summary> 
+    /// Price per image.
+    /// </summary>
+    public decimal InputPricePerImage { get; set; }
+
+    /// <summary> 
+    /// Price in detail. (Optional) 
+    /// </summary>
     public List<ChatPriceUsageDetail>? ChatPriceUsageDetail { get; set; }
 
-    public ChatPriceUsage(decimal output = 0, decimal input = 0, List<ChatPriceUsageDetail>? details = null)
+    public ChatPriceUsage(decimal outputPricePerToken = 0, decimal inputPricePerToken = 0, decimal inputPricePerImage = 0, List<ChatPriceUsageDetail>? details = null)
     {
-        OutputPricePerToken = output;
-        InputPricePerToken = input;
-        ChatPriceUsageDetail = details ?? new List<ChatPriceUsageDetail>();
+        this.OutputPricePerToken = outputPricePerToken;
+        this.InputPricePerToken = inputPricePerToken;
+        this.InputPricePerImage = inputPricePerImage;
+        this.ChatPriceUsageDetail = details ?? new List<ChatPriceUsageDetail>();
+    }
+
+    public decimal TotalTokenPrice()
+    {
+        return this.OutputPricePerToken + this.InputPricePerToken;
     }
 
     public decimal TotalPrice()
     {
-        return OutputPricePerToken + InputPricePerToken;
+        return this.TotalTokenPrice() + this.InputPricePerImage;
     }
 }

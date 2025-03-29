@@ -11,5 +11,6 @@ public enum ModelType
     Chat,
     Question,
     Image,
-    TTS
+    TTS,
+    Vision
 }
