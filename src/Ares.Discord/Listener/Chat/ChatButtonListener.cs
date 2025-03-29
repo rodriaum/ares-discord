@@ -11,6 +11,7 @@ using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Objects.Language;
 using Ares.Core.Util;
 using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 
 namespace Ares.Discord.Listener.Chat;
@@ -27,7 +28,8 @@ internal class ChatButtonListener
     {
         if (!args.Data.CustomId.Equals("close-chat")) return;
 
-        await args.DeferAsync(true);
+        await args.RespondAsync(ephemeral: true);
+        RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
         try
         {
@@ -35,7 +37,7 @@ internal class ChatButtonListener
 
             if (user == null)
             {
-                await args.FollowupAsync(AresConstant.UnableGetMember);
+                await message.ModifyAsync(it => it.Content = AresConstant.UnableGetMember);
                 return;
             }
 
@@ -43,7 +45,7 @@ internal class ChatButtonListener
 
             if (data == null)
             {
-                await args.FollowupAsync(AresConstant.UnablePerformTask);
+                await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
                 return;
             }
 
@@ -51,7 +53,7 @@ internal class ChatButtonListener
 
             if (guild == null)
             {
-                await args.FollowupAsync("Ops! Parece que o servidor atual não foi configurado no banco de dados.");
+                await message.ModifyAsync(it => it.Content = "Ops! Parece que o servidor atual não foi configurado no banco de dados.");
                 return;
             }
 
@@ -61,7 +63,7 @@ internal class ChatButtonListener
             {
                 if (!await guild.ToggleChatInfo(user, channel.Id, false))
                 {
-                    await args.FollowupAsync(AresConstant.UnablePerformTask);
+                    await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
                     return;
                 }
 
@@ -69,7 +71,7 @@ internal class ChatButtonListener
 
                 if (info == null)
                 {
-                    await args.FollowupAsync("Parece que você não é o proprietário desse canal.");
+                    await message.ModifyAsync(it => it.Content = "Parece que você não é o proprietário desse canal.");
                     return;
                 }
 
@@ -78,11 +80,11 @@ internal class ChatButtonListener
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();
 
-                AresLogger.Log("Chat", $"Chat \"{info.Id}\" has been disabled by \"{user.Username}#{user.Discriminator}\"");
+                AresLogger.Log("Chat", $"Chat \"{info.Id}\" disabled by \"{user.Username}#{user.Discriminator}\"");
             }
             else
             {
-                await args.FollowupAsync(AresConstant.UnablePerformTask);
+                await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
             }
         }
         catch (Exception e)

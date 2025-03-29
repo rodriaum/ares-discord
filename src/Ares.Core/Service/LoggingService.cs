@@ -35,7 +35,9 @@ internal class LoggingService
         }
         else
         {
-            AresLogger.Error($"General: {message.Source}", message.Message, severity: message.Severity);
+            // Will be ignore info messages because the Discord.Net SDK has random logs.
+            if (message.Severity != LogSeverity.Info)
+                AresLogger.Error($"General: {message.Source}", message.Message, severity: message.Severity);
         }
 
         return Task.CompletedTask;

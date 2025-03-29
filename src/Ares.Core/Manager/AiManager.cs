@@ -312,7 +312,7 @@ public class AiManager
         {
             AresLogger.Log(
                 $"AI: {FormatterUtil.CapitalizeFirstLetter(model.Category.ToString())}",
-                $"Engine type \"{model.Type}\" with model \"{model.Model}\" registered."
+                $"Engine type \"{model.Type.ToString().ToLower()}\" with model \"{model.Model.ToString().ToLower()}\" registered."
             );
         }
 

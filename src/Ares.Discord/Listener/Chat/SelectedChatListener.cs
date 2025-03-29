@@ -34,7 +34,8 @@ internal class SelectedChatListener
     {
         if (!args.Data.CustomId.StartsWith("chat-menu-")) return;
 
-        await args.DeferLoadingAsync(true);
+        await args.RespondAsync(ephemeral: true);
+        RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
         try
         {
@@ -43,7 +44,7 @@ internal class SelectedChatListener
 
             if (_client == null || user == null)
             {
-                await args.FollowupAsync(AresConstant.UnableGetMember);
+                await message.ModifyAsync(it => it.Content = AresConstant.UnableGetMember);
                 return;
             }
 
@@ -51,7 +52,7 @@ internal class SelectedChatListener
 
             if (data == null)
             {
-                await args.FollowupAsync(AresConstant.UnablePerformTask);
+                await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
                 return;
             }
 
@@ -60,14 +61,14 @@ internal class SelectedChatListener
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
             {
-                await args.FollowupAsync($"Tentando criar servidor no banco de dados... {attempts}/{maxAttempts}");
+                await message.ModifyAsync(it => it.Content = $"Tentando criar servidor no banco de dados... {attempts}/{maxAttempts}");
                 await Task.Delay(1500);
                 guild = await data.SaveAsync(guildId);
             }
 
             if (guild == null)
             {
-                await args.FollowupAsync("Ops! Não foi possível criar o servidor no banco de dados.");
+                await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar o servidor no banco de dados.");
                 return;
             }
 
@@ -75,7 +76,7 @@ internal class SelectedChatListener
 
             if (socketGuild == null)
             {
-                await args.FollowupAsync(AresConstant.UnableGetMember);
+                await message.ModifyAsync(it => it.Content = AresConstant.UnableGetMember);
                 return;
             }
 
@@ -83,7 +84,7 @@ internal class SelectedChatListener
 
             if (gid == null)
             {
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.CouldNotFindInfoID));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.CouldNotFindInfoID));
                 return;
             }
 
@@ -91,7 +92,7 @@ internal class SelectedChatListener
 
             if (usageRole == null)
             {
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.RoleEliminated));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.RoleEliminated));
                 return;
             }
 
@@ -99,13 +100,13 @@ internal class SelectedChatListener
 
             if (!member.Roles.Contains(usageRole))
             {
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.RoleMissing).Replace("{0}", usageRole.Mention));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.RoleMissing).Replace("{0}", usageRole.Mention));
                 return;
             }
 
             if (guild.HasActiveUserConversation(user))
             {
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.ActiveConversation));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.ActiveConversation));
                 return;
             }
 
@@ -113,13 +114,13 @@ internal class SelectedChatListener
 
             if (model == null)
             {
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.ModelNotFound));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.ModelNotFound));
                 return;
             }
 
             if (!model.Available)
             {
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.ModelUnavailable));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.ModelUnavailable));
                 return;
             }
 
@@ -129,13 +130,13 @@ internal class SelectedChatListener
 
                 if (exclusiveRole == null)
                 {
-                    await args.FollowupAsync(guild.GetTranslation(LangKeys.RoleEliminated));
+                    await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.RoleEliminated));
                     return;
                 }
 
                 if (!member.Roles.Contains(exclusiveRole))
                 {
-                    await args.FollowupAsync(guild.GetTranslation(LangKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
+                    await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
                     return;
                 }
             }
@@ -262,11 +263,13 @@ internal class SelectedChatListener
 
             await channel.AddPermissionOverwriteAsync(user, permissions);
 
-            await args.FollowupAsync(guild.GetTranslation(LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
+            await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
+            await Task.Delay(30000);
+            await message.DeleteAsync();
         }
         catch (Exception e)
         {
-            await args.FollowupAsync(AresConstant.UnablePerformTask);
+            await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
             await AresLogger.ErrorAsync("SelectException", "Unable to process chat model choice.", e.Message);
         }
     }
