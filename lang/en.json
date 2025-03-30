@@ -51,5 +51,6 @@
     "unable-perform-task": "Oops! An unexpected error occurred. Please try again later.",
     "model-not-found": "Could not identify the model. Please try again!",
     "close-chat": "Thank you for using **Ares**! Closing the conversation...",
-    "unable-get-member": "Oops! Could not find your profile information."
+    "unable-get-member": "Oops! Could not find your profile information.",
+	"not-chat-owner": "It looks like you don't own this channel.",
 }

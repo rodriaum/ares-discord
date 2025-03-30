@@ -61,4 +61,5 @@ public class LangKeys
     public static readonly string UnableGetMember = "unable-get-member";
     public static readonly string ChatDescriptionTTS = "chat-description-tts";
     public static readonly string HistoryTTSDesc = "history-tts-description";
+    public static readonly string NotChatOwner = "not-chat-owner";
 }

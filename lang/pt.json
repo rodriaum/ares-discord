@@ -51,5 +51,6 @@
     "unable-perform-task": "Ops! Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.",
     "model-not-found": "Não foi possível identificar o modelo. Tente novamente!",
     "close-chat": "Obrigado por usar **Ares**! A fechar a conversa...",
-    "unable-get-member": "Ops! Não foi possível encontrar as informações do seu perfil."
+    "unable-get-member": "Ops! Não foi possível encontrar as informações do seu perfil.",
+	"not-chat-owner": "Parece que você não é o proprietário desse canal.",
 }
