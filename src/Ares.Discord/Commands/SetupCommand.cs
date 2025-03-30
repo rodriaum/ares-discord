@@ -72,21 +72,21 @@ internal class SetupCommand
                     string name = category.ToString();
 
                     SelectMenuBuilder menu = new SelectMenuBuilder()
-                        .WithPlaceholder(FormatterUtil.CapitalizeFirstLetter(name))
+                        .WithPlaceholder(name)
                         .WithCustomId($"chat-menu-{name.ToLower()}");
 
                     foreach (ChatModel model in AiManager.Models)
                     {
                         if (model.Category != category) continue;
 
-                        string modelText = model.Type switch
+                        var (emote, modelText) = model.Type switch
                         {
-                            ModelType.Chat => "Chat",
-                            ModelType.Question => "Questão",
-                            ModelType.Image => "Imagem",
-                            ModelType.TTS => "Audio",
-                            ModelType.Vision => "Visão",
-                            _ => "Desconhecido"
+                            ModelType.Chat => (new Emoji("📜"), "Chat"),
+                            ModelType.Question => (new Emoji("📃"), "Questão"),
+                            ModelType.Image => (new Emoji("📷"), "Imagem"),
+                            ModelType.TTS => (new Emoji("🔊"), "Audio"),
+                            ModelType.Vision => (new Emoji("👁️"), "Visão"),
+                            _ => (new Emoji("❓"), "Desconhecido")
                         };
 
                         string availableText = (model.Exclusive ? "Exclusivo" : (model.Available ? "Disponível" : "Indisponível"));
@@ -95,7 +95,8 @@ internal class SetupCommand
                         {
                             Label = model.DisplayName,
                             Value = model.Model,
-                            Description = $"{modelText}: {availableText}"
+                            Description = $"{modelText}: {availableText}",
+                            Emote = emote
                         });
                     }
 
