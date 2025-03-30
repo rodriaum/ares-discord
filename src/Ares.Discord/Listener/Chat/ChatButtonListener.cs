@@ -18,7 +18,6 @@ namespace Ares.Discord.Listener.Chat;
 
 internal class ChatButtonListener
 {
-
     public ChatButtonListener(DiscordSocketClient client)
     {
         client.ButtonExecuted += ButtonExecutedHandler;
@@ -26,18 +25,23 @@ internal class ChatButtonListener
 
     private async Task ButtonExecutedHandler(SocketMessageComponent args)
     {
-        if (!args.Data.CustomId.Equals("close-chat")) return;
+        if (!(
+            args.Data.CustomId.Equals("close-chat") ||
+            args.Data.CustomId.Equals("quality-menu") ||
+            args.Data.CustomId.Equals("style-menu") ||
+            args.Data.CustomId.Equals("size-menu")
+        )) return;
 
         await args.RespondAsync(ephemeral: true);
         RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
         try
         {
-            IUser user = args.User;
+            ulong? guildId = args.GuildId;
 
-            if (user == null)
+            if (!guildId.HasValue)
             {
-                await message.ModifyAsync(it => it.Content = AresConstant.UnableGetMember);
+                await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
                 return;
             }
 
@@ -49,42 +53,74 @@ internal class ChatButtonListener
                 return;
             }
 
-            Guild? guild = await data.FetchAsync(args.GuildId.GetValueOrDefault());
+            Guild? guild = await data.FetchAsync(guildId.Value);
+            const int maxAttempts = 3;
+
+            for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
+            {
+                await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
+                await Task.Delay(1500);
+                guild = await data.SaveAsync(guildId.Value);
+            }
 
             if (guild == null)
             {
-                await message.ModifyAsync(it => it.Content = "Ops! Parece que o servidor atual não foi configurado no banco de dados.");
+                await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar o servidor no banco de dados.");
                 return;
             }
 
-            var channel = await args.GetChannelAsync() as SocketTextChannel;
+            IUser user = args.User;
 
-            if (channel != null)
+            switch (args.Data.CustomId)
             {
-                if (!await guild.ToggleChatInfo(user, channel.Id, false))
-                {
-                    await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
-                    return;
-                }
+                /*
+                 * General chats
+                 */
 
-                GChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
+                case "close-chat":
+                    var channel = await args.GetChannelAsync() as SocketTextChannel;
 
-                if (info == null)
-                {
-                    await message.ModifyAsync(it => it.Content = "Parece que você não é o proprietário desse canal.");
-                    return;
-                }
+                    if (channel != null)
+                    {
+                        if (!await guild.ToggleChatInfo(user, channel.Id, false))
+                        {
+                            await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                            return;
+                        }
 
-                await args.FollowupAsync(guild.GetTranslation(LangKeys.CloseChat));
+                        GChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
 
-                await Task.Delay(TimeSpan.FromSeconds(1));
-                await channel.DeleteAsync();
+                        if (info == null)
+                        {
+                            await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.NotChatOwner));
+                            return;
+                        }
 
-                AresLogger.Log("Chat", $"Chat \"{info.Id}\" disabled by \"{user.Username}#{user.Discriminator}\"");
-            }
-            else
-            {
-                await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                        await args.FollowupAsync(guild.GetTranslation(LangKeys.CloseChat));
+
+                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        await channel.DeleteAsync();
+
+                        AresLogger.Log("Chat", $"Chat \"{info.Id}\" disabled by \"{user.Username}\"");
+                    }
+                    else
+                    {
+                        await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                    }
+                    break;
+
+                /*
+                 * Image generation chat
+                 */
+
+                case "quality-menu":
+                    break;
+
+                case "style-menu":
+                    break;
+
+                case "size-menu":
+                    break;
             }
         }
         catch (Exception e)
