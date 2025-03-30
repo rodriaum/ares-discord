@@ -27,7 +27,7 @@ https://github.com/user-attachments/assets/4adcdaf8-8a5a-4a45-ac0b-68eb1518bc1f
 ## Pré-requisitos
 Para usar o Ares, certifique-se de ter o seguinte configurado:
 1. **Discord.Net**: A plataforma principal para interagir com o Ares.
-2. **Serviços de IA**: Acesso aos modelos OpenAI, Anthropic, DeepSeek, etc.
+2. **Serviços de IA**: Acesso aos modelos OpenAI, Anthropic, DeepSeek, xAI, etc.
 3. **Driver MongoDB**: Para armazenar grandes conjuntos de dados eficientemente.
 4. **Driver Redis**: Para otimização e caching de dados, tornando as consultas mais rápidas.
 
@@ -54,6 +54,6 @@ Siga estes passos para configurar seu ambiente:
 
 ## Arquitetura
 Ares é construído com uma arquitetura modular que permite fácil integração de novos modelos e serviços de IA. A plataforma utiliza:
-- Serviços de IA: OpenAI, Anthropic e DeepSeek.
+- Serviços de IA: OpenAI, Anthropic, DeepSeek, xAI.
 - Armazenamento de Dados:  MongoDB para gerenciamento eficiente e Redis para caching otimizado.
 - Integração com Discord: Suporte completo à API do Discord para criação e gerenciamento de bots.
