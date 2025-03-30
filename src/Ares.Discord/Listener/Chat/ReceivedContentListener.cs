@@ -73,7 +73,7 @@ internal class ReceivedContentListener
             // Check if the channel is in the correct category and the user has an active conversation
             // Alert: This code must be right here, if you move it to another place there may be problems.
             if (!(channel.CategoryId.Equals(guild.Config?.ChatsCategoryId) &&
-                  guild.HasActiveUserConversation(user)))
+                  guild.HasActiveUserConversation(user, channel: channel.Id)))
                 return;
 
             // Check if the channel belongs to the user
@@ -207,8 +207,7 @@ internal class ReceivedContentListener
         EmbedBuilder embed,
         List<GChatHistoricModel>? historics)
     {
-        ImageGenOptions options = info.ImageGenOptions ??
-                                 new ImageGenOptions(ImageQuality.Standard, ImageSize.W1024xH1024, ImageStyle.Natural);
+        ImageGenOptions options = info.ImageGenOptions ?? new ImageGenOptions();
 
         string responseImageUrl = await AiService.GenerateImageUrlAsync(guild, guildUser, model, options, channelId, prompt);
 

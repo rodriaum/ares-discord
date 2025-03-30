@@ -15,7 +15,7 @@ public class ImageGenOptions
     public ImageSize Size;
     public ImageStyle Style;
 
-    public ImageGenOptions(ImageQuality quality, ImageSize size, ImageStyle style)
+    public ImageGenOptions(ImageQuality quality = ImageQuality.Standard, ImageSize size = ImageSize.W1024xH1024, ImageStyle style = ImageStyle.Natural)
     {
         Quality = quality;
         Size = size;

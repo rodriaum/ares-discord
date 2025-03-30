@@ -484,9 +484,10 @@ public class Guild
     /// Checks if a user has an active conversation.
     /// </summary>
     /// <param name="user">The user to check.</param>
+    /// <param name="channel">Optional: Channel ID to filter by. If 0, returns the active check of the last chat used.</param>
     /// <returns>Returns true if an active conversation exists, false otherwise.</returns>
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
-    public bool HasActiveUserConversation(IUser user)
+    public bool HasActiveUserConversation(IUser user, ulong channel = 0)
     {
         if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -498,9 +499,16 @@ public class Guild
             return false;
         }
 
-        infos.TryGetValue(user.Id, out List<GChatInfoModel>? value);
+        if (!infos.TryGetValue(user.Id, out List<GChatInfoModel>? value) || value == null || value.Count == 0)
+            return false;
 
-        return value != null && value.Count > 0 && value[value.Count - 1].Active;
+        if (channel == 0)
+        {
+            return value[value.Count - 1].Active;
+        }
+
+        GChatInfoModel? chat = value.Find(x => x.Channel == channel);
+        return chat?.Active ?? value[value.Count - 1].Active;
     }
 
     /// <summary>

@@ -80,13 +80,13 @@ internal class SetupCommand
                         if (model.Category != category) continue;
 
                         var (emote, modelText) = model.Type switch
-                        {
-                            ModelType.Chat => (new Emoji("📜"), "Chat"),
-                            ModelType.Question => (new Emoji("📃"), "Questão"),
-                            ModelType.Image => (new Emoji("📷"), "Imagem"),
-                            ModelType.TTS => (new Emoji("🔊"), "Audio"),
-                            ModelType.Vision => (new Emoji("👁️"), "Visão"),
-                            _ => (new Emoji("❓"), "Desconhecido")
+                        {   
+                            ModelType.Chat => (new Emoji("\U0001F4DC"), "Chat"),         // 📜
+                            ModelType.Question => (new Emoji("\U0001F4C3"), "Questão"),  // 📃
+                            ModelType.Image => (new Emoji("\U0001F4F7"), "Imagem"),      // 📷
+                            ModelType.TTS => (new Emoji("\U0001F50A"), "Audio"),         // 🔊
+                            ModelType.Vision => (new Emoji("\U0001F441"), "Visão"),      // 👁️
+                            _ => (new Emoji("\U00002753"), "Desconhecido")               // ❓
                         };
 
                         string availableText = (model.Exclusive ? "Exclusivo" : (model.Available ? "Disponível" : "Indisponível"));

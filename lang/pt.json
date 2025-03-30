@@ -52,5 +52,6 @@
     "model-not-found": "Não foi possível identificar o modelo. Tente novamente!",
     "close-chat": "Obrigado por usar **Ares**! A fechar a conversa...",
     "unable-get-member": "Ops! Não foi possível encontrar as informações do seu perfil.",
-	"not-chat-owner": "Parece que você não é o proprietário desse canal.",
+	"not-chat-owner": "Parece que você não é o proprietário desse canal.",,
+	"chat-incompatible-option": "Parece que o chat atual não é compatível com essas opções."
 }

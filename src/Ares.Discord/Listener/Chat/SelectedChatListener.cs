@@ -141,8 +141,18 @@ internal class SelectedChatListener
                 }
             }
 
+            string emote = model.Type switch
+            {
+                ModelType.Chat => "\U0001F4DC",             // 📜
+                ModelType.Question => "\U0001F4D3",         // 📃
+                ModelType.Image => "\U0001F4F7",            // 📷
+                ModelType.TTS => "\U0001F50A",              // 🔊
+                ModelType.Vision => "\U0001F441\U0000FE0F", // 👁️
+                _ => "\U00002753"                           // ❓
+            };
+
             SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
-            RestTextChannel channel = await socketGuild.CreateTextChannelAsync("\uD83E\uDDFF┃" + user.GlobalName, properties => properties.CategoryId = category.Id);
+            RestTextChannel channel = await socketGuild.CreateTextChannelAsync($"{emote}┃{user.GlobalName}", properties => properties.CategoryId = category.Id);
 
             GChatInfoModel info = new GChatInfoModel
                 (

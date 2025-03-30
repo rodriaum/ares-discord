@@ -53,4 +53,5 @@
     "close-chat": "Thank you for using **Ares**! Closing the conversation...",
     "unable-get-member": "Oops! Could not find your profile information.",
 	"not-chat-owner": "It looks like you don't own this channel.",
+	"chat-incompatible-option": "It looks like the current chat does not support these options."
 }

@@ -10,6 +10,7 @@ using Ares.Core.Database.Model;
 using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
+using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using Discord;
 using Discord.Rest;
@@ -87,14 +88,15 @@ internal class ChatImageOptionListener
                 return;
             }
 
-            ImageGenOptions? options = chat.ImageGenOptions;
+            ChatModel? model = ChatModel.GetByModel(chat.Model);
 
-            // Is not a image generation chat.
-            if (options == null)
+            if (model == null || model != null && model.Type != ModelType.Image)
             {
-                await message.ModifyAsync(it => guild.GetTranslation(LangKeys.UnablePerformTask));
+                await message.ModifyAsync(it => guild.GetTranslation(LangKeys.ChatIncompatibleOption));
                 return;
             }
+
+            ImageGenOptions options = chat.ImageGenOptions ?? new ImageGenOptions();
 
             string optionValue = args.Data.Value;
             bool success = false;

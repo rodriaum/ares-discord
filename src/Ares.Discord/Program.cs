@@ -12,6 +12,7 @@ using Ares.Discord.Commands;
 using Ares.Discord.Listener;
 using Ares.Discord.Listener.Chat;
 using Discord;
+using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
 using DotNetEnv;
@@ -28,6 +29,11 @@ internal class Program
     /// Discord client instance for bot operations.
     /// </summary>
     private static DiscordSocketClient? _client { get; set; }
+
+    /// <summary>
+    /// Discord command service instance.
+    /// </summary>
+    private static CommandService? _commands { get; set; }
 
     /// <summary>
     /// Main entry point of the application.
@@ -69,6 +75,7 @@ internal class Program
         };
 
         _client = new DiscordSocketClient(config);
+        _commands = new CommandService();
 
         string discordToken = Env.GetString("DISCORD_TOKEN");
         if (string.IsNullOrWhiteSpace(discordToken))
@@ -81,7 +88,7 @@ internal class Program
         await _client.LoginAsync(TokenType.Bot, discordToken);
         await _client.StartAsync();
 
-        new LoggingService(client: _client);
+        new LoggingService(client: _client, command: _commands);
 
         // Initialize event listeners
         InitListeners();
