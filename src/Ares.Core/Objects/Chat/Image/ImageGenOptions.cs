@@ -11,9 +11,9 @@ namespace Ares.Core.Objects.Chat.Image;
 
 public class ImageGenOptions
 {
-    public readonly ImageQuality Quality;
-    public readonly ImageSize Size;
-    public readonly ImageStyle Style;
+    public ImageQuality Quality;
+    public ImageSize Size;
+    public ImageStyle Style;
 
     public ImageGenOptions(ImageQuality quality, ImageSize size, ImageStyle style)
     {

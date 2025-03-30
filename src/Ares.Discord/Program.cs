@@ -119,6 +119,7 @@ internal class Program
         new ChatButtonListener(_client);
         new ReceivedContentListener(_client);
         new GuildListener(_client);
+        new ChatImageOptionListener(_client);
 
         // Command handlers
         new PingCommand(_client);

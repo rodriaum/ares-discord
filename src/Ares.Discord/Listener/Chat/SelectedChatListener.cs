@@ -68,7 +68,7 @@ internal class SelectedChatListener
 
             if (guild == null)
             {
-                await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar o servidor no banco de dados.");
+                await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar a guilda no banco de dados.");
                 return;
             }
 
