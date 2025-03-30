@@ -49,21 +49,18 @@ public class LangManager
             }
             catch (Exception e)
             {
-                AresLogger.Error(nameof(LangManager), $"Can't load language {category.Name}: {e.Message}");
+                AresLogger.Error(nameof(LangManager), $"Can't load language \"{category.Code}\"", e.Message);
             }
         }
     }
 
-    public List<LangCategory> GetLanguages()
-    {
-        return _languages;
-    }
+    public List<LangCategory> GetLanguages() => _languages;
 
     static List<LangCategory> GetLanguageCategories()
     {
         return new List<LangCategory>
         {
-            new("Português", "Português", "pt"),
+            new("Português", "Português de Portugal", "pt"),
             new("English", "English", "en")
         };
     }
@@ -77,10 +74,9 @@ public class LangManager
             : element.ToString();
     }
 
-    public bool IsKeyAvailable(LangCategory category, string key)
-    {
-        return _translation.ContainsKey(category) && _translation[category].ContainsKey(key.ToLower());
-    }
+    public bool IsKeyAvailable(LangCategory category, string key) =>
+        category != null && key != null && _translation.TryGetValue(category, out var keys) && keys.ContainsKey(key.ToLower());
+
 
     public string GetTranslation(LangCategory category, string key)
     {
@@ -89,8 +85,6 @@ public class LangManager
         return _translation[category][key.ToLower()];
     }
 
-    public LangCategory? GetCategoryByCode(string code)
-    {
-        return _languages.Find(category => category.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
-    }
+    public LangCategory? GetCategoryByCode(string code) => 
+        _languages.Find(category => category.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
 }

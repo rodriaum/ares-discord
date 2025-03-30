@@ -14,13 +14,13 @@ namespace Ares.Core.Manager;
 
 public class AiManager
 {
-    private static readonly IReadOnlyCollection<ChatModel> _openAiModels;
+    private static readonly IReadOnlyCollection<ChatModel> _chatModels;
 
-    public static IReadOnlyCollection<ChatModel> Models => _openAiModels;
+    public static IReadOnlyCollection<ChatModel> Models => _chatModels;
 
     static AiManager()
     {
-        _openAiModels = new ReadOnlyCollection<ChatModel>(InitializeModels());
+        _chatModels = new ReadOnlyCollection<ChatModel>(InitializeModels());
     }
 
     private static List<ChatModel> InitializeModels()

@@ -6,6 +6,7 @@
     "could-not-find-info-id": "Could not find information about the IDs.",
     "could-not-find-last-model": "Could not find the last used model.",
     "could-not-find-model": "The model used was not found or is not available.",
+	"could-not-find-chat": "Unable to find current chat.",
     "price-lower-cache": "Price may be lower with cached response",
     "request": "Request",
     "response": "Response",

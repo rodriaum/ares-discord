@@ -84,7 +84,7 @@ internal class ChatImageOptionListener
 
             if (chat == null)
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnablePerformTask));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.CouldNotFindChat));
                 return;
             }
 

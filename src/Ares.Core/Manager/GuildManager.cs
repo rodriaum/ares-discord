@@ -10,11 +10,11 @@ namespace Ares.Core.Manager;
 
 internal class GuildManager
 {
-    private readonly Dictionary<string, Guild> Guilds = new Dictionary<string, Guild>();
+    private readonly Dictionary<string, Guild> _guilds = new Dictionary<string, Guild>();
 
     public IEnumerable<Guild> Fetch()
     {
-        return Guilds.Values.ToList();
+        return _guilds.Values.ToList();
     }
 
     public IEnumerable<Guild> Fetch(Predicate<Guild> filter)
@@ -29,16 +29,16 @@ internal class GuildManager
 
     public Guild? Fetch(string guildId)
     {
-        return Guilds.GetValueOrDefault(guildId);
+        return _guilds.GetValueOrDefault(guildId);
     }
 
     public void Save(Guild guild)
     {
-        Guilds.TryAdd(guild.Id, guild);
+        _guilds.TryAdd(guild.Id, guild);
     }
 
     public void Delete(string guildId)
     {
-        Guilds.Remove(guildId);
+        _guilds.Remove(guildId);
     }
 }

@@ -6,6 +6,7 @@
     "could-not-find-info-id": "Não foi possível encontrar as informações sobre os IDs.",
     "could-not-find-last-model": "Não foi possível encontrar o último modelo usado.",
     "could-not-find-model": "O modelo usado não foi encontrado ou não está disponível.",
+	"could-not-find-chat": "Não foi possível encontrar o chat atual.",
     "price-lower-cache": "Preço pode ser menor com resposta em cache",
     "request": "Pedido",
     "response": "Resposta",
@@ -52,6 +53,6 @@
     "model-not-found": "Não foi possível identificar o modelo. Tente novamente!",
     "close-chat": "Obrigado por usar **Ares**! A fechar a conversa...",
     "unable-get-member": "Ops! Não foi possível encontrar as informações do seu perfil.",
-	"not-chat-owner": "Parece que você não é o proprietário desse canal.",,
+	"not-chat-owner": "Parece que você não é o proprietário desse canal.",
 	"chat-incompatible-option": "Parece que o chat atual não é compatível com essas opções."
 }

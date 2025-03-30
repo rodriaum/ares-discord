@@ -13,7 +13,7 @@ public class WebUtil
 {
     private const string ImgurApiUrl = "https://api.imgur.com/3/image";
 
-    public static async Task<string> UploadMediaFromUrl(string token, string imageUrl)
+    public static async Task<string?> UploadMediaFromUrl(string token, string imageUrl)
     {
         using (HttpClient client = new HttpClient())
         {
@@ -29,7 +29,7 @@ public class WebUtil
 
             if (!response.IsSuccessStatusCode)
             {
-                AresLogger.Error("Request", $"Erro ao enviar imagem.", jsonResponse);
+                AresLogger.Error(nameof(UploadMediaFromUrl), $"Error sending a response.", jsonResponse);
             }
 
             using (JsonDocument doc = JsonDocument.Parse(jsonResponse))
@@ -37,7 +37,7 @@ public class WebUtil
                 JsonElement root = doc.RootElement;
 
                 string? imgurLink = root.GetProperty("data").GetProperty("link").GetString();
-                return imgurLink ?? "";
+                return imgurLink ?? null;
             }
         }
     }

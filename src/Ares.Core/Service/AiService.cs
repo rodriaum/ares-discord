@@ -315,6 +315,7 @@ public class AiService
             ModelCategory.OpenAI => tokenData.OpenAi,
             ModelCategory.Anthropic => tokenData.Anthropic,
             ModelCategory.DeepSeek => tokenData.Deepseek,
+            ModelCategory.xAI => tokenData.xAI,
             _ => null
         };
 
@@ -335,8 +336,8 @@ public class AiService
         // Create chat client
         ChatClient client = new ChatClient
             (
-                model: model.Model, 
-                credential: new ApiKeyCredential(token), 
+                model: model.Model,
+                credential: new ApiKeyCredential(token),
                 options: clientOptions
             );
 

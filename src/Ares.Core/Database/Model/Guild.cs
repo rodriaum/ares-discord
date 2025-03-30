@@ -343,7 +343,11 @@ public class Guild
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
     public async Task<bool> CreateChatData(IUser user, GChatInfoModel info)
     {
-        if (user == null) throw new ArgumentNullException(nameof(user));
+        if (user == null)
+        {
+            AresLogger.Error(nameof(CreateChatData), "User is null. Unable to create chat data.");
+            return await Task.FromResult(false);
+        }
 
         if (HasActiveUserConversation(user))
         {
@@ -400,8 +404,11 @@ public class Guild
     /// <exception cref="ArgumentNullException">Thrown when user or historics is null.</exception>
     public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, List<GChatHistoricModel> historics)
     {
-        if (user == null) throw new ArgumentNullException(nameof(user));
-        if (historics == null) throw new ArgumentNullException(nameof(historics));
+        if (user == null || historics == null)
+        {
+            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), "User or historics is null. Unable to update chat history.");
+            return false;
+        }
 
         if (this.Chat is not { } chat)
             return false;
@@ -489,7 +496,11 @@ public class Guild
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
     public bool HasActiveUserConversation(IUser user, ulong channel = 0)
     {
-        if (user == null) throw new ArgumentNullException(nameof(user));
+        if (user == null)
+        {
+            AresLogger.Error(nameof(this.HasActiveUserConversation), "User is null.");
+            return false;
+        }
 
         Dictionary<ulong, List<GChatInfoModel>>? infos = Infos();
 
@@ -520,7 +531,11 @@ public class Guild
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
     public ChatModel? GetLastModelByUser(IUser user, ulong channel = 0)
     {
-        if (user == null) throw new ArgumentNullException(nameof(user));
+        if (user == null)
+        {
+            AresLogger.Error(nameof(this.GetLastModelByUser), "User is null.");
+            return null;
+        }
 
         GChatInfoModel? info = LastChatInfo(user, channel: channel);
         if (info == null) return null;

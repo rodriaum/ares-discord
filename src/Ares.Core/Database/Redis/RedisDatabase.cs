@@ -6,7 +6,6 @@
 
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
-using Newtonsoft.Json;
 using StackExchange.Redis;
 
 namespace Ares.Core.Database.Redis;
@@ -245,7 +244,7 @@ public class RedisDatabase : DatabaseTemplate
         if (fields.Length == 0)
             return null;
 
-        return await this.ConvertFromHashEntriesAsync<T>(fields);
+        return this.ConvertFromHashEntriesAsync<T>(fields);
     }
 
     /// <summary>
@@ -265,7 +264,7 @@ public class RedisDatabase : DatabaseTemplate
 
             if (fields.Length > 0)
             {
-                T? obj = await ConvertFromHashEntriesAsync<T>(fields);
+                T? obj = ConvertFromHashEntriesAsync<T>(fields);
                 if (obj != null)
                     results.Add(obj);
             }
@@ -329,16 +328,15 @@ public class RedisDatabase : DatabaseTemplate
     /// <typeparam name="T">The type of object to convert to.</typeparam>
     /// <param name="entries">The hash entries to convert.</param>
     /// <returns>A Task representing the converted object, or null if conversion fails.</returns>
-    private async Task<T?> ConvertFromHashEntriesAsync<T>(HashEntry[] entries) where T : class
+    private T? ConvertFromHashEntriesAsync<T>(HashEntry[] entries) where T : class
     {
-        return await Task.Run(() =>
-        {
-            Dictionary<string, string> dictionary = entries.ToDictionary(
-                entry => entry.Name.ToString(),
-                entry => entry.Value.ToString()
-            );
 
-            return JsonUtil.DictionaryToObject<T?>(dictionary);
-        });
+        Dictionary<string, string> dictionary = entries.ToDictionary(
+            entry => entry.Name.ToString(),
+            entry => entry.Value.ToString()
+        );
+
+        return JsonUtil.DictionaryToObject<T?>(dictionary);
+
     }
 }

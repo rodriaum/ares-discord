@@ -303,7 +303,7 @@ internal class Program
             // Register each command with Discord
             foreach (SlashCommandBuilder command in commands)
             {
-                var build = command.Build();
+                SlashCommandProperties build = command.Build();
                 AresLogger.Log("Commands", $"Command \"{build.Name}\" registered.");
             }
         }

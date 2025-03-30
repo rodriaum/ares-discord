@@ -17,6 +17,7 @@ public class LangKeys
     public static readonly string CouldNotFindToken = "could-not-find-token";
     public static readonly string CouldNotFindLastModel = "could-not-find-last-model";
     public static readonly string CouldNotFindModel = "could-not-find-model";
+    public static readonly string CouldNotFindChat = "could-not-find-chat";
     public static readonly string PriceLowerCache = "price-lower-cache";
     public static readonly string Request = "request";
     public static readonly string Response = "response";
