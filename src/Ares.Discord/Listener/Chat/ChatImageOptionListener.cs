@@ -33,7 +33,7 @@ internal class ChatImageOptionListener
             args.Data.CustomId.Equals("size-menu")
         )) return;
 
-        await args.RespondAsync(ephemeral: true);
+        await args.RespondAsync(ephemeral: true, text: ":hourglass:");
         RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
         try
@@ -84,7 +84,7 @@ internal class ChatImageOptionListener
 
             if (chat == null)
             {
-                await message.ModifyAsync(it => guild.GetTranslation(LangKeys.UnablePerformTask));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnablePerformTask));
                 return;
             }
 
@@ -92,13 +92,13 @@ internal class ChatImageOptionListener
 
             if (model == null || model != null && model.Type != ModelType.Image)
             {
-                await message.ModifyAsync(it => guild.GetTranslation(LangKeys.ChatIncompatibleOption));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.ChatIncompatibleOption));
                 return;
             }
 
             ImageGenOptions options = chat.ImageGenOptions ?? new ImageGenOptions();
 
-            string optionValue = args.Data.Value;
+            string optionValue = args.Data.Values.First();
             bool success = false;
 
             switch (args.Data.CustomId)
@@ -130,14 +130,14 @@ internal class ChatImageOptionListener
 
             if (!success)
             {
-                await message.ModifyAsync(it => guild.GetTranslation(LangKeys.UnablePerformTask));
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnablePerformTask) + $" (#{optionValue})");
                 return;
             }
 
             chat.ImageGenOptions = options;
             await guild.UpdateChatInfoAsync(user, chat);
 
-            await message.ModifyAsync(it => guild.GetTranslation(LangKeys.Success));
+            await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.Success));
         }
         catch (Exception e)
         {

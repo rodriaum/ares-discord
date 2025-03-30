@@ -34,7 +34,7 @@ internal class SelectedChatListener
     {
         if (!args.Data.CustomId.StartsWith("chat-menu-")) return;
 
-        await args.RespondAsync(ephemeral: true);
+        await args.RespondAsync(ephemeral: true, text: ":hourglass:");
         RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
         try
@@ -204,7 +204,8 @@ internal class SelectedChatListener
                         .ForEach(quality => qualityMenu.AddOption(new SelectMenuOptionBuilder()
                         {
                             Label = quality.ToString(),
-                            Value = quality.ToString()
+                            Value = quality.ToString(),
+                            IsDefault = quality.Equals(info.ImageGenOptions?.Quality)
                         }));
 
                     component.WithSelectMenu(qualityMenu);
@@ -223,7 +224,8 @@ internal class SelectedChatListener
                         .ForEach(size => sizeMenu.AddOption(new SelectMenuOptionBuilder()
                         {
                             Label = size.ToString(),
-                            Value = size.ToString()
+                            Value = size.ToString(),
+                            IsDefault = size.Equals(info.ImageGenOptions?.Size)
                         }));
 
                     component.WithSelectMenu(sizeMenu);
@@ -239,10 +241,11 @@ internal class SelectedChatListener
                     Enum.GetValues(typeof(ImageStyle))
                         .Cast<ImageStyle>()
                         .ToList()
-                        .ForEach(quality => styleMenu.AddOption(new SelectMenuOptionBuilder()
+                        .ForEach(style => styleMenu.AddOption(new SelectMenuOptionBuilder()
                         {
-                            Label = quality.ToString(),
-                            Value = quality.ToString(),
+                            Label = style.ToString(),
+                            Value = style.ToString(),
+                            IsDefault = style.Equals(info.ImageGenOptions?.Style)
                         }));
 
                     component.WithSelectMenu(styleMenu);

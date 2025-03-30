@@ -5,6 +5,8 @@
  */
 
 using Ares.Core.Objects.Chat.Image;
+using Ares.Core.Objects.Model;
+using Ares.Core.Util;
 
 namespace Ares.Core.Database.Model.Chat.Sub;
 
@@ -23,7 +25,12 @@ public class GChatInfoModel
         Channel = channel;
         Model = model;
         Active = active;
-        ImageGenOptions = imageGenOptions;
+
+        if (ImageGenOptions == null && ChatModel.GetByModel(model)?.Type == ModelType.Image)
+        {
+            this.ImageGenOptions = new ImageGenOptions();
+        }
+
         Historics = historics ?? new List<GChatHistoricModel>();
     }
 }

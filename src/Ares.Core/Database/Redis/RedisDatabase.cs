@@ -87,7 +87,7 @@ public class RedisDatabase : DatabaseTemplate
             }
             catch (Exception ex)
             {
-                await AresLogger.ErrorAsync("DB: Redis", "Could not connect to Redis.", error: ex.Message);
+                await AresLogger.ErrorAsync("DB: Redis", "Could not connect to Redis.", extra: ex.Message);
 
                 connected = false;
                 tries++;

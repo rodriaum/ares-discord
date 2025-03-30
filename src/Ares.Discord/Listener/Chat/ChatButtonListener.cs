@@ -27,7 +27,7 @@ internal class ChatButtonListener
     {
         if (!args.Data.CustomId.Equals("close-chat")) return;
 
-        await args.RespondAsync(ephemeral: true);
+        await args.RespondAsync(ephemeral: true, text: ":hourglass:");
         RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
         try
@@ -90,7 +90,7 @@ internal class ChatButtonListener
 
             AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Username}\"");
 
-            await args.FollowupAsync(guild.GetTranslation(LangKeys.CloseChat));
+            await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.CloseChat));
 
             await Task.Delay(TimeSpan.FromSeconds(1));
             await channel.DeleteAsync();
