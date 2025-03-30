@@ -177,6 +177,11 @@ internal class SelectedChatListener
             embed.AddField(guild.GetTranslation(LangKeys.FieldRules), guild.GetTranslation(LangKeys.ChatDescriptionRules));
             embed.AddField(guild.GetTranslation(LangKeys.FieldTime), guild.GetTranslation(LangKeys.ChatDescriptionTime));
 
+            if (!string.IsNullOrWhiteSpace(model.DescriptionKey))
+            {
+                embed.AddField(guild.GetTranslation(LangKeys.FieldDescription), guild.GetTranslation(model.DescriptionKey));
+            }
+
             ComponentBuilder component = new ComponentBuilder();
 
             switch (model.Type)

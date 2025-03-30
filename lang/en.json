@@ -23,6 +23,7 @@
     "field-rules": "Rules",
     "field-time": "Time",
     "field-history": "History",
+	"field-description": "Description",
     "history-chat-desc": "Will save the message history, allowing corrections.",
     "history-image-desc": "Will not save the message history, preventing corrections.",
     "chat-description-question": "Enter your question to start the conversation.",
@@ -54,5 +55,12 @@
     "close-chat": "Thank you for using **Ares**! Closing the conversation...",
     "unable-get-member": "Oops! Could not find your profile information.",
 	"not-chat-owner": "It looks like you don't own this channel.",
-	"chat-incompatible-option": "It looks like the current chat does not support these options."
+	"chat-incompatible-option": "It looks like the current chat does not support these options.",
+	"model-desc-gpt-4.5": "Largest GPT model for creative tasks and agentic planning.",
+	"model-desc-o1-pro": "A version of of that uses maximum compute for more reliable responses.",
+	"model-desc-o1": "Reasoning model designed to solve hard problems across domains.",
+	"model-desc-o3-mini": "Faster and cheaper reasoning model particularly good at coding, math, and science.",
+	"model-desc-gpt-4o": "High-intelligence flagship model for complex, multi-step tasks.",
+	"model-desc-gpt-4o-mini": "Affordable and intelligent small model for fast, lightweight tasks.",
+	"model-desc-gpt-4o-s": "Fast, up-to-date answers with clear and relevant citations from the web.",
 }

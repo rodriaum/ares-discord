@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Objects.Model;
 using Ares.Core.Manager;
 using Ares.Core.Objects.Chat.Price;
 using MongoDB.Driver.Linq;
@@ -16,19 +17,34 @@ public class ChatModel
     public ModelType Type;
     public string DisplayName;
     public string Model;
+    public string DescriptionKey;
+    public ModelTaskCategory Task;
     public ChatPriceUsage? Price;
     public bool Exclusive;
     public bool Available;
 
-    public ChatModel(ModelCategory category, ModelType type, string display, string model, ChatPriceUsage? price = null, bool exclusive = false, bool available = true)
+    public ChatModel
+        (
+            ModelCategory category, 
+            ModelType type, 
+            string display, 
+            string model, 
+            string descriptionKey = "",
+            ModelTaskCategory task = ModelTaskCategory.Other, 
+            ChatPriceUsage? price = null, 
+            bool exclusive = false, 
+            bool available = true
+        )
     {
-        Category = category;
-        Type = type;
-        DisplayName = display;
-        Model = model;
-        Price = price;
-        Exclusive = exclusive;
-        Available = available;
+        this.Category = category;
+        this.Type = type;
+        this.DisplayName = display;
+        this.Model = model;
+        this.DescriptionKey = descriptionKey;
+        this.Task = task;
+        this.Price = price;
+        this.Exclusive = exclusive;
+        this.Available = available;
     }
 
     public static List<ChatModel> GetModelsByCategory(ModelType category)

@@ -34,6 +34,7 @@ public class LangKeys
     public static readonly string FieldRules = "field-rules";
     public static readonly string FieldTime = "field-time";
     public static readonly string FieldHistory = "field-history";
+    public static readonly string FieldDescription = "field-description";
     public static readonly string HistoryChatDesc = "history-chat-desc";
     public static readonly string HistoryImageDesc = "history-image-desc";
     public static readonly string ChatDescriptionQuestion = "chat-description-question";
@@ -64,4 +65,11 @@ public class LangKeys
     public static readonly string HistoryTTSDesc = "history-tts-description";
     public static readonly string NotChatOwner = "not-chat-owner";
     public static readonly string ChatIncompatibleOption = "chat-incompatible-option";
+    public static readonly string ModelDescGpt45 = "model-desc-gpt-4.5";
+    public static readonly string ModelDescO1Pro = "model-desc-o1-pro";
+    public static readonly string ModelDescO1 = "model-desc-o1";
+    public static readonly string ModelDescO3Mini = "model-desc-o3-mini";
+    public static readonly string ModelDescGpt4o = "model-desc-gpt-4o";
+    public static readonly string ModelDescGpt4oMini = "model-desc-gpt-4o-mini";
+    public static readonly string ModelDescGpt4oS = "model-desc-gpt-4o-s";
 }

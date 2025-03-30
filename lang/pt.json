@@ -23,6 +23,7 @@
     "field-rules": "Regras",
     "field-time": "Tempo",
     "field-history": "Histórico",
+	"field-description": "Descrição",
     "history-chat-desc": "Guardará o histórico de mensagens, permitindo correções.",
     "history-image-desc": "Não guardará o histórico de mensagens, impedindo correções.",
     "chat-description-question": "Insira a sua pergunta para iniciar a conversa.",
@@ -54,5 +55,12 @@
     "close-chat": "Obrigado por usar **Ares**! A fechar a conversa...",
     "unable-get-member": "Ops! Não foi possível encontrar as informações do seu perfil.",
 	"not-chat-owner": "Parece que você não é o proprietário desse canal.",
-	"chat-incompatible-option": "Parece que o chat atual não é compatível com essas opções."
+	"chat-incompatible-option": "Parece que o chat atual não é compatível com essas opções.",
+	"model-desc-gpt-4.5": "Maior modelo GPT para tarefas criativas e planejamento agencial.",
+	"model-desc-o1-pro": "Uma versão que usa o máximo de poder computacional para respostas mais confiáveis.",
+	"model-desc-o1": "Modelo de raciocínio projetado para resolver problemas difíceis em várias áreas.",
+	"model-desc-o3-mini": "Modelo de raciocínio mais rápido e barato, particularmente bom em programação, matemática e ciências.",
+	"model-desc-gpt-4o": "Modelo de inteligência avançada para tarefas complexas e de múltiplas etapas.",
+	"model-desc-gpt-4o-mini": "Modelo pequeno, acessível e inteligente para tarefas rápidas e leves.",
+	"model-desc-gpt-4o-s": "Respostas rápidas e atualizadas com citações claras e relevantes da web.",
 }

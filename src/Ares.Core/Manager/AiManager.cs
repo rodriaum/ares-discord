@@ -4,8 +4,10 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Objects.Model;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Chat.Price;
+using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using System.Collections.ObjectModel;
@@ -39,6 +41,8 @@ public class AiManager
                 type: ModelType.Chat,
                 display: "GPT-4.5 Preview",
                 model: "gpt-4.5-preview",
+                descriptionKey: LangKeys.ModelDescGpt45,
+                task: ModelTaskCategory.Flagship,
                 price: new ChatPriceUsage(outputPricePerToken: 0.00015m, inputPricePerToken: 0.000068m),
                 exclusive: true
             ),
@@ -46,17 +50,21 @@ public class AiManager
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "GPT-4 o1 Preview",
-                model: "o1-preview",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000044m, inputPricePerToken: 0.000015m),
+                display: "o1 Pro",
+                model: "o1-pro",
+                descriptionKey: LangKeys.ModelDescO1Pro,
+                task: ModelTaskCategory.Reasoning,
+                price: new ChatPriceUsage(outputPricePerToken: 0.0006m, inputPricePerToken: 0.00015m),
                 exclusive: true
             ),
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "GPT-4 o1",
+                display: "o1",
                 model: "o1",
+                descriptionKey: LangKeys.ModelDescO1,
+                task: ModelTaskCategory.Reasoning,
                 price: new ChatPriceUsage(outputPricePerToken: 0.0000044m, inputPricePerToken: 0.000015m),
                 exclusive: true
             ),
@@ -64,26 +72,31 @@ public class AiManager
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "GPT-4 o1-mini",
+                display: "o1-mini",
                 model: "o1-mini",
+                task: ModelTaskCategory.Reasoning,
                 price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.0000011m),
-                exclusive: true
+                available: true
             ),
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "GPT-4 o3-mini",
+                display: "o3-mini",
                 model: "o3-mini",
+                descriptionKey: LangKeys.ModelDescO3Mini,
+                task: ModelTaskCategory.Reasoning,
                 price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.0000011m),
-                exclusive: true
+                available: true
             ),
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "GPT-4 Omni",
+                display: "GPT-4o",
                 model: "gpt-4o",
+                descriptionKey: LangKeys.ModelDescGpt4o,
+                task: ModelTaskCategory.Flagship,
                 price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.0000025m),
                 available: true
             ),
@@ -91,8 +104,31 @@ public class AiManager
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "GPT-4 Omni Mini",
+                display: "GPT-4o Mini",
                 model: "gpt-4o-mini",
+                descriptionKey: LangKeys.ModelDescGpt4oMini,
+                task: ModelTaskCategory.CostOptimized,
+                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.00000015m),
+                available: true
+            ),
+
+            new(
+                category: ModelCategory.OpenAI,
+                type: ModelType.Chat,
+                display: "GPT-4o Search Preview",
+                model: "gpt-4o-search-preview",
+                descriptionKey: LangKeys.ModelDescGpt4oS,
+                task: ModelTaskCategory.ToolSpecific,
+                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.0000025m),
+                available: true
+            ),
+
+            new(
+                category: ModelCategory.OpenAI,
+                type: ModelType.Chat,
+                display: "GPT-4o Mini Search Preview",
+                model: "gpt-4o-mini-search-preview",
+                task: ModelTaskCategory.ToolSpecific,
                 price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.00000015m),
                 available: true
             ),
@@ -102,6 +138,7 @@ public class AiManager
                 type: ModelType.Chat,
                 display: "GPT-4 Turbo",
                 model: "gpt-4-turbo",
+                task: ModelTaskCategory.Older,
                 price: new ChatPriceUsage(outputPricePerToken:0.00003m, inputPricePerToken: 0.00001m),
                 available: true
             ),
@@ -111,6 +148,7 @@ public class AiManager
                 type: ModelType.Chat,
                 display: "GPT-3 Turbo",
                 model: "gpt-3.5-turbo",
+                task: ModelTaskCategory.Older,
                 price: new ChatPriceUsage(outputPricePerToken: 0.0000015m, inputPricePerToken: 0.0000005m),
                 available: true
             ),
@@ -120,6 +158,7 @@ public class AiManager
                 type: ModelType.Image,
                 display: "DALL·E 3",
                 model: "dall-e-3",
+                task: ModelTaskCategory.Image,
                 price: new ChatPriceUsage(
                     details: new List<ChatPriceUsageDetail>()
                     {
@@ -137,6 +176,7 @@ public class AiManager
                 type: ModelType.Image,
                 display: "DALL·E 2",
                 model: "dall-e-2",
+                task: ModelTaskCategory.Image,
                 price: new ChatPriceUsage(
                     details: new List<ChatPriceUsageDetail>()
                     {
@@ -153,7 +193,8 @@ public class AiManager
                 type: ModelType.TTS,
                 display: "TTS 1",
                 model: "tts-1",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
+                task: ModelTaskCategory.TTS,
+                price: new ChatPriceUsage(outputPricePerToken: 0.000015m),
                 available: true
             ),
 
@@ -162,7 +203,8 @@ public class AiManager
                 type: ModelType.TTS,
                 display: "TTS 1 HD",
                 model: "tts-1-hd",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
+                task: ModelTaskCategory.TTS,
+                price: new ChatPriceUsage(outputPricePerToken: 0.00003m),
                 exclusive: true
             ),
 
@@ -260,6 +302,7 @@ public class AiManager
                 type: ModelType.Chat,
                 display: "Deepseek V3",
                 model: "deepseek-chat",
+                task: ModelTaskCategory.Flagship,
                 price: new ChatPriceUsage(outputPricePerToken: 0.00000110m, inputPricePerToken: 0.00000027m),
                 available: true
             ),
@@ -269,6 +312,7 @@ public class AiManager
                 type: ModelType.Chat,
                 display: "Deepseek R1",
                 model: "deepseek-reasoner",
+                task: ModelTaskCategory.Reasoning,
                 price: new ChatPriceUsage(outputPricePerToken: 0.00000219m, inputPricePerToken: 0.00000055m),
                 available: true
             ),
@@ -291,6 +335,7 @@ public class AiManager
                 type: ModelType.Vision,
                 display: "Grok 2 Vision",
                 model: "grok-2-vision-latest",
+                task: ModelTaskCategory.Vision,
                 price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.000002m, inputPricePerImage: 0.000002m),
                 available: false
             ),
@@ -300,6 +345,7 @@ public class AiManager
                 type: ModelType.Image,
                 display: "Grok 2 Image",
                 model: "grok-2-image",
+                task: ModelTaskCategory.Image,
                 price: new ChatPriceUsage(),
                 available: false
             ),
