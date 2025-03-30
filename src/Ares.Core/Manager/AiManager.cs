@@ -311,8 +311,8 @@ public class AiManager
         foreach (ChatModel model in models)
         {
             AresLogger.Log(
-                $"AI: {FormatterUtil.CapitalizeFirstLetter(model.Category.ToString())}",
-                $"Engine type \"{model.Type.ToString().ToLower()}\" with model \"{model.Model.ToString().ToLower()}\" registered."
+                $"AI: {model.Category.ToString()}",
+                $"Type \"{model.Type.ToString().ToLower()}\" with model \"{model.Model.ToString().ToLower()}\" registered."
             );
         }
 

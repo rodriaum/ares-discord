@@ -61,7 +61,7 @@ internal class SelectedChatListener
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
             {
-                await message.ModifyAsync(it => it.Content = $"Tentando criar servidor no banco de dados... {attempts}/{maxAttempts}");
+                await message.ModifyAsync(it => it.Content = $"Tentando criar guilda no banco de dados... {attempts}/{maxAttempts}");
                 await Task.Delay(1500);
                 guild = await data.SaveAsync(guildId);
             }
@@ -264,7 +264,7 @@ internal class SelectedChatListener
             await channel.AddPermissionOverwriteAsync(user, permissions);
 
             await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
-            await Task.Delay(30000);
+            await Task.Delay(TimeSpan.FromSeconds(10));
             await message.DeleteAsync();
         }
         catch (Exception e)

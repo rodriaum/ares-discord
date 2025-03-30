@@ -378,7 +378,7 @@ public class Guild
 
             if (success)
             {
-                AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{user.Username}#{user.Discriminator}\"");
+                AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{user.Username}\"");
             }
 
             return success;
