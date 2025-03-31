@@ -1,90 +1,94 @@
-﻿/*
- * Copyright (C) Rodrigo Ferreira, All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- */
-
-using Ares.Core.Objects.Language;
+﻿using Ares.Core.Objects.Language;
 using Ares.Core.Util;
-using Newtonsoft.Json.Linq;
-using System.Text;
+using System.Text.Json.Nodes;
 
-namespace Ares.Core.Manager;
-
-/// <summary>
-/// Inspired by a legacy, complex Minecraft network design.
-/// Original implementation: 
-/// https://github.com/StudioLoad/Load/blob/main/core/src/main/java/br/com/loadmc/core/manager/LanguageManager.java
-/// </summary>
-
-public class LangManager
+namespace Ares.Core.Manager
 {
-    readonly List<LangCategory> _languages = new List<LangCategory>();
-    readonly Dictionary<LangCategory, Dictionary<string, string>> _translation = new Dictionary<LangCategory, Dictionary<string, string>>();
+    /// <summary>
+    /// Inspired by a legacy, complex Minecraft network design.
+    /// Original implementation: 
+    /// https://github.com/StudioLoad/Load/blob/main/core/src/main/java/br/com/loadmc/core/manager/LanguageManager.java
+    /// </summary>
 
-    public LangManager()
+    public class LangManager
     {
-        _languages = GetLanguageCategories();
+        readonly List<LangCategory> _languages = new List<LangCategory>();
+        readonly Dictionary<LangCategory, Dictionary<string, string>> _translation = new Dictionary<LangCategory, Dictionary<string, string>>();
 
-        foreach (LangCategory category in _languages)
+        public LangManager()
         {
-            try
+            _languages = GetLanguageCategories();
+            InitializeLanguagesAsync().GetAwaiter().GetResult();
+        }
+
+        public async Task InitializeLanguagesAsync()
+        {
+            foreach (LangCategory category in _languages)
             {
-                string filePath = Path.Combine("lang", category.Code.ToLower() + ".json");
-
-                if (!File.Exists(filePath)) continue;
-
-                string jsonContent = File.ReadAllText(filePath, Encoding.UTF8);
-                JObject language = JObject.Parse(jsonContent);
-
-                Dictionary<string, string> messages = new Dictionary<string, string>();
-
-                foreach (KeyValuePair<string, JToken?> entry in language)
+                try
                 {
-                    messages[entry.Key.ToLower()] = GetJsonMessage(entry.Value);
-                }
+                    string filePath = Path.Combine("lang", category.Code.ToLower() + ".json");
+                    if (!File.Exists(filePath)) continue;
 
-                _translation[category] = messages;
-                AresLogger.Log("Lang", $"Registered lang \"{category.Code}\" with {messages.Count} translations.");
-            }
-            catch (Exception e)
-            {
-                AresLogger.Error(nameof(LangManager), $"Can't load language \"{category.Code}\"", e.Message);
+                    using FileStream fileStream = File.OpenRead(filePath);
+                    using MemoryStream memoryStream = new MemoryStream();
+
+                    await fileStream.CopyToAsync(memoryStream);
+                    memoryStream.Position = 0;
+
+                    JsonNode? rootNode = await JsonNode.ParseAsync(memoryStream);
+                    if (rootNode == null) continue;
+
+                    Dictionary<string, string> messages = new Dictionary<string, string>();
+
+                    foreach (var property in rootNode.AsObject())
+                    {
+                        messages[property.Key.ToLower()] = GetJsonMessage(property.Value);
+                    }
+
+                    _translation[category] = messages;
+                    AresLogger.Log("Lang", $"Registered lang \"{category.Code}\" with {messages.Count} translations.");
+                }
+                catch (Exception e)
+                {
+                    AresLogger.Error(nameof(LangManager), $"Can't load language \"{category.Code}\"", e.Message);
+                }
             }
         }
-    }
 
-    public List<LangCategory> GetLanguages() => _languages;
+        public List<LangCategory> GetLanguages() => _languages;
 
-    static List<LangCategory> GetLanguageCategories()
-    {
-        return new List<LangCategory>
+        static List<LangCategory> GetLanguageCategories()
         {
-            new("Português", "Português de Portugal", "pt"),
-            new("English", "English", "en")
-        };
+            return new List<LangCategory>
+            {
+                new("Português", "Português de Portugal", "pt"),
+                new("English", "English", "en")
+            };
+        }
+
+        static string GetJsonMessage(JsonNode? element)
+        {
+            if (element == null) return string.Empty;
+
+            if (element is JsonArray array)
+            {
+                return string.Join("\n", array.Select(item => item?.ToString() ?? string.Empty));
+            }
+
+            return element.ToString() ?? string.Empty;
+        }
+
+        public bool IsKeyAvailable(LangCategory category, string key) =>
+            category != null && key != null && _translation.TryGetValue(category, out var keys) && keys.ContainsKey(key.ToLower());
+
+        public string GetTranslation(LangCategory category, string key)
+        {
+            if (!IsKeyAvailable(category, key)) return key;
+            return _translation[category][key.ToLower()];
+        }
+
+        public LangCategory? GetCategoryByCode(string code) =>
+            _languages.Find(category => category.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
     }
-
-    static string GetJsonMessage(JToken? element)
-    {
-        if (element == null) return string.Empty;
-
-        return element.Type == JTokenType.Array
-            ? string.Join("\n", element.Select(item => item.ToString()))
-            : element.ToString();
-    }
-
-    public bool IsKeyAvailable(LangCategory category, string key) =>
-        category != null && key != null && _translation.TryGetValue(category, out var keys) && keys.ContainsKey(key.ToLower());
-
-
-    public string GetTranslation(LangCategory category, string key)
-    {
-        if (!IsKeyAvailable(category, key)) return key;
-
-        return _translation[category][key.ToLower()];
-    }
-
-    public LangCategory? GetCategoryByCode(string code) => 
-        _languages.Find(category => category.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
 }

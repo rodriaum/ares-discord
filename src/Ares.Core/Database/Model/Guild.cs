@@ -273,7 +273,7 @@ public class Guild
     /// <returns>Chat information object or null if not found.</returns>
     public GChatInfoModel? ChatInfoByChannel(IUser user, ulong channel)
     {
-        return Infos()?[user.Id].FindLast(historic => historic.Channel == channel);
+        return Infos()?[user.Id].Find(historic => historic.Channel == channel);
     }
 
     /// <summary>

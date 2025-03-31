@@ -11,8 +11,8 @@ using Ares.Core.Manager;
 using Ares.Core.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace Ares.Core.Database.Collection;
 
@@ -98,7 +98,7 @@ internal class GuildCollection
     /// Saves or updates a guild in the database, returning the updated object.
     /// </summary>
     /// <param name="id">Unique ID of the guild.</param>
-    /// <returns>A <see cref="Model.Guild"/> object representing the saved or updated guild.</returns>
+    /// <returns>A <see cref="Guild"/> object representing the saved or updated guild.</returns>
     public async Task<Guild?> SaveAsync(string id)
     {
         if (_collection == null)
@@ -114,12 +114,12 @@ internal class GuildCollection
 
         if (element != null)
         {
-            guild = await DeserializeGuildAsync(element) ?? guild;
+            guild = await JsonUtil.BsonDocumentToObjectAsync<Guild>(element) ?? guild;
         }
         else
         {
-            string guildJson = await SerializeGuildAsync(guild);
-            BsonDocument document = BsonDocument.Parse(guildJson);
+            string json = await JsonUtil.ObjectToStringAsync<Guild>(guild);
+            BsonDocument document = BsonDocument.Parse(json);
 
             // Insert the document in the database if it doesn't exist.
             await _collection.InsertOneAsync(document);
@@ -135,7 +135,7 @@ internal class GuildCollection
     /// Saves or updates a guild in the database, returning the updated object.
     /// </summary>
     /// <param name="id">Ulong of the guild.</param>
-    /// <returns>A <see cref="Model.Guild"/> object representing the saved or updated guild.</returns>
+    /// <returns>A <see cref="Guild"/> object representing the saved or updated guild.</returns>
     public async Task<Guild?> SaveAsync(ulong id)
     {
         return await SaveAsync(id.ToString());
@@ -145,12 +145,12 @@ internal class GuildCollection
     /// Retrieves a guild from the cache or database using its ID.
     /// </summary>
     /// <param name="id">Unique ID of the guild.</param>
-    /// <returns>A <see cref="Model.Guild"/> object representing the retrieved guild, or null if not found.</returns>
+    /// <returns>A <see cref="Guild"/> object representing the retrieved guild, or null if not found.</returns>
     /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
     /// <seealso cref="FetchAsync(ulong, bool)"/>
-    public async Task<Model.Guild?> FetchAsync(string id, bool saveInRedis = false)
+    public async Task<Guild?> FetchAsync(string id, bool saveInRedis = false)
     {
-        Model.Guild? guild = _manager.Fetch(id);
+        Guild? guild = _manager.Fetch(id);
 
         if (guild == null)
         {
@@ -158,11 +158,12 @@ internal class GuildCollection
 
             if (guild == null)
             {
-                BsonDocument element = await _collection.Find(Builders<BsonDocument>.Filter.Eq("Id", id)).FirstOrDefaultAsync();
+                IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(Builders<BsonDocument>.Filter.Eq("Id", id));
+                BsonDocument element = await cursor.FirstOrDefaultAsync();
 
                 if (element != null)
                 {
-                    guild = await DeserializeGuildAsync(element);
+                    guild = await JsonUtil.BsonDocumentToObjectAsync<Guild>(element);
 
                     if (saveInRedis && guild != null)
                     {
@@ -179,10 +180,10 @@ internal class GuildCollection
     /// Overload of the Fetch method that accepts a ulong numeric ID.
     /// </summary>
     /// <param name="id">Numeric ID of the guild.</param>
-    /// <returns>A <see cref="Model.Guild"/> object representing the retrieved guild, or null if not found.</returns>
+    /// <returns>A <see cref="Guild"/> object representing the retrieved guild, or null if not found.</returns>
     /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
     /// <seealso cref="FetchAsync(string, bool)"/>
-    public async Task<Model.Guild?> FetchAsync(ulong id, bool saveInRedis = false)
+    public async Task<Guild?> FetchAsync(ulong id, bool saveInRedis = false)
     {
         return await FetchAsync(id.ToString(), saveInRedis);
     }
@@ -190,7 +191,7 @@ internal class GuildCollection
     /// <summary>
     /// Updates a specific field of a guild in the database.
     /// </summary>
-    /// <param name="guild">A <see cref="Model.Guild"/> object representing the guild to be updated.</param>
+    /// <param name="guild">A <see cref="Guild"/> object representing the guild to be updated.</param>
     /// <param name="field">Name of the field to be updated.</param>
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(Guild guild, string field)
@@ -199,10 +200,10 @@ internal class GuildCollection
 
         try
         {
-            string serialized = await SerializeGuildAsync(guild);
-            BsonDocument tree = BsonDocument.Parse(serialized);
+            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(guild);
+            if (tree == null) return false;
 
-            if (!tree.TryGetValue(field, out BsonValue value))
+            if (!tree.TryGetValue(field, out BsonValue? value))
                 value = null;
 
             FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
@@ -211,7 +212,8 @@ internal class GuildCollection
                 ? Builders<BsonDocument>.Update.Set(field, value)
                 : Builders<BsonDocument>.Update.Unset(field);
 
-            await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+            // Update Local Storage
+            await _collection.UpdateOneAsync(filter, update);
 
             // Update Redis
             await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
@@ -259,9 +261,9 @@ internal class GuildCollection
     /// </summary>
     /// <param name="limit">Maximum number of guilds to retrieve (0 for no limit).</param>
     /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved guilds.</returns>
-    public async Task<ConcurrentBag<Model.Guild>> GetGuildsAsync(int limit = 0)
+    public async Task<ConcurrentBag<Guild>> GetGuildsAsync(int limit = 0)
     {
-        ConcurrentBag<Guild> accounts = new ConcurrentBag<Model.Guild>();
+        ConcurrentBag<Guild> accounts = new ConcurrentBag<Guild>();
 
         if (_collection == null)
         {
@@ -276,56 +278,17 @@ internal class GuildCollection
         {
             try
             {
-                string jsonString = document.ToJson();
-                Guild? guild = JsonConvert.DeserializeObject<Model.Guild>(jsonString);
+                Guild? guild = await JsonUtil.BsonDocumentToObjectAsync<Guild>(document);
 
                 if (guild != null)
                     accounts.Add(guild);
             }
-            catch (JsonReaderException ex)
+            catch (JsonException ex)
             {
                 await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
             }
         });
 
         return accounts;
-    }
-
-    /*
-     * Serialization and deserialization methods.
-     */
-
-    /// <summary>
-    /// Serializes a guild object to a JSON string.
-    /// </summary>
-    /// <param name="guild"></param>
-    /// <returns></returns>
-    private async Task<string> SerializeGuildAsync(Guild guild)
-    {
-        return await Task.Run(() => JsonConvert.SerializeObject(guild));
-    }
-
-    /// <summary>
-    /// Deserializes a BSON document to a guild object.
-    /// </summary>
-    /// <param name="bsonDoc"></param>
-    /// <returns></returns>
-    private async Task<Guild?> DeserializeGuildAsync(BsonDocument bsonDoc)
-    {
-        return await Task.Run(() =>
-        {
-            try
-            {
-                object mappedDoc = BsonTypeMapper.MapToDotNetValue(bsonDoc);
-                string json = JsonConvert.SerializeObject(mappedDoc);
-
-                return JsonConvert.DeserializeObject<Guild>(json);
-            }
-            catch (JsonReaderException ex)
-            {
-                AresLogger.Error("JsonReaderException", "Error deserializing guild document.", ex.Message);
-                return null;
-            }
-        });
     }
 }

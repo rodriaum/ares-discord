@@ -244,7 +244,7 @@ public class RedisDatabase : DatabaseTemplate
         if (fields.Length == 0)
             return null;
 
-        return this.ConvertFromHashEntriesAsync<T>(fields);
+        return await this.ConvertFromHashEntriesAsync<T>(fields);
     }
 
     /// <summary>
@@ -264,7 +264,7 @@ public class RedisDatabase : DatabaseTemplate
 
             if (fields.Length > 0)
             {
-                T? obj = ConvertFromHashEntriesAsync<T>(fields);
+                T? obj = await ConvertFromHashEntriesAsync<T>(fields);
                 if (obj != null)
                     results.Add(obj);
             }
@@ -305,21 +305,18 @@ public class RedisDatabase : DatabaseTemplate
     /// <returns>A Task representing a HashEntry array.</returns>
     private async Task<HashEntry[]> ConvertToHashEntriesAsync(object obj)
     {
-        return await Task.Run(() =>
+        Dictionary<string, string>? dictionary = await JsonUtil.ObjectToDictionaryAsync(obj);
+
+        if (dictionary == null)
         {
-            Dictionary<string, string>? dictionary = JsonUtil.ObjectToDictionary(obj);
+            AresLogger.Error("DB: Redis", "Could not convert object to hash entries.");
+            return Array.Empty<HashEntry>();
+        }
 
-            if (dictionary == null)
-            {
-                AresLogger.Error("DB: Redis", "Could not convert object to hash entries.");
-                return Array.Empty<HashEntry>();
-            }
-
-            return dictionary
-                .Where(kvp => kvp.Value != null)
-                .Select(kvp => new HashEntry(kvp.Key, kvp.Value))
-                .ToArray();
-        });
+        return dictionary
+            .Where(kvp => kvp.Value != null)
+            .Select(kvp => new HashEntry(kvp.Key, kvp.Value))
+            .ToArray();
     }
 
     /// <summary>
@@ -328,7 +325,7 @@ public class RedisDatabase : DatabaseTemplate
     /// <typeparam name="T">The type of object to convert to.</typeparam>
     /// <param name="entries">The hash entries to convert.</param>
     /// <returns>A Task representing the converted object, or null if conversion fails.</returns>
-    private T? ConvertFromHashEntriesAsync<T>(HashEntry[] entries) where T : class
+    private async Task<T?> ConvertFromHashEntriesAsync<T>(HashEntry[] entries) where T : class
     {
 
         Dictionary<string, string> dictionary = entries.ToDictionary(
@@ -336,7 +333,7 @@ public class RedisDatabase : DatabaseTemplate
             entry => entry.Value.ToString()
         );
 
-        return JsonUtil.DictionaryToObject<T?>(dictionary);
+        return await JsonUtil.DictionaryToObjectAsync<T?>(dictionary);
 
     }
 }
