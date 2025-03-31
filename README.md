@@ -1,5 +1,8 @@
 # Ares
 
+> [!CAUTION]
+> Esta é uma versão "dev", ou seja, uma branch de desenvolvimento. Tudo aqui pode ser lançado oficialmente no futuro, mas, até lá, pode conter bugs.
+
 Ares é uma plataforma de chat privado poderosa e flexível projetada para aprimorar sua experiência no Discord com interações inteligentes. Esta plataforma utiliza tecnologias de IA de ponta para gerar texto, imagens e mais, tudo isso mantendo armazenamento de dados seguro e em conformidade.
 
 ## Demonstração em Vídeo
