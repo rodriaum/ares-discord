@@ -51,6 +51,7 @@
     "function-call": "Não foi possível gerar porque o sistema está lento. (FunctionCall)",
     "unable-generate-order": "Não foi possível gerar o pedido. Motivo: {0}",
     "unable-perform-task": "Ops! Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.",
+	"unable-find-chat": "Não foi possível encontrar o chat atual no banco de dados devido a um problema técnico. O canal precisa ser removido manualmente, mas você pode criar um novo chat a qualquer momento!",
     "model-not-found": "Não foi possível identificar o modelo. Tente novamente!",
     "close-chat": "Obrigado por usar **Ares**! A fechar a conversa...",
     "unable-get-member": "Ops! Não foi possível encontrar as informações do seu perfil.",

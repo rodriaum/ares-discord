@@ -51,6 +51,7 @@
     "function-call": "Could not generate because the system is slow. (FunctionCall)",
     "unable-generate-order": "Could not generate the request. Reason: {0}",
     "unable-perform-task": "Oops! An unexpected error occurred. Please try again later.",
+	"unable-find-chat": "The current chat could not be found in the database due to a technical problem. The channel needs to be removed manually, but you can create a new chat at any time!",
     "model-not-found": "Could not identify the model. Please try again!",
     "close-chat": "Thank you for using **Ares**! Closing the conversation...",
     "unable-get-member": "Oops! Could not find your profile information.",
