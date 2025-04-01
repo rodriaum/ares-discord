@@ -68,7 +68,7 @@ internal class ChatButtonListener
 
             if (channel == null)
             {
-                await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnablePerformTask));
                 return;
             }
 
@@ -76,7 +76,7 @@ internal class ChatButtonListener
 
             if (!await guild.ToggleChatInfo(user, channel.Id, false))
             {
-                await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnableFindChat));
                 return;
             }
 

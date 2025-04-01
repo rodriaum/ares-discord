@@ -4,11 +4,10 @@
  * Proprietary and confidential
  */
 
-using Discord.WebSocket;
-using Discord;
+using Ares.Core;
 using Ares.Core.Database.Collection;
 using Ares.Core.Database.Model;
-using Ares.Core;
+using Discord.WebSocket;
 
 namespace Ares.Discord.Listener;
 
@@ -22,38 +21,22 @@ class GuildListener
             throw new ArgumentNullException(nameof(client), "Client cannot be null");
 
         _client = client;
-        _client.Ready += Ready;
+
         _client.GuildAvailable += GuildAvailable;
         _client.GuildUnavailable += GuildUnavailable;
     }
 
-    private async Task Ready()
+    private async Task GuildAvailable(SocketGuild sguild)
     {
-        if (_client == null) return;
-
-        IReadOnlyCollection<IGuild>? guilds = _client.Guilds;
-        if (guilds == null || guilds.Count == 0) return;
+        if (sguild == null) return;
 
         GuildCollection? data = AresCore.GuildCollection;
         if (data == null) return;
 
-        foreach (IGuild iguild in guilds)
-        {
-            Guild? guild = await data.FetchAsync(iguild.Id, saveInRedis: true);
-            if (guild != null) continue;
+        Guild? guild = await data.FetchAsync(sguild.Id, saveInRedis: true);
+        if (guild != null) return;
 
-            await data.SaveAsync(iguild.Id.ToString());
-        }
-    }
-
-    private async Task GuildAvailable(SocketGuild guild)
-    {
-        if (guild == null) return;
-
-        GuildCollection? data = AresCore.GuildCollection;
-        if (data == null) return;
-
-        await data.SaveAsync(guild.Id);
+        await data.SaveAsync(sguild.Id);
     }
 
     private async Task GuildUnavailable(SocketGuild guild)

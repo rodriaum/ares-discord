@@ -16,6 +16,7 @@ using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
 using DotNetEnv;
+using System.Text.Json;
 
 namespace Ares.Discord;
 
@@ -309,7 +310,12 @@ internal class Program
         catch (HttpException e)
         {
             // Handle and log any errors during command registration
-            string json = await JsonUtil.ObjectToStringAsync<IReadOnlyCollection<DiscordJsonError>>(e.Errors, indented: true);
+            string json = await JsonUtil.ObjectToStringAsync<IReadOnlyCollection<DiscordJsonError>>
+                (
+                    e.Errors, 
+                    serializerOptions: new JsonSerializerOptions { WriteIndented = true }
+                );
+
             AresLogger.Log("Commands", "Unable to register commands.\n -> " +
                         (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message));
         }
