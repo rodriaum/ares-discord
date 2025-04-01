@@ -390,6 +390,9 @@ internal class ReceivedContentListener
         // Alert: Add the main embed at the end so it is the last one displayed
         embeds.Add(mainEmbed.Build());
 
+        // Fix in case someone deletes the channel before sending the message.
+        if (botMessage == null) return;
+
         if (attachments != null)
         {
             var attachment = attachments.Value;
