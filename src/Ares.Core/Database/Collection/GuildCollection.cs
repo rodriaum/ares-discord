@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Database.Collection;
 using Ares.Core.Database.Model;
 using Ares.Core.Database.Mongo;
 using Ares.Core.Database.Redis;
@@ -19,7 +20,7 @@ namespace Ares.Core.Database.Collection;
 /// <summary>
 /// Class responsible for managing guild data in MongoDB database.
 /// </summary>
-internal class GuildCollection
+internal class GuildCollection : CollectionTemplate
 {
     /// <summary>
     /// Represents the "guilds" collection in MongoDB database.
@@ -39,7 +40,7 @@ internal class GuildCollection
     /// <summary>
     /// Key prefix used for guild data in Redis.
     /// </summary>
-    private readonly String GRedisKey = "guild:";
+    private readonly string GRedisKey = "guild:";
 
     /*
      * Constructors and initialization methods.
@@ -107,8 +108,10 @@ internal class GuildCollection
             return null;
         }
 
-        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", id);
-        BsonDocument element = await _collection.Find(filter).FirstOrDefaultAsync();
+        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+
+        IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+        BsonDocument element = await cursor.FirstOrDefaultAsync();
 
         Guild? guild = new Guild(id);
 
@@ -158,7 +161,9 @@ internal class GuildCollection
 
             if (guild == null)
             {
-                IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(Builders<BsonDocument>.Filter.Eq("Id", id));
+                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+
+                IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
                 BsonDocument element = await cursor.FirstOrDefaultAsync();
 
                 if (element != null)
@@ -206,13 +211,13 @@ internal class GuildCollection
             if (!tree.TryGetValue(field, out BsonValue? value))
                 value = null;
 
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("Id", guild.Id);
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", guild.Id);
 
             UpdateDefinition<BsonDocument> update = value != null
                 ? Builders<BsonDocument>.Update.Set(field, value)
                 : Builders<BsonDocument>.Update.Unset(field);
 
-            // Update Local Storage
+            // Update MongoDB
             await _collection.UpdateOneAsync(filter, update);
 
             // Update Redis
@@ -261,7 +266,7 @@ internal class GuildCollection
     /// </summary>
     /// <param name="limit">Maximum number of guilds to retrieve (0 for no limit).</param>
     /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved guilds.</returns>
-    public async Task<ConcurrentBag<Guild>> GetGuildsAsync(int limit = 0)
+    public async Task<ConcurrentBag<Guild>> GetAllAsync(int limit = 0)
     {
         ConcurrentBag<Guild> accounts = new ConcurrentBag<Guild>();
 
