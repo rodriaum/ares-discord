@@ -5,11 +5,14 @@
  */
 
 using Ares.Core.Database.Model.Chat.Sub;
+using System.Text.Json.Serialization;
 
 namespace Ares.Core.Database.Model.Chat;
 
 public class GChatModel
 {
+    [JsonInclude]
+    [JsonPropertyName("infos")]
     public Dictionary<ulong, List<GChatInfoModel>> Infos { get; set; }
 
     public GChatModel()

@@ -61,6 +61,7 @@ public class LangKeys
     public static readonly string CloseChat = "close-chat";
     public static readonly string UnablePerformTask = "unable-perform-task";
     public static readonly string UnableGetMember = "unable-get-member";
+    public static readonly string UnableFindChat = "unable-find-chat";
     public static readonly string ChatDescriptionTTS = "chat-description-tts";
     public static readonly string HistoryTTSDesc = "history-tts-description";
     public static readonly string NotChatOwner = "not-chat-owner";

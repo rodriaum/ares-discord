@@ -18,10 +18,9 @@ namespace Ares.Core.Manager
         public LangManager()
         {
             _languages = GetLanguageCategories();
-            InitializeLanguagesAsync().GetAwaiter().GetResult();
         }
 
-        public async Task InitializeLanguagesAsync()
+        public async Task Init()
         {
             foreach (LangCategory category in _languages)
             {

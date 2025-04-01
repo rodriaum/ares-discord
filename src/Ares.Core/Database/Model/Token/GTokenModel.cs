@@ -4,14 +4,30 @@
  * Proprietary and confidential
  */
 
+using System.Text.Json.Serialization;
+
 namespace Ares.Core.Database.Model.Token;
 
 public class GTokenModel
 {
+    [JsonInclude]
+    [JsonPropertyName("openai")]
     public string? OpenAi { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("anthropic")]
     public string? Anthropic { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("deepseek")]
     public string? Deepseek { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("xai")]
     public string? xAI { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("imgur")]
     public string? Imgur { get; set; }
 
     public GTokenModel(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? imgur = "")

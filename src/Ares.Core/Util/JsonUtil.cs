@@ -49,7 +49,12 @@ internal class JsonUtil
         return element?.ToJsonString() ?? "";
     }
 
-    public static async Task<T?> DictionaryToObjectAsync<T>(Dictionary<string, string> map)
+    public static async Task<T?> DictionaryToObjectAsync<T>
+        (
+            Dictionary<string, string> map, 
+            JsonSerializerOptions? serializerOptions = null, 
+            JsonSerializerOptions? deserializeOptions = null
+        )
     {
         JsonObject obj = new JsonObject();
 
@@ -66,10 +71,10 @@ internal class JsonUtil
         }
 
         using MemoryStream stream = new MemoryStream();
-        await JsonSerializer.SerializeAsync(stream, obj);
+        await JsonSerializer.SerializeAsync(stream, obj, options: serializerOptions);
         stream.Position = 0;
 
-        return await JsonSerializer.DeserializeAsync<T>(stream);
+        return await JsonSerializer.DeserializeAsync<T>(stream, options: deserializeOptions);
     }
 
     public static async Task<Dictionary<string, string>> ObjectToDictionaryAsync(object src)
@@ -122,19 +127,15 @@ internal class JsonUtil
         return map;
     }
 
-    public static async Task<string> ObjectToStringAsync<T>(object value, bool indented = false)
+    public static async Task<string> ObjectToStringAsync<T>(object value, JsonSerializerOptions? serializerOptions = null)
     {
         using MemoryStream stream = new MemoryStream();
 
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = indented
-        };
-
-        await JsonSerializer.SerializeAsync(stream, value, options);
+        await JsonSerializer.SerializeAsync(stream, value, serializerOptions);
         stream.Position = 0;
 
         using StreamReader reader = new StreamReader(stream);
+
         return await reader.ReadToEndAsync();
     }
 
@@ -148,16 +149,8 @@ internal class JsonUtil
             await JsonSerializer.SerializeAsync(stream, mapped);
             stream.Position = 0;
 
-            var options = new JsonSerializerOptions
-            {
-                IncludeFields = true,
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
 
-            return await JsonSerializer.DeserializeAsync<T>(stream, options: options);
-
-            return await JsonSerializer.DeserializeAsync<T>(stream, options: options);
+            return await JsonSerializer.DeserializeAsync<T>(stream);
         }
         catch (JsonException ex)
         {

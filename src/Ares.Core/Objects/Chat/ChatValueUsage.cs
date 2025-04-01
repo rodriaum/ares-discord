@@ -4,6 +4,8 @@
  * Proprietary and confidential
  */
 
+using System.Text.Json.Serialization;
+
 namespace Ares.Core.Objects.Chat;
 
 /// <summary>
@@ -15,11 +17,15 @@ namespace Ares.Core.Objects.Chat;
 /// </remarks>
 public class ChatValueUsage
 {
-        /// <summary> Número de tokens na conclusão gerada. </summary>
-        public int OutputTokens { get; }
+    /// <summary> Número de tokens na conclusão gerada. </summary>
+    [JsonInclude]
+    [JsonPropertyName("outputTokens")]
+    public int OutputTokens { get; }
 
-        /// <summary> Número de tokens no prompt. </summary>
-        public int InputTokens { get; }
+    /// <summary> Número de tokens no prompt. </summary>
+    [JsonInclude]
+    [JsonPropertyName("inputTokens")]
+    public int InputTokens { get; }
 
     public ChatValueUsage(int outputTokens = 0, int inputTokens = 0)
     {

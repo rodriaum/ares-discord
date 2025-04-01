@@ -7,6 +7,7 @@
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
 using StackExchange.Redis;
+using System.Text.Json;
 
 namespace Ares.Core.Database.Redis;
 
@@ -333,7 +334,11 @@ public class RedisDatabase : DatabaseTemplate
             entry => entry.Value.ToString()
         );
 
-        return await JsonUtil.DictionaryToObjectAsync<T?>(dictionary);
+        return await JsonUtil.DictionaryToObjectAsync<T?>
+            (
+                dictionary, 
+                deserializeOptions: new JsonSerializerOptions { IncludeFields = true }
+            );
 
     }
 }

@@ -4,24 +4,51 @@
  * Proprietary and confidential
  */
 
+using System.Text.Json.Serialization;
+
 namespace Ares.Core.Database.Model.Config;
 
 public partial class GuildConfigData
 {
+    /*
+     * Application Predefinitions
+     */
+
+    [JsonInclude]
+    [JsonPropertyName("lang")]
     public string Lang { get; set; }
 
+    /*
+     * Channels and Categories
+     */
+
+    [JsonInclude]
+    [JsonPropertyName("memberRoleId")]
     public ulong MemberRoleId { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("usageRoleId")]
     public ulong UsageRoleId { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("exclusiveRoleId")]
     public ulong ExclusiveRoleId { get; set; }
 
+    [JsonInclude]
+    [JsonPropertyName("setupChannelId")]
     public ulong SetupChannelId { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("logChannelId")]
     public ulong LogChannelId { get; set; }
 
+    [JsonInclude]
+    [JsonPropertyName("chatsCategoryId")]
     public ulong ChatsCategoryId { get; set; }
 
     public GuildConfigData()
     {
-        // By default, the language is Portuguese
+        // By default, the language is Portuguese.
         this.Lang = "pt";
     }
 }

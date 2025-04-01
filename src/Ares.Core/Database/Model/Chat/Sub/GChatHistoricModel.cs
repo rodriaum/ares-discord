@@ -8,6 +8,7 @@ using Ares.Core.Objects.Chat;
 using Ares.Core.Util;
 using OpenAI.Chat;
 using OpenAI.Images;
+using System.Text.Json.Serialization;
 
 namespace Ares.Core.Database.Model.Chat.Sub;
 
@@ -19,26 +20,36 @@ public class GChatHistoricModel
     /// <summary>
     /// Pergunta ou comando enviado pelo usuário.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("prompt")]
     public string Prompt { get; set; }
 
     /// <summary>
     /// Resposta gerada pela AI, se aplicável.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("response")]
     public string? Response { get; set; }
 
     /// <summary>
     /// URL de uma imagem gerada na conversa, se aplicável.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("imageUrl")]
     public string? ImageUrl { get; set; }
 
     /// <summary>
     /// Informações sobre o uso de tokens na conversa.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("usage")]
     public ChatValueUsage? Usage { get; set; }
 
     /// <summary>
     /// Timestamp da conversa.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("timestamp")]
     public long Timestamp { get; set; }
 
     /// <summary>

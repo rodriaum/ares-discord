@@ -12,6 +12,7 @@ using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using Discord;
+using System.Text.Json.Serialization;
 
 namespace Ares.Core.Database.Model;
 
@@ -23,21 +24,29 @@ public class Guild
     /// <summary>
     /// The unique identifier of the guild.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("id")]
     public readonly string Id;
 
     /// <summary>
     /// Token data for the guild.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("token")]
     public GTokenModel Token;
 
     /// <summary>
     /// Config data for the guild.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("config")]
     public GuildConfigData Config;
 
     /// <summary>
     /// Chat data for the guild.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("chat")]
     public GChatModel Chat;
 
     /// <summary>
@@ -117,7 +126,7 @@ public class Guild
             this.Token = token;
         }
 
-        return await SaveAsync("Token");
+        return await SaveAsync("token");
     }
 
     /// <summary>
@@ -133,7 +142,7 @@ public class Guild
             this.Config = config;
         }
 
-        return await SaveAsync("Config");
+        return await SaveAsync("config");
     }
 
     /// <summary>
@@ -149,7 +158,7 @@ public class Guild
             this.Chat = chat;
         }
 
-        return await SaveAsync("Chat");
+        return await SaveAsync("chat");
     }
 
     /// <summary>
@@ -200,7 +209,8 @@ public class Guild
 
         GChatInfoModel? existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
 
-        if (existingInfo != null)
+        // It seems strange, but it is done so as not to add the same information as the chat.
+        if (existingInfo != null && this.Chat.Infos.ContainsKey(user.Id))
         {
             this.Chat.Infos[user.Id].Remove(existingInfo);
         }
@@ -228,7 +238,7 @@ public class Guild
     /// <returns>List of chat history records or null if not found.</returns>
     public List<GChatHistoricModel>? ChatHistorics(IUser user, ulong channel = 0)
     {
-        List<GChatInfoModel>? infos = Infos()?[user.Id];
+        List<GChatInfoModel>? infos = Infos()?.GetValueOrDefault(user.Id);
         if (infos == null) return null;
 
         if (channel != 0)
@@ -248,7 +258,10 @@ public class Guild
     /// <returns>List of chat information objects or null if not found.</returns>
     public List<GChatInfoModel>? ChatInfos(IUser user)
     {
-        return Infos()?[user.Id];
+        var infos = Infos();
+        if (infos == null) return null;
+
+        return infos.GetValueOrDefault(user.Id);
     }
 
     /// <summary>
@@ -273,7 +286,10 @@ public class Guild
     /// <returns>Chat information object or null if not found.</returns>
     public GChatInfoModel? ChatInfoByChannel(IUser user, ulong channel)
     {
-        return Infos()?[user.Id].Find(historic => historic.Channel == channel);
+        List<GChatInfoModel>? userInfos = Infos()?.GetValueOrDefault(user.Id);
+        if (userInfos == null || !userInfos.Any()) return null;
+
+        return userInfos.Find(historic => historic.Channel == channel);
     }
 
     /// <summary>

@@ -6,13 +6,22 @@
 
 using Ares.Core.Util;
 using OpenAI.Images;
+using System.Text.Json.Serialization;
 
 namespace Ares.Core.Objects.Chat.Image;
 
 public class ImageGenOptions
 {
+    [JsonInclude]
+    [JsonPropertyName("quality")]
     public ImageQuality Quality;
+
+    [JsonInclude]
+    [JsonPropertyName("size")]
     public ImageSize Size;
+
+    [JsonInclude]
+    [JsonPropertyName("style")]
     public ImageStyle Style;
 
     public ImageGenOptions(ImageQuality quality = ImageQuality.Standard, ImageSize size = ImageSize.W1024xH1024, ImageStyle style = ImageStyle.Natural)
