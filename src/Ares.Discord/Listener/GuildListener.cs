@@ -7,6 +7,7 @@
 using Ares.Core;
 using Ares.Core.Database.Collection;
 using Ares.Core.Database.Model;
+using Ares.Core.Util;
 using Discord.WebSocket;
 
 namespace Ares.Discord.Listener;
@@ -36,6 +37,8 @@ class GuildListener
         Guild? guild = await data.FetchAsync(sguild.Id, saveInRedis: true);
         if (guild != null) return;
 
+        await AresLogger.LogAsync(nameof(GuildUnavailable), $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
+
         await data.SaveAsync(sguild.Id);
     }
 
@@ -46,6 +49,7 @@ class GuildListener
         GuildCollection? data = AresCore.GuildCollection;
         if (data == null) return;
 
+        await AresLogger.LogAsync(nameof(GuildUnavailable), $"Guild \"{guild.Id}\" is not available, cache will be deleted.");
         await data.DeleteCache(guild.Id);
     }
 }
