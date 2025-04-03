@@ -4,12 +4,13 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Database.Repository;
+using Ares.Ares.Core.Monitor;
 using Ares.Core.Database;
 using Ares.Core.Database.Collection;
 using Ares.Core.Database.Mongo;
 using Ares.Core.Database.Redis;
 using Ares.Core.Manager;
-using System.Runtime.CompilerServices;
 
 namespace Ares.Core;
 
@@ -50,6 +51,9 @@ internal class AresCore
     /// <returns>True if the initialization was successful, otherwise false.</returns>
     public static async Task<bool> Init()
     {
+        SystemMonitor monitor = new SystemMonitor();
+        _ = monitor.Init();
+
         await LangManager.Init();
         return await InitDatabase();
     }

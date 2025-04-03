@@ -5,10 +5,10 @@
  */
 
 using Ares.Ares.Core.Database.Collection;
+using Ares.Ares.Core.Database.Repository;
 using Ares.Core.Database.Model;
 using Ares.Core.Database.Mongo;
 using Ares.Core.Database.Redis;
-using Ares.Core.Manager;
 using Ares.Core.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;

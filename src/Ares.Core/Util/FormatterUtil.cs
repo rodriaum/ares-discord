@@ -51,4 +51,9 @@ public class FormatterUtil
 
         return formatted;
     }
+
+    public static string FormatRam(float ram)
+    {
+        return ram >= 1024 ? $"{ram / 1024:F2} GB" : $"{ram:F2} MB";
+    }
 }
