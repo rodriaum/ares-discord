@@ -206,6 +206,7 @@ internal class Program
             new SlashCommandBuilder()
                 .WithName("config-token")
                 .WithDescription("Configure tokens for the current server.")
+                .WithDefaultMemberPermissions(GuildPermission.Administrator)
                 .AddOptions(
                     new SlashCommandOptionBuilder
                     {
@@ -248,6 +249,7 @@ internal class Program
             new SlashCommandBuilder()
                 .WithName("config-id")
                 .WithDescription("Configure channels for the current server.")
+                .WithDefaultMemberPermissions(GuildPermission.Administrator)
                 .AddOptions(
                     new SlashCommandOptionBuilder
                     {
@@ -297,6 +299,7 @@ internal class Program
             new SlashCommandBuilder()
                 .WithName("config-lang")
                 .WithDescription("Choose the application language for this server.")
+                .WithDefaultMemberPermissions(GuildPermission.Administrator)
                 .AddOptions(
                     new SlashCommandOptionBuilder
                     {
@@ -312,6 +315,7 @@ internal class Program
             new SlashCommandBuilder()
                 .WithName("setup")
                 .WithDescription("Choose the type of setup to perform in the current channel.")
+                .WithDefaultMemberPermissions(GuildPermission.Administrator)
                 .AddOptions(
                     new SlashCommandOptionBuilder
                     {
