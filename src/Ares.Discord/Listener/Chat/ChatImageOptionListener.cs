@@ -33,7 +33,7 @@ internal class ChatImageOptionListener
             args.Data.CustomId.Equals("size-menu")
         )) return;
 
-        await args.RespondAsync(ephemeral: true, text: ":hourglass:");
+        await args.RespondAsync(ephemeral: true, text: AresConstant.LoadingEmote);
         RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
         try

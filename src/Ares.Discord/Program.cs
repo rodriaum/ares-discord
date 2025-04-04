@@ -312,12 +312,16 @@ internal class Program
             // Handle and log any errors during command registration
             string json = await JsonUtil.ObjectToStringAsync<IReadOnlyCollection<DiscordJsonError>>
                 (
-                    e.Errors, 
+                    e.Errors,
                     serializerOptions: new JsonSerializerOptions { WriteIndented = true }
                 );
 
-            AresLogger.Log("Commands", "Unable to register commands.\n -> " +
-                        (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message));
+            await AresLogger.ErrorAsync
+                (
+                    "Commands",
+                    "Unable to register commands.",
+                    extra: (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message)
+                );
         }
     }
 }

@@ -27,7 +27,7 @@ internal class ChatButtonListener
     {
         if (!args.Data.CustomId.Equals("close-chat")) return;
 
-        await args.RespondAsync(ephemeral: true, text: ":hourglass:");
+        await args.RespondAsync(ephemeral: true, text: AresConstant.LoadingEmote);
         RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
         try

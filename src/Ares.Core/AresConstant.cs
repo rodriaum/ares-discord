@@ -20,4 +20,10 @@ internal class AresConstant
      */
 
     public static readonly string GRedisChannel = "guild_channel";
+
+    /*
+     * Emotes
+     */
+
+    public static readonly string LoadingEmote = ":hourglass:";
 }

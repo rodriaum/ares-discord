@@ -4,7 +4,6 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Backend.Database;
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
 using StackExchange.Redis;
@@ -337,7 +336,7 @@ public class RedisDatabase : DatabaseTemplate
 
         return await JsonUtil.DictionaryToObjectAsync<T?>
             (
-                dictionary, 
+                dictionary,
                 deserializeOptions: new JsonSerializerOptions { IncludeFields = true }
             );
 

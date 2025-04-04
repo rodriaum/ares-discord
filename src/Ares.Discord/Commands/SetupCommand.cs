@@ -10,6 +10,7 @@ using Ares.Core.Manager;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using Discord.Rest;
+using Ares.Core;
 
 namespace Ares.Discord.Commands;
 
@@ -30,7 +31,7 @@ internal class SetupCommand
         ulong? guildId = command.GuildId;
 
         EmbedBuilder embed = new EmbedBuilder()
-            .WithDescription(":hourglass:")
+            .WithDescription(AresConstant.LoadingEmote)
             .WithCurrentTimestamp();
 
         await command.RespondAsync(embed: embed.Build());
