@@ -16,6 +16,7 @@ using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
 using DotNetEnv;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Ares.Discord;
@@ -46,6 +47,19 @@ internal class Program
     /// <returns>A task representing the asynchronous operation.</returns>
     static async Task Main()
     {
+        // Set the console output encoding to UTF-8
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+        // Check if the application is already running
+        string currentProcessName = Process.GetCurrentProcess().ProcessName;
+        bool isRunning = Process.GetProcessesByName(currentProcessName).Length > 1;
+
+        if (isRunning)
+        {
+            await AresLogger.ErrorAsync("Status", "Application is already running.");
+            return;
+        }
+
         // Load environment variables
         Env.Load();
 
