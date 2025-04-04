@@ -337,6 +337,7 @@ internal class Program
             foreach (SlashCommandBuilder command in commands)
             {
                 SlashCommandProperties build = command.Build();
+                await _client.CreateGlobalApplicationCommandAsync(build);
                 AresLogger.Log("Commands", $"Command \"{build.Name}\" registered.");
             }
         }
