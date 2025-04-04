@@ -46,6 +46,7 @@
     "authentication-error": "Erro de autenticação. Certifique-se de que suas credenciais estão corretas e válidas.",
     "server-error": "Ocorreu um erro interno no servidor. Tente novamente mais tarde.",
     "timeout": "A solicitação demorou muito para ser processada e foi interrompida. Tente novamente.",
+	"overloaded-error": "A API está temporariamente sobrecarregada.",
     "could-not-find-info-token": "Não foi possível encontrar as informações sobre os Tokens.",
     "could-not-find-token": "Ops! Parece que o servidor atual não tem um token pré-configurado.",
     "function-call": "Não foi possível gerar porque o sistema está lento. (FunctionCall)",

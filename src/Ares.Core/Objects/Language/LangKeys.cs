@@ -73,9 +73,9 @@ public class LangKeys
     public static readonly string ModelDescGpt4o = "model-desc-gpt-4o";
     public static readonly string ModelDescGpt4oMini = "model-desc-gpt-4o-mini";
     public static readonly string ModelDescGpt4oS = "model-desc-gpt-4o-s";
-
     public static readonly string HelloMessage = "hello-message";
     public static readonly string GoodMorning = "good-morning";
     public static readonly string GoodAftermoon = "good-aftermoon";
     public static readonly string GoodNight = "good-night";
+    public static readonly string OverloadedError = "overloaded-error";
 }

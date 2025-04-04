@@ -56,6 +56,7 @@
     "close-chat": "Thank you for using **Ares**! Closing the conversation...",
     "unable-get-member": "Oops! Could not find your profile information.",
 	"not-chat-owner": "It looks like you don't own this channel.",
+	"overloaded-error": "The API is temporarily overloaded.",
 	"chat-incompatible-option": "It looks like the current chat does not support these options.",
 	"model-desc-gpt-4.5": "Largest GPT model for creative tasks and agentic planning.",
 	"model-desc-o1-pro": "A version of of that uses maximum compute for more reliable responses.",

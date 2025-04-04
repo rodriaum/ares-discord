@@ -37,6 +37,7 @@ public class AiService
         { "invalid_request", LangKeys.InvalidRequest },
         { "authentication_error", LangKeys.AuthenticationError },
         { "server_error", LangKeys.ServerError },
+        { "overloaded_error", LangKeys.OverloadedError },
         { "timeout", LangKeys.Timeout },
         { "model_not_found", LangKeys.ModelNotFound }
     };
