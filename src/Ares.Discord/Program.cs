@@ -75,7 +75,6 @@ internal class Program
         {
             GatewayIntents = GatewayIntents.Guilds |
                              GatewayIntents.GuildMembers |
-                             GatewayIntents.GuildBans |
                              GatewayIntents.GuildEmojis |
                              GatewayIntents.GuildIntegrations |
                              GatewayIntents.GuildWebhooks |

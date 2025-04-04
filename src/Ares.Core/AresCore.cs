@@ -11,6 +11,7 @@ using Ares.Ares.Core.Database.Repository;
 using Ares.Ares.Core.Monitor;
 using Ares.Core.Database.Collection;
 using Ares.Core.Manager;
+using DotNetEnv;
 
 namespace Ares.Core;
 
@@ -79,9 +80,11 @@ internal class AresCore
 
         MongoDatabase mongoDatabase = new MongoDatabase(new DatabaseCredentials
         {
-            Host = "127.0.0.1",
-            Database = "ares",
-            Port = 27017
+            Host = Env.GetString("MONGO_HOST"),
+            User = Env.GetString("MONGO_USERNAME"),
+            Database = Env.GetString("MONGO_DATABASE"),
+            Password = Env.GetString("MONGO_PASSWORD"),
+            Port = Env.GetInt("MONGO_PORT")
         });
 
         await mongoDatabase.ConnectAsync();
@@ -93,8 +96,9 @@ internal class AresCore
 
         RedisDatabase redisDatabase = new RedisDatabase(new DatabaseCredentials
         {
-            Host = "127.0.0.1",
-            Port = 6379
+            Host = Env.GetString("REDIS_HOST"),
+            Password = Env.GetString("REDIS_PASSWORD"),
+            Port = Env.GetInt("REDIS_PORT")
         });
 
         await redisDatabase.ConnectAsync();

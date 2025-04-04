@@ -60,3 +60,7 @@ Ares é construído com uma arquitetura modular que permite fácil integração 
 - Serviços de IA: OpenAI, Anthropic, DeepSeek, xAI.
 - Armazenamento de Dados:  MongoDB para gerenciamento eficiente e Redis para caching otimizado.
 - Integração com Discord: Suporte completo à API do Discord para criação e gerenciamento de bots.
+
+## Licença
+
+Este projeto é de uso privado e não está disponível para distribuição pública.
