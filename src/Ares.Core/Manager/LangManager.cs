@@ -1,5 +1,6 @@
 ﻿using Ares.Core.Objects.Language;
 using Ares.Core.Util;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Ares.Core.Manager
@@ -35,7 +36,13 @@ namespace Ares.Core.Manager
                     await fileStream.CopyToAsync(memoryStream);
                     memoryStream.Position = 0;
 
-                    JsonNode? rootNode = await JsonNode.ParseAsync(memoryStream);
+                    JsonDocumentOptions documentOptions = new JsonDocumentOptions 
+                    {
+                        CommentHandling = JsonCommentHandling.Skip,
+                        AllowTrailingCommas = true 
+                    };
+
+                    JsonNode? rootNode = await JsonNode.ParseAsync(memoryStream, documentOptions: documentOptions);
                     if (rootNode == null) continue;
 
                     Dictionary<string, string> messages = new Dictionary<string, string>();
