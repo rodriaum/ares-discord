@@ -80,8 +80,16 @@ internal class MongoDatabase : DatabaseTemplate
     {
         if (client != null)
         {
-            client.Dispose();
-            return Task.CompletedTask;
+            try
+            {
+                client.Dispose();
+                return Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                AresLogger.Error("DB: Mongo", "Unable to close connection.", e.Message);
+                return Task.FromResult(false);
+            }
         }
 
         return Task.FromResult(false);

@@ -58,6 +58,15 @@ internal class AresCore
         return await InitDatabase();
     }
 
+    public static async Task Close()
+    {
+        if (MongoDatabase == null || RedisDatabase == null)
+            return;
+
+        await MongoDatabase.CloseAsync();
+        await RedisDatabase.CloseAsync();
+    }
+
     /// <summary>
     /// Initializes the database connection.
     /// </summary>

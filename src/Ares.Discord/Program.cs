@@ -36,6 +36,11 @@ internal class Program
     private static CommandService? _commands { get; set; }
 
     /// <summary>
+    /// Cancellation token source for graceful shutdown of the application.
+    /// </summary>
+    private static readonly CancellationTokenSource _cts = new();
+
+    /// <summary>
     /// Main entry point of the application.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -110,8 +115,23 @@ internal class Program
             return Task.CompletedTask;
         };
 
-        // Keep the application running
-        await Task.Delay(Timeout.Infinite);
+        Console.CancelKeyPress += async (sender, e) =>
+        {
+            e.Cancel = true;
+            await AresLogger.LogAsync("Exit", "Shutting down core system...");
+            await AresCore.Close();
+            await AresLogger.LogAsync("Exit", "Core system shutdown.");
+            _cts.Cancel();
+            Environment.Exit(0);
+        };
+
+        // Keep the application running until cancellation is requested
+        try
+        {
+            await Task.Delay(Timeout.Infinite, _cts.Token);
+        }
+        // Just ignore the exception as it is expected behavior when canceling the token.
+        catch (TaskCanceledException) { }
     }
 
     /// <summary>

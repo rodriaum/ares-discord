@@ -108,8 +108,16 @@ public class RedisDatabase : DatabaseTemplate
     {
         if (IsConnected())
         {
-            await _connection.CloseAsync();
-            await _connection.DisposeAsync();
+            try
+            {
+                await this.FlushAsync();
+                await _connection.CloseAsync();
+                await _connection.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                await AresLogger.ErrorAsync("DB: Redis", "Could not close connection.", ex.Message);
+            }
         }
     }
 
