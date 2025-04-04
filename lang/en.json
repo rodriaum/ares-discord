@@ -64,4 +64,8 @@
 	"model-desc-gpt-4o": "High-intelligence flagship model for complex, multi-step tasks.",
 	"model-desc-gpt-4o-mini": "Affordable and intelligent small model for fast, lightweight tasks.",
 	"model-desc-gpt-4o-s": "Fast, up-to-date answers with clear and relevant citations from the web.",
+	"hello-message": "{0}, {1}! How can I help today?",
+	"good-morning": "Good morning",
+	"good-afternoon": "Good afternoon",
+	"good-night": "Goodnight",
 }

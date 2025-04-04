@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Discord.Util;
 using Ares.Core;
 using Ares.Core.Database.Collection;
 using Ares.Core.Database.Model;
@@ -168,18 +169,18 @@ internal class SelectedChatListener
                 return;
             }
 
-            EmbedBuilder embed = new EmbedBuilder()
-                .WithTitle($"Olá, {user.GlobalName}")
+            EmbedBuilder infoEmbed = new EmbedBuilder()
+                .WithTitle("Informação")
                 .WithColor(Color.Green)
                 .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} - Ares"));
 
-            embed.AddField(guild.GetTranslation(LangKeys.FieldModel), model.DisplayName);
-            embed.AddField(guild.GetTranslation(LangKeys.FieldRules), guild.GetTranslation(LangKeys.ChatDescriptionRules));
-            embed.AddField(guild.GetTranslation(LangKeys.FieldTime), guild.GetTranslation(LangKeys.ChatDescriptionTime));
+            infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldModel), model.DisplayName);
+            infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldRules), guild.GetTranslation(LangKeys.ChatDescriptionRules));
+            infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldTime), guild.GetTranslation(LangKeys.ChatDescriptionTime));
 
             if (!string.IsNullOrWhiteSpace(model.DescriptionKey))
             {
-                embed.AddField(guild.GetTranslation(LangKeys.FieldDescription), guild.GetTranslation(model.DescriptionKey));
+                infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldDescription), guild.GetTranslation(model.DescriptionKey));
             }
 
             ComponentBuilder component = new ComponentBuilder();
@@ -187,13 +188,13 @@ internal class SelectedChatListener
             switch (model.Type)
             {
                 case ModelType.Chat:
-                    embed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryChatDesc));
-                    embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionDefault));
+                    infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryChatDesc));
+                    infoEmbed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionDefault));
                     break;
 
                 case ModelType.Image:
-                    embed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryImageDesc));
-                    embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionImage));
+                    infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryImageDesc));
+                    infoEmbed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionImage));
 
                     /* 
                      * Quality Menu
@@ -257,12 +258,12 @@ internal class SelectedChatListener
                     break;
 
                 case ModelType.TTS:
-                    embed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryTTSDesc));
-                    embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionTTS));
+                    infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldHistory), guild.GetTranslation(LangKeys.HistoryTTSDesc));
+                    infoEmbed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionTTS));
                     break;
 
                 default:
-                    embed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionDefault));
+                    infoEmbed.WithDescription(guild.GetTranslation(LangKeys.ChatDescriptionDefault));
                     break;
             }
 
@@ -271,7 +272,31 @@ internal class SelectedChatListener
                .WithStyle(ButtonStyle.Danger)
                .WithCustomId("close-chat"));
 
-            await channel.SendMessageAsync(embed: embed.Build(), components: component.Build());
+            await channel.SendMessageAsync(embed: infoEmbed.Build(), components: component.Build());
+
+            /*
+             * Start:
+             * Hello Message
+             */
+
+            DateTime time = DateTime.Now;
+
+            string greetingKey = (time.Hour >= 5 && time.Hour < 12) ? LangKeys.GoodMorning :
+                  (time.Hour >= 12 && time.Hour < 18) ? LangKeys.GoodAftermoon :
+                  LangKeys.GoodNight;
+
+            EmbedBuilder helloEmbed = new EmbedBuilder()
+                .WithTitle("Ares")
+                .WithDescription(string.Format(guild.GetTranslation(LangKeys.HelloMessage), guild.GetTranslation(greetingKey), user.GlobalName))
+                .WithColor(AresUtil.GetColorForModelCategory(model.Category))
+                .WithFooter(footer => footer.WithText($"{time.Year} - Ares | {model.DisplayName}"));
+
+            await channel.SendMessageAsync(embed: helloEmbed.Build());
+
+            /*
+             * End:
+             * Hello Message
+             */
 
             OverwritePermissions permissions = new OverwritePermissions(
                 viewChannel: PermValue.Allow,

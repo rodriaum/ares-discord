@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Discord.Util;
 using Ares.Core;
 using Ares.Core.Database.Collection;
 using Ares.Core.Database.Model;
@@ -171,7 +172,7 @@ internal class ReceivedContentListener
         string responseText = await AiService.GenerateConversationAsync(guild, guildUser, model, channelId, prompt, botMessage);
 
         // Set color based on model category
-        Color color = GetColorForModelCategory(model.Category);
+        Color color = AresUtil.GetColorForModelCategory(model.Category);
         DateTime date = DateTime.Now;
 
         // Handle Discord's description character limit
@@ -242,7 +243,7 @@ internal class ReceivedContentListener
         (string responseBinary, bool isAudio) = await AiService.GenerateTTSAsync(guild, guildUser, model, channelId, prompt);
 
         // Set color based on model category
-        Color color = GetColorForModelCategory(model.Category);
+        Color color = AresUtil.GetColorForModelCategory(model.Category);
         DateTime date = DateTime.Now;
 
         Optional<IEnumerable<FileAttachment>>? attachments = null;
@@ -299,18 +300,6 @@ internal class ReceivedContentListener
         // Process pricing information
         // EmbedBuilder? priceEmbed = CreatePriceEmbedForChat(guild, model, historics);
         await UpdateBotMessage(botMessage, embed, /*priceEmbed,*/ attachments: attachments);
-    }
-
-    private Color GetColorForModelCategory(ModelCategory category)
-    {
-        return category switch
-        {
-            ModelCategory.OpenAI => Color.Green,
-            ModelCategory.Anthropic => Color.Orange,
-            ModelCategory.DeepSeek => Color.Blue,
-            ModelCategory.xAI => Color.Orange,
-            _ => Color.Default
-        };
     }
 
     private EmbedBuilder? CreatePriceEmbedForChat(Guild guild, ChatModel model, List<GChatHistoricModel>? historics)

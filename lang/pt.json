@@ -64,4 +64,8 @@
 	"model-desc-gpt-4o": "Modelo de inteligência avançada para tarefas complexas e de múltiplas etapas.",
 	"model-desc-gpt-4o-mini": "Modelo pequeno, acessível e inteligente para tarefas rápidas e leves.",
 	"model-desc-gpt-4o-s": "Respostas rápidas e atualizadas com citações claras e relevantes da web.",
+	"hello-message": "{0}, {1}! Como posso ajudar hoje?",
+	"good-morning": "Bom dia",
+	"good-afternoon": "Boa tarde",
+	"good-night": "Boa noite",
 }
