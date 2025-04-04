@@ -282,8 +282,6 @@ internal class SelectedChatListener
             await channel.AddPermissionOverwriteAsync(user, permissions);
 
             await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
-            await Task.Delay(TimeSpan.FromSeconds(10));
-            await message.DeleteAsync();
         }
         catch (Exception e)
         {

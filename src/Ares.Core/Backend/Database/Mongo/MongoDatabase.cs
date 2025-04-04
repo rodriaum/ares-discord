@@ -4,11 +4,12 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Backend.Database;
 using Ares.Core.Util;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
 
-namespace Ares.Core.Database.Mongo;
+namespace Ares.Ares.Core.Backend.Database.Mongo;
 
 internal class MongoDatabase : DatabaseTemplate
 {
@@ -29,7 +30,7 @@ internal class MongoDatabase : DatabaseTemplate
             throw new ArgumentException($"Host cannot be null ({nameof(MongoDatabase)})");
         }
 
-        this.url = _ipPattern.Match(credential.Host).Success
+        url = _ipPattern.Match(credential.Host).Success
             ? "mongodb://" + (credential.User == null ? "" : credential.User + ":" + credential.Password + "@")
             + credential.Host + "/" + credential.Database
             + "?retryWrites=true&w=majority"

@@ -4,12 +4,13 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Backend.Database;
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace Ares.Core.Database.Redis;
+namespace Ares.Ares.Core.Backend.Database.Redis;
 
 /// <summary>
 /// Represents a Redis database connection and provides methods for interacting with Redis.
@@ -31,7 +32,7 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="credentials">The database connection credentials.</param>
     public RedisDatabase(DatabaseCredentials credentials)
     {
-        this._credentials = credentials;
+        _credentials = credentials;
     }
 
     /// <summary>
@@ -42,7 +43,7 @@ public class RedisDatabase : DatabaseTemplate
     /// </remarks>
     public RedisDatabase()
     {
-        this._credentials = new DatabaseCredentials
+        _credentials = new DatabaseCredentials
         {
             Host = "127.0.0.1",
             Port = 6379
@@ -79,8 +80,8 @@ public class RedisDatabase : DatabaseTemplate
                     AsyncTimeout = 5000
                 };
 
-                this._connection = await ConnectionMultiplexer.ConnectAsync(options);
-                this._database = _connection.GetDatabase();
+                _connection = await ConnectionMultiplexer.ConnectAsync(options);
+                _database = _connection.GetDatabase();
 
                 await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({tries}x/{FormatterUtil.FormatSeconds(start)})");
                 connected = true;
@@ -106,10 +107,10 @@ public class RedisDatabase : DatabaseTemplate
     /// </remarks>
     public async Task CloseAsync()
     {
-        if (this.IsConnected())
+        if (IsConnected())
         {
-            await this._connection.CloseAsync();
-            await this._connection.DisposeAsync();
+            await _connection.CloseAsync();
+            await _connection.DisposeAsync();
         }
     }
 
@@ -119,7 +120,7 @@ public class RedisDatabase : DatabaseTemplate
     /// <returns>True if connected, false otherwise.</returns>
     public bool IsConnected()
     {
-        return this._connection != null && this._connection.IsConnected;
+        return _connection != null && _connection.IsConnected;
     }
 
     /// <summary>
@@ -127,7 +128,7 @@ public class RedisDatabase : DatabaseTemplate
     /// </summary>
     public async Task<RedisResult> FlushAsync()
     {
-        return await this._database.ExecuteAsync("FLUSHDB");
+        return await _database.ExecuteAsync("FLUSHDB");
     }
 
     /// <summary>
@@ -137,7 +138,7 @@ public class RedisDatabase : DatabaseTemplate
     /// <returns>True if the key exists, false otherwise.</returns>
     public async Task<bool> ExistsAsync(string key)
     {
-        return await this._database.KeyExistsAsync(key);
+        return await _database.KeyExistsAsync(key);
     }
 
     /// <summary>
@@ -147,10 +148,10 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="obj">The object to be saved.</param>
     public async Task SaveAsync(string key, object obj)
     {
-        if (await this.ExistsAsync(key)) return;
+        if (await ExistsAsync(key)) return;
 
         HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
-        await this._database.HashSetAsync(key, fields);
+        await _database.HashSetAsync(key, fields);
     }
 
     /// <summary>
@@ -163,7 +164,7 @@ public class RedisDatabase : DatabaseTemplate
         if (await ExistsAsync(key))
         {
             HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
-            await this._database.HashSetAsync(key, fields);
+            await _database.HashSetAsync(key, fields);
         }
     }
 
@@ -174,7 +175,7 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="message">The message to publish.</param>
     public async Task<long> PublishAsync(string channel, string message)
     {
-        return await this._connection.GetSubscriber().PublishAsync(RedisChannel.Pattern(channel), message);
+        return await _connection.GetSubscriber().PublishAsync(RedisChannel.Pattern(channel), message);
     }
 
     /// <summary>
@@ -185,8 +186,8 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="expire">The number of seconds before the key expires.</param>
     public async Task SaveAsync(string key, object obj, int expire)
     {
-        await this.SaveAsync(key, obj);
-        await this.CacheAsync(key, expire);
+        await SaveAsync(key, obj);
+        await CacheAsync(key, expire);
     }
 
     /// <summary>
@@ -195,7 +196,7 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="key">The key to delete.</param
     public async Task<bool> DeleteAsync(string key)
     {
-        return await this._database.KeyDeleteAsync(key);
+        return await _database.KeyDeleteAsync(key);
     }
 
     /// <summary>
@@ -205,7 +206,7 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="seconds">The number of seconds until expiration.</param>
     public async Task CacheAsync(string key, int seconds)
     {
-        await this._database.KeyExpireAsync(key, TimeSpan.FromSeconds(seconds));
+        await _database.KeyExpireAsync(key, TimeSpan.FromSeconds(seconds));
     }
 
     /// <summary>
@@ -214,9 +215,9 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="key">The key to make persistent.</param>
     public async Task<bool> PersistAsync(string key)
     {
-        if (await this._database.KeyTimeToLiveAsync(key) != null)
+        if (await _database.KeyTimeToLiveAsync(key) != null)
         {
-            return await this._database.KeyPersistAsync(key);
+            return await _database.KeyPersistAsync(key);
         }
 
         return false;
@@ -229,7 +230,7 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="fields">The fields to delete.</param>
     public async Task<long> DeleteAsync(string key, params string[] fields)
     {
-        return await this._database.HashDeleteAsync(key, fields.Select(f => (RedisValue)f).ToArray());
+        return await _database.HashDeleteAsync(key, fields.Select(f => (RedisValue)f).ToArray());
     }
 
     /// <summary>
@@ -240,12 +241,12 @@ public class RedisDatabase : DatabaseTemplate
     /// <returns>The loaded object, or null if not found.</returns>
     public async Task<T?> LoadAsync<T>(string key) where T : class
     {
-        HashEntry[] fields = await this._database.HashGetAllAsync(key);
+        HashEntry[] fields = await _database.HashGetAllAsync(key);
 
         if (fields.Length == 0)
             return null;
 
-        return await this.ConvertFromHashEntriesAsync<T>(fields);
+        return await ConvertFromHashEntriesAsync<T>(fields);
     }
 
     /// <summary>
@@ -256,12 +257,12 @@ public class RedisDatabase : DatabaseTemplate
     /// <returns>A list of matching objects.</returns>
     public async Task<List<T>> LoadAllAsync<T>(string key) where T : class
     {
-        RedisResult keys = await this._database.ExecuteAsync("KEYS", $"{key}*");
+        RedisResult keys = await _database.ExecuteAsync("KEYS", $"{key}*");
         List<T> results = new List<T>();
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
-            HashEntry[] fields = await this._database.HashGetAllAsync(value.Key);
+            HashEntry[] fields = await _database.HashGetAllAsync(value.Key);
 
             if (fields.Length > 0)
             {
@@ -280,11 +281,11 @@ public class RedisDatabase : DatabaseTemplate
     /// <param name="key">The key pattern to match and remove.</param>
     public async Task RemoveAllAsync(string key)
     {
-        RedisResult keys = await this._database.ExecuteAsync("KEYS", $"{key}*");
+        RedisResult keys = await _database.ExecuteAsync("KEYS", $"{key}*");
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
-            await this._database.KeyDeleteAsync(value.Key);
+            await _database.KeyDeleteAsync(value.Key);
         }
     }
 
