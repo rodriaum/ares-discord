@@ -80,11 +80,11 @@ internal class AresCore
 
         MongoDatabase mongoDatabase = new MongoDatabase(new DatabaseCredentials
         {
-            Host = Env.GetString("MONGO_HOST"),
+            Host = Env.GetString("MONGO_HOST", fallback: "127.0.0.1"),
             User = Env.GetString("MONGO_USERNAME"),
-            Database = Env.GetString("MONGO_DATABASE"),
+            Database = Env.GetString("MONGO_DATABASE", fallback: "ares"),
             Password = Env.GetString("MONGO_PASSWORD"),
-            Port = Env.GetInt("MONGO_PORT")
+            Port = Env.GetInt("MONGO_PORT", fallback: 27017),
         });
 
         await mongoDatabase.ConnectAsync();
@@ -96,9 +96,9 @@ internal class AresCore
 
         RedisDatabase redisDatabase = new RedisDatabase(new DatabaseCredentials
         {
-            Host = Env.GetString("REDIS_HOST"),
+            Host = Env.GetString("REDIS_HOST", fallback: "127.0.0.1"),
             Password = Env.GetString("REDIS_PASSWORD"),
-            Port = Env.GetInt("REDIS_PORT")
+            Port = Env.GetInt("REDIS_PORT", fallback: 6379),
         });
 
         await redisDatabase.ConnectAsync();
