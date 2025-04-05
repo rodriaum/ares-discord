@@ -172,7 +172,7 @@ internal class ReceivedContentListener
         string responseText = await AiService.GenerateConversationAsync(guild, guildUser, model, channelId, prompt, botMessage);
 
         // Set color based on model category
-        Color color = AresUtil.GetColorForModelCategory(model.Category);
+        Color color = AresUtil.GetColorByModelCategory(model.Category);
         DateTime date = DateTime.Now;
 
         // Handle Discord's description character limit
@@ -243,7 +243,7 @@ internal class ReceivedContentListener
         (string responseBinary, bool isAudio) = await AiService.GenerateTTSAsync(guild, guildUser, model, channelId, prompt);
 
         // Set color based on model category
-        Color color = AresUtil.GetColorForModelCategory(model.Category);
+        Color color = AresUtil.GetColorByModelCategory(model.Category);
         DateTime date = DateTime.Now;
 
         Optional<IEnumerable<FileAttachment>>? attachments = null;

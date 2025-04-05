@@ -4,13 +4,13 @@
  * Proprietary and confidential
  */
 
-using Discord;
-using Discord.WebSocket;
+using Ares.Ares.Discord.Util;
+using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Objects.Model;
-using Ares.Core.Util;
+using Discord;
 using Discord.Rest;
-using Ares.Core;
+using Discord.WebSocket;
 
 namespace Ares.Discord.Commands;
 
@@ -53,7 +53,7 @@ internal class SetupCommand
         {
             case "setup-ai-menu":
                 embed.Title = "Inteligência Artificial";
-                embed.Description = "Inicie uma conversa com um modelo A.I";
+                embed.Description = "Inicie uma conversa com um modelo AI";
                 embed.ThumbnailUrl = "https://imgur.com/tnh71Er.gif";
 
                 embed.AddField("🤔 Como Funciona", "Escolha um modelo e um canal privado será criado.");
@@ -80,14 +80,14 @@ internal class SetupCommand
                     {
                         if (model.Category != category) continue;
 
-                        var (emote, modelText) = model.Type switch
-                        {   
-                            ModelType.Chat => (new Emoji("\U0001F4DC"), "Chat"),         // 📜
-                            ModelType.Question => (new Emoji("\U0001F4C3"), "Questão"),  // 📃
-                            ModelType.Image => (new Emoji("\U0001F4F7"), "Imagem"),      // 📷
-                            ModelType.TTS => (new Emoji("\U0001F50A"), "Audio"),         // 🔊
-                            ModelType.Vision => (new Emoji("\U0001F441"), "Visão"),      // 👁️
-                            _ => (new Emoji("\U00002753"), "Desconhecido")               // ❓
+                        var modelText = model.Type switch
+                        {
+                            ModelType.Chat => "Chat",
+                            ModelType.Question => "Questão",
+                            ModelType.Image => "Imagem",
+                            ModelType.TTS => "Audio",
+                            ModelType.Vision => "Visão",
+                            _ => "Desconhecido"
                         };
 
                         string availableText = (model.Exclusive ? "Exclusivo" : (model.Available ? "Disponível" : "Indisponível"));
@@ -97,7 +97,7 @@ internal class SetupCommand
                             Label = model.DisplayName,
                             Value = model.Model,
                             Description = $"{modelText}: {availableText}",
-                            Emote = emote
+                            Emote = AresUtil.GetEmojiByModelType(model.Type)
                         });
                     }
 
