@@ -73,6 +73,13 @@ public class LangKeys
     public static readonly string ModelDescGpt4o = "model-desc-gpt-4o";
     public static readonly string ModelDescGpt4oMini = "model-desc-gpt-4o-mini";
     public static readonly string ModelDescGpt4oS = "model-desc-gpt-4o-s";
+    public static readonly string ModelDescGemini25ProPreview = "model-desc-gemini-2.5-pro-preview";
+    public static readonly string ModelDescGemini20Flash = "model-desc-gemini-2.0-flash";
+    public static readonly string ModelDescGemini20FlashLite = "model-desc-gemini-2.0-flash-lite";
+    public static readonly string ModelDescGemini15Flash = "model-desc-gemini-1.5-flash";
+    public static readonly string ModelDescGemini15Flash8B = "model-desc-gemini-1.5-flash-8b";
+    public static readonly string ModelDescGemini15Pro = "model-desc-gemini-1.5-pro";
+    public static readonly string ModelDescImagen3Generate002 = "model-desc-imagen-3.0-generate-002";
     public static readonly string HelloMessage = "hello-message";
     public static readonly string GoodMorning = "good-morning";
     public static readonly string GoodAftermoon = "good-aftermoon";
