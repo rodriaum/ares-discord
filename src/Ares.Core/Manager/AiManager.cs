@@ -349,6 +349,87 @@ public class AiManager
                 price: new ChatPriceUsage(),
                 available: false
             ),
+
+            /*
+             * Google Models
+             */
+
+            new(
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 2.5 Pro Preview",
+                model: "gemini-2.5-pro-preview-03-25",
+                descriptionKey: LangKeys.ModelDescGemini25ProPreview,
+                task: ModelTaskCategory.Reasoning,
+                price: new ChatPriceUsage(),
+                exclusive: true
+            ),
+
+            new(
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 2.0 Flash",
+                model: "gemini-2.0-flash",
+                descriptionKey: LangKeys.ModelDescGemini20Flash,
+                task: ModelTaskCategory.Flagship,
+                price: new ChatPriceUsage(),
+                available: true
+            ),
+
+            new(
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 2.0 Flash-Lite",
+                model: "gemini-2.0-flash-lite",
+                descriptionKey: LangKeys.ModelDescGemini20FlashLite,
+                task: ModelTaskCategory.CostOptimized,
+                price: new ChatPriceUsage(),
+                available: true
+            ),
+
+            new(
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 1.5 Flash",
+                model: "gemini-1.5-flash",
+                descriptionKey: LangKeys.ModelDescGemini15Flash,
+                task: ModelTaskCategory.CostOptimized,
+                price: new ChatPriceUsage(),
+                available: true
+            ),
+
+            new(
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 1.5 Flash-8B",
+                model: "gemini-1.5-flash-8b",
+                descriptionKey: LangKeys.ModelDescGemini15Flash8B,
+                task: ModelTaskCategory.CostOptimized,
+                price: new ChatPriceUsage(),
+                available: true
+            ),
+
+            new(
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 1.5 Pro",
+                model: "gemini-1.5-pro",
+                descriptionKey: LangKeys.ModelDescGemini15Pro,
+                task: ModelTaskCategory.Reasoning,
+                price: new ChatPriceUsage(),
+                available: true
+            ),
+
+            new(
+                category: ModelCategory.Google,
+                type: ModelType.Image,
+                display: "Imagen 3",
+                model: "imagen-3.0-generate-002",
+                descriptionKey: LangKeys.ModelDescImagen3Generate002,
+                task: ModelTaskCategory.Image,
+                price: new ChatPriceUsage(),
+                available: true
+            ),
         };
 
         // Empty Message

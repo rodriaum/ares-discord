@@ -27,15 +27,20 @@ public class GTokenModel
     public string? xAI { get; set; }
 
     [JsonInclude]
+    [JsonPropertyName("google")]
+    public string? Google { get; set; }
+
+    [JsonInclude]
     [JsonPropertyName("imgur")]
     public string? Imgur { get; set; }
 
-    public GTokenModel(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? imgur = "")
+    public GTokenModel(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? google = "", string? imgur = "")
     {
         this.OpenAi = openai;
         this.Anthropic = anthropic;
         this.Deepseek = deepseek;
         this.xAI = xai;
+        this.Google = google;
         this.Imgur = imgur;
     }
 }
