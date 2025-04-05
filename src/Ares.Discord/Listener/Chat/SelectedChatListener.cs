@@ -142,18 +142,10 @@ internal class SelectedChatListener
                 }
             }
 
-            string emote = model.Type switch
-            {
-                ModelType.Chat => "\U0001F4DC",             // 📜
-                ModelType.Question => "\U0001F4D3",         // 📃
-                ModelType.Image => "\U0001F4F7",            // 📷
-                ModelType.TTS => "\U0001F50A",              // 🔊
-                ModelType.Vision => "\U0001F441\U0000FE0F", // 👁️
-                _ => "\U00002753"                           // ❓
-            };
+            string emojiUnicode = AresUtil.GetEmojiByModelType(model.Type).ToString();
 
             SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
-            RestTextChannel channel = await socketGuild.CreateTextChannelAsync($"{emote}┃{user.GlobalName}", properties => properties.CategoryId = category.Id);
+            RestTextChannel channel = await socketGuild.CreateTextChannelAsync($"{emojiUnicode}┃{user.GlobalName}", properties => properties.CategoryId = category.Id);
 
             GChatInfoModel info = new GChatInfoModel
                 (
@@ -161,6 +153,17 @@ internal class SelectedChatListener
                     channel: channel.Id,
                     model: model.Model
                 );
+
+            DateTime time = DateTime.Now;
+
+            string greetingKey = (time.Hour >= 5 && time.Hour < 12) ? LangKeys.GoodMorning :
+                  (time.Hour >= 12 && time.Hour < 18) ? LangKeys.GoodAftermoon :
+                  LangKeys.GoodNight;
+
+            string helloMessage = string.Format(guild.GetTranslation(LangKeys.HelloMessage), guild.GetTranslation(greetingKey), user.GlobalName);
+
+            GChatHistoricModel historic = new GChatHistoricModel(system: helloMessage);
+            info.Historics.Add(historic);
 
             if (!await guild.CreateChatData(user, info))
             {
@@ -172,7 +175,7 @@ internal class SelectedChatListener
             EmbedBuilder infoEmbed = new EmbedBuilder()
                 .WithTitle("Informação")
                 .WithColor(Color.Green)
-                .WithFooter(footer => footer.WithText($"{DateTime.Now.Year} - Ares"));
+                .WithFooter(footer => footer.WithText($"{time.Year} - Ares"));
 
             infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldModel), model.DisplayName);
             infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldRules), guild.GetTranslation(LangKeys.ChatDescriptionRules));
@@ -279,16 +282,10 @@ internal class SelectedChatListener
              * Hello Message
              */
 
-            DateTime time = DateTime.Now;
-
-            string greetingKey = (time.Hour >= 5 && time.Hour < 12) ? LangKeys.GoodMorning :
-                  (time.Hour >= 12 && time.Hour < 18) ? LangKeys.GoodAftermoon :
-                  LangKeys.GoodNight;
-
             EmbedBuilder helloEmbed = new EmbedBuilder()
                 .WithTitle("Ares")
-                .WithDescription(string.Format(guild.GetTranslation(LangKeys.HelloMessage), guild.GetTranslation(greetingKey), user.GlobalName))
-                .WithColor(AresUtil.GetColorForModelCategory(model.Category))
+                .WithDescription(helloMessage)
+                .WithColor(AresUtil.GetColorByModelCategory(model.Category))
                 .WithFooter(footer => footer.WithText($"{time.Year} - Ares | {model.DisplayName}"));
 
             await channel.SendMessageAsync(embed: helloEmbed.Build());

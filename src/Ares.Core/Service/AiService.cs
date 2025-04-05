@@ -158,7 +158,15 @@ public class AiService
         string prompt,
         ImageGenerationOptions options)
     {
-        ImageClient client = new ImageClient(model.Model, token);
+        OpenAIClientOptions clientOptions = new OpenAIClientOptions { Endpoint = model.Category.GetEndpoint() };
+
+        ImageClient client = new ImageClient
+        (
+            model: model.Model,
+            credential: new ApiKeyCredential(token),
+            options: clientOptions
+        );
+
         return await client.GenerateImageAsync(prompt, options);
     }
 
@@ -203,13 +211,7 @@ public class AiService
 
         try
         {
-            switch (model.Category)
-            {
-                case ModelCategory.OpenAI:
-                    return await HandleOpenAiTTS(guild, user, model, prompt, tokenData);
-                default:
-                    return (guild.GetTranslation(LangKeys.ModelNotFound), false);
-            }
+            return await HandleOpenAiTTS(guild, user, model, prompt, tokenData);
         }
         catch (Exception e)
         {
@@ -235,7 +237,15 @@ public class AiService
         if (string.IsNullOrWhiteSpace(token))
             return (guild.GetTranslation(LangKeys.CouldNotFindToken), false);
 
-        OpenAIClient client = new(token);
+        // Create client options
+        OpenAIClientOptions clientOptions = new OpenAIClientOptions { Endpoint = model.Category.GetEndpoint() };
+
+        OpenAIClient client = new OpenAIClient
+        (
+            credential: new ApiKeyCredential(token),
+            options: clientOptions
+        );
+
         AudioClient ttsClient = client.GetAudioClient(model.Model);
 
         ClientResult<BinaryData> result = await ttsClient.GenerateSpeechAsync(prompt, GeneratedSpeechVoice.Alloy);
@@ -317,6 +327,7 @@ public class AiService
             ModelCategory.Anthropic => tokenData.Anthropic,
             ModelCategory.DeepSeek => tokenData.Deepseek,
             ModelCategory.xAI => tokenData.xAI,
+            ModelCategory.Google => tokenData.Google,
             _ => null
         };
 

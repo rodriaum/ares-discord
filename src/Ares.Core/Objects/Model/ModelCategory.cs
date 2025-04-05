@@ -20,7 +20,10 @@ public enum ModelCategory
     DeepSeek,
 
     [WebApi(endpoint: "https://api.x.ai/v1", streamingResponses: true)]
-    xAI
+    xAI,
+
+    [WebApi(endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/", streamingResponses: true)]
+    Google
 }
 
 [AttributeUsage(AttributeTargets.Field)]

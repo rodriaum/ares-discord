@@ -131,35 +131,36 @@ internal class ConfigCommand
 
                 /*
                  * Token Configuration
+                 * It only saves if the token is different. There is no message to prevent brute force.
                  */
 
                 case "openai":
                     tokenData.OpenAi = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
                     tokenChange = tokenData.OpenAi != optionValue;
                     break;
 
                 case "anthropic":
                     tokenData.Anthropic = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
                     tokenChange = tokenData.Anthropic != optionValue;
                     break;
 
                 case "deepseek":
                     tokenData.Deepseek = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
                     tokenChange = tokenData.Deepseek != optionValue;
                     break;
 
                 case "xai":
                     tokenData.xAI = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
                     tokenChange = tokenData.xAI != optionValue;
+                    break;
+
+                case "google":
+                    tokenData.Google = optionValue;
+                    tokenChange = tokenData.Google != optionValue;
                     break;
 
                 case "imgur":
                     tokenData.Imgur = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
                     tokenChange = tokenData.Imgur != optionValue;
                     break;
 
@@ -226,7 +227,7 @@ internal class ConfigCommand
                 .Replace("{1}", optionValue ?? "N/A"));
         }
 
-        // Só uma opção pode ser alterada por comando, por isso o uso de uma variável booleana apenas.
+        // Only one option can be changed per command, hence the use of only one boolean variable.
         bool success = false;
 
         if (tokenChange)
@@ -253,7 +254,7 @@ internal class ConfigCommand
             await message.ModifyAsync(msg =>
                 msg.Embed = embed
                     .WithDescription(guild.GetTranslation(LangKeys.ConfigUpdateUnSuccess))
-                    .WithColor(Color.Red)
+                    .WithColor(Color.Gold)
                     .Build()
                 );
         }

@@ -23,20 +23,22 @@ public class GChatHistoricModel
     [JsonInclude]
     [JsonPropertyName("system")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string System { get; set; }
+    public string? System { get; set; }
 
     /// <summary>
     /// Pergunta ou comando enviado pelo usuário.
     /// </summary>
     [JsonInclude]
     [JsonPropertyName("prompt")]
-    public string Prompt { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Prompt { get; set; }
 
     /// <summary>
     /// Resposta gerada pela AI, se aplicável.
     /// </summary>
     [JsonInclude]
     [JsonPropertyName("response")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Response { get; set; }
 
     /// <summary>
@@ -70,7 +72,7 @@ public class GChatHistoricModel
     /// <param name="imageUrl">Opcional: Url da Image</param>
     /// <param name="usage">Uso de Tokens</param>
     /// <param name="timestamp">Timestamp da Conversa</param>
-    public GChatHistoricModel(string system = "", string prompt = "", string? response = "", string? imageUrl = null, ChatValueUsage? usage = null, long timestamp = -1)
+    public GChatHistoricModel(string? system = null, string? prompt = null, string? response = null, string? imageUrl = null, ChatValueUsage? usage = null, long timestamp = -1)
     {
         this.System = system;
         this.Prompt = prompt;
@@ -162,7 +164,7 @@ public class GChatHistoricModel
     ///  Obtém mensagens do histórico de chat da OpenAI.
     /// </summary>
     /// <param name="historics">Lista de históricos de chat armazenados.</param>
-    public static List<ChatMessage> ToSystemMessage(List<GChatHistoricModel>? historics)
+    public static List<ChatMessage> ToChatMessages(List<GChatHistoricModel>? historics)
     {
         if (historics == null || historics.Count == 0)
         {
@@ -173,6 +175,11 @@ public class GChatHistoricModel
 
         foreach (GChatHistoricModel historic in historics)
         {
+            if (!string.IsNullOrWhiteSpace(historic.System))
+            {
+                messages.Add(new SystemChatMessage(historic.System));
+            }
+
             if (!string.IsNullOrWhiteSpace(historic.Prompt))
             {
                 messages.Add(new UserChatMessage(historic.Prompt));
