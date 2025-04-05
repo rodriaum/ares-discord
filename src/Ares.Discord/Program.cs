@@ -6,6 +6,7 @@
 
 using Ares.Core;
 using Ares.Core.Manager;
+using Ares.Core.Objects.Model;
 using Ares.Core.Service;
 using Ares.Core.Util;
 using Ares.Discord.Commands;
@@ -187,12 +188,36 @@ internal class Program
     {
         // Get available language options
         var langOptionChoices = AresCore.LangManager.GetLanguages()
-            .Select(langCategory => new ApplicationCommandOptionChoiceProperties
+            .Select(category => new ApplicationCommandOptionChoiceProperties
             {
-                Name = langCategory.Name,
-                Value = langCategory.Code
+                Name = category.Name,
+                Value = category.Code
             })
             .ToList();
+
+        var configTokenOptions = Enum.GetValues(typeof(ModelCategory))
+            .Cast<ModelCategory>()
+            // Add all models.
+            .Select(model => new SlashCommandOptionBuilder
+            {
+                Type = ApplicationCommandOptionType.String,
+                Name = model.ToString().ToLower(), // Fix: Name cannot contain any uppercase characters.
+                Description = $"Access: {model.GetEndpoint()}",
+                IsRequired = false
+            })
+            // Add imgur token to permanent media.
+            .Concat(new[]
+            {
+                new SlashCommandOptionBuilder
+                {
+                    Type = ApplicationCommandOptionType.String,
+                    Name = "imgur",
+                    Description = "Access: https://api.imgur.com/oauth2/addclient",
+                    IsRequired = false
+                }
+            })
+            .ToArray();
+
 
         // Define all slash commands
         List<SlashCommandBuilder> commands = new List<SlashCommandBuilder>
@@ -207,43 +232,7 @@ internal class Program
                 .WithName("config-token")
                 .WithDescription("Configure tokens for the current server.")
                 .WithDefaultMemberPermissions(GuildPermission.Administrator)
-                .AddOptions(
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.String,
-                        Name = "openai",
-                        Description = "Access: https://platform.openai.com/settings/organization/api-keys",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.String,
-                        Name = "anthropic",
-                        Description = "Access: https://console.anthropic.com/settings/keys",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.String,
-                        Name = "deepseek",
-                        Description = "Access: https://platform.deepseek.com/api_keys",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.String,
-                        Name = "xai",
-                        Description = "Access: https://console.x.ai/team/api-keys",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.String,
-                        Name = "imgur",
-                        Description = "Access: https://api.imgur.com/oauth2/addclient",
-                        IsRequired = false
-                    }
-                ),
+                .AddOptions(configTokenOptions),
 
             // ID configuration command
             new SlashCommandBuilder()
