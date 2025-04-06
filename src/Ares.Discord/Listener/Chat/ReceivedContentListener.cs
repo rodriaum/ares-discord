@@ -161,7 +161,7 @@ internal class ReceivedContentListener
 
     private async Task ProcessChatModel(
         Guild guild,
-        SocketGuildUser guildUser,
+        SocketGuildUser user,
         ChatModel model,
         ulong channelId,
         string prompt,
@@ -169,31 +169,43 @@ internal class ReceivedContentListener
         EmbedBuilder embed,
         List<GChatHistoricModel>? historics)
     {
-        string responseText = await AiService.GenerateConversationAsync(guild, guildUser, model, channelId, prompt, botMessage);
-
-        // Set color based on model category
-        Color color = AresUtil.GetColorByModelCategory(model.Category);
         DateTime date = DateTime.Now;
+        EmbedBuilder? priceEmbed = null;
 
-        // Handle Discord's description character limit
-        if (responseText.Length > 4096)
+        var (responseText, success) = await AiService.GenerateConversationAsync(guild, user, model, channelId, prompt, botMessage);
+
+        if (success)
         {
-            embed.WithDescription(responseText.Substring(0, 4096))
-                .WithColor(color)
-                .WithFooter($"{date.Year} - Ares | {model.DisplayName} (Limite de caracteres alcançado)");
+            // Set color based on model category
+            Color color = AresUtil.GetColorByModelCategory(model.Category);
+
+            // Handle Discord's description character limit
+            if (responseText.Length > 4096)
+            {
+                embed.WithDescription(responseText.Substring(0, 4096))
+                    .WithColor(color)
+                    .WithFooter($"{date.Year} - Ares | {model.DisplayName} (♾️)");
+            }
+            else
+            {
+                embed.WithDescription(responseText)
+                    .WithColor(color)
+                    .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
+            }
+
+            // Atualiza o historico de chat após a geracão.
+            historics = guild.ChatHistorics(user, channel: channelId);
+
+            // Process pricing information
+            priceEmbed = CreatePriceEmbedForChat(guild, model, historics);
         }
         else
         {
             embed.WithDescription(responseText)
-                .WithColor(color)
+                .WithColor(Color.Red)
                 .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
         }
 
-        // Atualiza o historico de chat apos a geracao.
-        historics = guild.ChatHistorics(guildUser, channel: channelId);
-
-        // Process pricing information
-        EmbedBuilder? priceEmbed = CreatePriceEmbedForChat(guild, model, historics);
         await UpdateBotMessage(botMessage, embed, priceEmbed);
     }
 
@@ -210,18 +222,26 @@ internal class ReceivedContentListener
     {
         ImageGenOptions options = info.ImageGenOptions ?? new ImageGenOptions();
 
-        string responseImageUrl = await AiService.GenerateImageUrlAsync(guild, guildUser, model, options, channelId, prompt);
+        var (responseImageUrl, success) = await AiService.GenerateImageUrlAsync(guild, guildUser, model, options, channelId, prompt);
 
-        // Check if the result is a valid URL
-        if (WebUtil.IsValidUrl(responseImageUrl))
+        if (success)
         {
-            embed.WithDescription(guild.GetTranslation(LangKeys.Success))
-                .WithColor(Color.Green)
-                .WithImageUrl(responseImageUrl);
+            // Check if the result is a valid URL
+            if (WebUtil.IsValidUrl(responseImageUrl))
+            {
+                embed.WithDescription(guild.GetTranslation(LangKeys.Success))
+                    .WithColor(Color.Green)
+                    .WithImageUrl(responseImageUrl);
+            }
+            else
+            {
+                embed.WithDescription(responseImageUrl)
+                    .WithColor(Color.Red);
+            }
         }
         else
         {
-            embed.WithDescription(responseImageUrl)
+            embed.WithDescription(guild.GetTranslation(LangKeys.UnableGenerateOrder))
                 .WithColor(Color.Red);
         }
 

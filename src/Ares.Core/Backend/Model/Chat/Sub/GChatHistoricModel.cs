@@ -72,7 +72,13 @@ public class GChatHistoricModel
     /// <param name="imageUrl">Opcional: Url da Image</param>
     /// <param name="usage">Uso de Tokens</param>
     /// <param name="timestamp">Timestamp da Conversa</param>
-    public GChatHistoricModel(string? system = null, string? prompt = null, string? response = null, string? imageUrl = null, ChatValueUsage? usage = null, long timestamp = -1)
+    public GChatHistoricModel(
+            string? system = null, 
+            string? prompt = null, 
+            string? response = null, 
+            string? imageUrl = null, 
+            ChatValueUsage? usage = null, 
+            long timestamp = -1)
     {
         this.System = system;
         this.Prompt = prompt;
@@ -130,41 +136,7 @@ public class GChatHistoricModel
     ///  Obtém mensagens do histórico de chat da OpenAI.
     /// </summary>
     /// <param name="historics">Lista de históricos de chat armazenados.</param>
-    public static List<ChatMessage> ToChatOpenAiMessages(List<GChatHistoricModel>? historics)
-    {
-        if (historics == null || historics.Count == 0)
-        {
-            return new List<ChatMessage>();
-        }
-
-        List<ChatMessage> messages = new List<ChatMessage>();
-
-        foreach (GChatHistoricModel historic in historics)
-        {
-            if (!string.IsNullOrWhiteSpace(historic.System))
-            {
-                messages.Add(new SystemChatMessage(historic.System));
-            }
-
-            if (!string.IsNullOrWhiteSpace(historic.Prompt))
-            {
-                messages.Add(new UserChatMessage(historic.Prompt));
-            }
-
-            if (!string.IsNullOrWhiteSpace(historic.Response))
-            {
-                messages.Add(new AssistantChatMessage(historic.Response));
-            }
-        }
-
-        return messages;
-    }
-
-    /// <summary>
-    ///  Obtém mensagens do histórico de chat da OpenAI.
-    /// </summary>
-    /// <param name="historics">Lista de históricos de chat armazenados.</param>
-    public static List<ChatMessage> ToChatMessages(List<GChatHistoricModel>? historics)
+    public static List<ChatMessage> To(List<GChatHistoricModel>? historics)
     {
         if (historics == null || historics.Count == 0)
         {

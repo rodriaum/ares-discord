@@ -34,10 +34,12 @@ class GuildListener
         GuildCollection? data = AresCore.GuildCollection;
         if (data == null) return;
 
+        await AresLogger.LogAsync(nameof(GuildAvailable), $"Searching and caching guild \"{sguild.Id}\" in Redis.");
+
         Guild? guild = await data.FetchAsync(sguild.Id, saveInRedis: true);
         if (guild != null) return;
 
-        await AresLogger.LogAsync(nameof(GuildUnavailable), $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
+        await AresLogger.LogAsync(nameof(GuildAvailable), $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
 
         await data.SaveAsync(sguild.Id);
     }
