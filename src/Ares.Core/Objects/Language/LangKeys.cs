@@ -82,7 +82,7 @@ public class LangKeys
     public static readonly string ModelDescImagen3Generate002 = "model-desc-imagen-3.0-generate-002";
     public static readonly string HelloMessage = "hello-message";
     public static readonly string GoodMorning = "good-morning";
-    public static readonly string GoodAftermoon = "good-aftermoon";
+    public static readonly string GoodAfternoon = "good-afternoon";
     public static readonly string GoodNight = "good-night";
     public static readonly string OverloadedError = "overloaded-error";
     public static readonly string ModelDevMode = "model-dev-mode";

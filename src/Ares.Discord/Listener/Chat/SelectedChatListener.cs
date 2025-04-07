@@ -163,7 +163,7 @@ internal class SelectedChatListener
             DateTime time = DateTime.Now;
 
             string greetingKey = (time.Hour >= 5 && time.Hour < 12) ? LangKeys.GoodMorning :
-                  (time.Hour >= 12 && time.Hour < 18) ? LangKeys.GoodAftermoon :
+                  (time.Hour >= 12 && time.Hour < 18) ? LangKeys.GoodAfternoon :
                   LangKeys.GoodNight;
 
             string helloMessage = string.Format(guild.GetTranslation(LangKeys.HelloMessage), guild.GetTranslation(greetingKey), user.GlobalName);

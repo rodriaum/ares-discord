@@ -490,7 +490,7 @@ public class AiManager
 
             new(
                 request: ChatRequestType.Local,
-                category: ModelCategory.Other,
+                category: ModelCategory.Microsoft,
                 type: ModelType.Chat,
                 display: "Phi (2.7b)",
                 model: "phi:latest",
