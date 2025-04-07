@@ -13,7 +13,7 @@ namespace Ares.Core.Objects.Model;
 
 public class ChatModel
 {
-    public ChatRequestCategory Request;
+    public ChatRequestType RequestType;
     public ModelCategory Category;
     public ModelType Type;
     public string DisplayName;
@@ -27,7 +27,7 @@ public class ChatModel
 
     public ChatModel
         (
-            ChatRequestCategory request,
+            ChatRequestType request,
             ModelCategory category,
             ModelType type,
             string display,
@@ -40,7 +40,7 @@ public class ChatModel
             bool dev = false
         )
     {
-        this.Request = request;
+        this.RequestType = request;
         this.Category = category;
         this.Type = type;
         this.DisplayName = display;

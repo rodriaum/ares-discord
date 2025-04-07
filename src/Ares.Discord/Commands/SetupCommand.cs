@@ -96,7 +96,7 @@ internal class SetupCommand
                         {
                             Label = model.DisplayName,
                             Value = model.Model,
-                            Description = $"{modelText}: {availableText}",
+                            Description = $"{modelText} ({model.RequestType.ToString()}): {availableText}",
                             Emote = AresUtil.GetEmojiByModelType(model.Type)
                         });
                     }

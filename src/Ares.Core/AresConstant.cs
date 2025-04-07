@@ -26,4 +26,13 @@ internal class AresConstant
      */
 
     public static readonly string LoadingEmote = ":hourglass:";
+
+    /*
+     * IDs
+     */
+
+    public static readonly List<string> DeveloperUserIds = new List<string>
+    {
+        "1065788770739294289" // Rodriaum
+    };
 }

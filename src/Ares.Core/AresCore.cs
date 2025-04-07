@@ -11,6 +11,7 @@ using Ares.Ares.Core.Database.Repository;
 using Ares.Ares.Core.Monitor;
 using Ares.Core.Database.Collection;
 using Ares.Core.Manager;
+using Discord;
 using DotNetEnv;
 using OllamaSharp;
 using System.Runtime.CompilerServices;
@@ -73,6 +74,11 @@ internal class AresCore
 
         await MongoDatabase.CloseAsync();
         await RedisDatabase.CloseAsync();
+    }
+
+    public static bool IsDeveloper(IUser user)
+    {
+        return AresConstant.DeveloperUserIds.Any(id => id.Equals(user.Id.ToString()));
     }
 
     /// <summary>

@@ -119,7 +119,7 @@ internal class SelectedChatListener
                 return;
             }
 
-            if (model.Dev)
+            if (model.Dev && !AresCore.IsDeveloper(user))
             {
                 await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.ModelDevMode));
                 return;

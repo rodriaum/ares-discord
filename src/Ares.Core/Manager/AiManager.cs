@@ -44,7 +44,7 @@ public class AiManager
              */
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "GPT-4.5 Preview",
@@ -56,7 +56,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "o1 Pro",
@@ -68,7 +68,7 @@ public class AiManager
             ),
 
             new(
-                request : ChatRequestCategory.WEB,
+                request : ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "o1",
@@ -80,7 +80,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "o1-mini",
@@ -91,7 +91,7 @@ public class AiManager
             ),
 
             new(
-                request : ChatRequestCategory.WEB,
+                request : ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "o3-mini",
@@ -103,7 +103,7 @@ public class AiManager
             ),
 
             new(
-                request : ChatRequestCategory.WEB,
+                request : ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "GPT-4o",
@@ -115,7 +115,7 @@ public class AiManager
             ),
 
             new(
-                request : ChatRequestCategory.WEB,
+                request : ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "GPT-4o Mini",
@@ -127,7 +127,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "GPT-4o Search Preview",
@@ -139,7 +139,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "GPT-4o Mini Search Preview",
@@ -150,7 +150,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "GPT-4 Turbo",
@@ -161,7 +161,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
                 display: "GPT-3 Turbo",
@@ -172,7 +172,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Image,
                 display: "DALL·E 3",
@@ -191,7 +191,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Image,
                 display: "DALL·E 2",
@@ -209,7 +209,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.TTS,
                 display: "TTS 1",
@@ -220,7 +220,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.TTS,
                 display: "TTS 1 HD",
@@ -235,7 +235,7 @@ public class AiManager
              */
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude v2.1",
@@ -245,7 +245,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude v2.0",
@@ -255,7 +255,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude Instant v1.2",
@@ -265,7 +265,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude 3 Opus",
@@ -275,7 +275,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude 3 Sonnet",
@@ -285,7 +285,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude 3.7 Sonnet",
@@ -295,7 +295,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude 3.5 Sonnet",
@@ -305,7 +305,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude 3.5 Haiku",
@@ -315,7 +315,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
                 display: "Claude 3 Haiku",
@@ -329,7 +329,7 @@ public class AiManager
              */
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.DeepSeek,
                 type: ModelType.Chat,
                 display: "Deepseek V3",
@@ -340,7 +340,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.DeepSeek,
                 type: ModelType.Chat,
                 display: "Deepseek R1",
@@ -355,7 +355,7 @@ public class AiManager
              */
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.xAI,
                 type: ModelType.Chat,
                 display: "Grok 2",
@@ -365,7 +365,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.xAI,
                 type: ModelType.Vision,
                 display: "Grok 2 Vision",
@@ -376,7 +376,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.xAI,
                 type: ModelType.Image,
                 display: "Grok 2 Image",
@@ -391,7 +391,7 @@ public class AiManager
              */
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Google,
                 type: ModelType.Chat,
                 display: "Gemini 2.5 Pro Preview",
@@ -403,7 +403,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Google,
                 type: ModelType.Chat,
                 display: "Gemini 2.0 Flash",
@@ -415,7 +415,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Google,
                 type: ModelType.Chat,
                 display: "Gemini 2.0 Flash-Lite",
@@ -427,7 +427,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Google,
                 type: ModelType.Chat,
                 display: "Gemini 1.5 Flash",
@@ -439,7 +439,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Google,
                 type: ModelType.Chat,
                 display: "Gemini 1.5 Flash-8B",
@@ -451,7 +451,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Google,
                 type: ModelType.Chat,
                 display: "Gemini 1.5 Pro",
@@ -463,7 +463,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.WEB,
+                request: ChatRequestType.Web,
                 category: ModelCategory.Google,
                 type: ModelType.Image,
                 display: "Imagen 3",
@@ -479,7 +479,7 @@ public class AiManager
              */
 
             new(
-                request: ChatRequestCategory.LOCAL,
+                request: ChatRequestType.Local,
                 category: ModelCategory.DeepSeek,
                 type: ModelType.Chat,
                 display: "Deepseek R1 (14b)",
@@ -489,7 +489,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.LOCAL,
+                request: ChatRequestType.Local,
                 category: ModelCategory.Other,
                 type: ModelType.Chat,
                 display: "Phi (2.7b)",
@@ -499,7 +499,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.LOCAL,
+                request: ChatRequestType.Local,
                 category: ModelCategory.Microsoft,
                 type: ModelType.Chat,
                 display: "Phi 3 (3.8b)",
@@ -509,8 +509,8 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.LOCAL,
-                category: ModelCategory.Other,
+                request: ChatRequestType.Local,
+                category: ModelCategory.MetaAI,
                 type: ModelType.Chat,
                 display: "LLaMA 3.2 (1b)",
                 model: "llama3.2:1b",
@@ -519,7 +519,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.LOCAL,
+                request: ChatRequestType.Local,
                 category: ModelCategory.Other,
                 type: ModelType.Chat,
                 display: "TinyLLaMA (1.1b)",
@@ -529,7 +529,7 @@ public class AiManager
             ),
 
             new(
-                request: ChatRequestCategory.LOCAL,
+                request: ChatRequestType.Local,
                 category: ModelCategory.DeepSeek,
                 type: ModelType.Chat,
                 display: "Deepseek R1 (7b)",
@@ -547,7 +547,7 @@ public class AiManager
 
         foreach (ChatModel model in models)
         {
-            if (ollama != null && model.Request == ChatRequestCategory.LOCAL)
+            if (ollama != null && model.RequestType == ChatRequestType.Local)
             {
                 if (localModels.Any(m => m.Name.Equals(model.Model, StringComparison.OrdinalIgnoreCase)))
                     continue;
