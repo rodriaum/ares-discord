@@ -17,12 +17,17 @@ using Ares.Core.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
+using OllamaSharp;
+using OllamaSharp.Models;
+using OllamaSharp.Models.Chat;
 using OpenAI;
 using OpenAI.Audio;
 using OpenAI.Chat;
 using OpenAI.Images;
+using System;
 using System.ClientModel;
 using System.Text;
+using ZstdSharp.Unsafe;
 
 namespace Ares.Core.Service;
 
@@ -218,6 +223,16 @@ public class AiService
         {
             return (errorMessage, false);
         }
+
+        OllamaApiClient ollama = new OllamaApiClient(new Uri("http://localhost:11434"));
+
+        ollama.SelectedModel = model.Model;
+
+        Chat chat = new Chat(ollama);
+
+        await foreach (var answerToken in chat.SendAsync(prompt))
+            Console.Write(answerToken);
+
 
         if (model.Type != ModelType.Chat)
         {

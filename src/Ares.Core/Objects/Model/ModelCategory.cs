@@ -10,20 +10,50 @@ namespace Ares.Core.Objects.Model;
 
 public enum ModelCategory
 {
+    /// <summary>
+    /// OpenAI
+    /// </summary>
     [WebApi(endpoint: "https://api.openai.com/v1", streamingResponses: true)]
     OpenAI,
 
+    /// <summary>
+    /// Anthropic
+    /// </summary>
     [WebApi(endpoint: "https://api.anthropic.com/v1/", streamingResponses: false)]
     Anthropic,
 
+    /// <summary>
+    /// DeepSeek
+    /// </summary>
     [WebApi(endpoint: "https://api.deepseek.com", streamingResponses: true)]
     DeepSeek,
 
+    /// <summary>
+    /// xAI
+    /// </summary>
     [WebApi(endpoint: "https://api.x.ai/v1", streamingResponses: true)]
     xAI,
 
+    /// <summary>
+    /// Google
+    /// </summary>
     [WebApi(endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/", streamingResponses: true)]
-    Google
+    Google,
+
+    /// <summary>
+    /// Meta AI
+    /// </summary>
+    MetaAI,
+
+    /// <summary>
+    /// Microsoft
+    /// </summary>
+    Microsoft,
+
+    /// <summary>
+    /// Others
+    /// </summary>
+    Other
 }
 
 [AttributeUsage(AttributeTargets.Field)]
@@ -32,7 +62,7 @@ public class WebApiAttribute : Attribute
     public string Endpoint { get; }
     public bool StreamingResponses { get; }
 
-    public WebApiAttribute(string endpoint, bool streamingResponses)
+    public WebApiAttribute(string endpoint = "", bool streamingResponses = false)
     {
         Endpoint = endpoint;
         StreamingResponses = streamingResponses;

@@ -85,4 +85,5 @@ public class LangKeys
     public static readonly string GoodAftermoon = "good-aftermoon";
     public static readonly string GoodNight = "good-night";
     public static readonly string OverloadedError = "overloaded-error";
+    public static readonly string ModelDevMode = "model-dev-mode";
 }

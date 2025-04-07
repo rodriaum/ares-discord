@@ -116,7 +116,7 @@ internal class Program
         await RegisterCommands();
 
         // Initialize managers
-        new AiManager();
+        await new AiManager().Init();
 
         // Configure bot status
         await ConfigureBotStatus();

@@ -13,6 +13,7 @@ namespace Ares.Core.Objects.Model;
 
 public class ChatModel
 {
+    public ChatRequestCategory Request;
     public ModelCategory Category;
     public ModelType Type;
     public string DisplayName;
@@ -22,20 +23,24 @@ public class ChatModel
     public ChatPriceUsage? Price;
     public bool Exclusive;
     public bool Available;
+    public bool Dev;
 
     public ChatModel
         (
-            ModelCategory category, 
-            ModelType type, 
-            string display, 
-            string model, 
+            ChatRequestCategory request,
+            ModelCategory category,
+            ModelType type,
+            string display,
+            string model,
             string descriptionKey = "",
-            ModelTaskCategory task = ModelTaskCategory.Other, 
-            ChatPriceUsage? price = null, 
-            bool exclusive = false, 
-            bool available = true
+            ModelTaskCategory task = ModelTaskCategory.Other,
+            ChatPriceUsage? price = null,
+            bool exclusive = false,
+            bool available = true,
+            bool dev = false
         )
     {
+        this.Request = request;
         this.Category = category;
         this.Type = type;
         this.DisplayName = display;
@@ -45,6 +50,12 @@ public class ChatModel
         this.Price = price;
         this.Exclusive = exclusive;
         this.Available = available;
+        this.Dev = dev; // Only in dev mode
+    }
+
+    public bool IsAvailable()
+    {
+        return (this.Dev ? false : this.Available);
     }
 
     public static List<ChatModel> GetModelsByCategory(ModelType category)
