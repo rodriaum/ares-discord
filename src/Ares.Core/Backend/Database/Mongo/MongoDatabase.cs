@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace Ares.Ares.Core.Backend.Database.Mongo;
 
-internal class MongoDatabase : DatabaseTemplate
+internal class MongoDatabase : IDatabaseTemplate
 {
     private static readonly string _pattern = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
     private static readonly Regex _ipPattern = new Regex(_pattern + "\\." + _pattern + "\\." + _pattern + "\\." + _pattern);

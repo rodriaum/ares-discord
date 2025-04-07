@@ -18,7 +18,7 @@ namespace Ares.Ares.Core.Backend.Database.Redis;
 /// This class implements database operations using StackExchange.Redis library,
 /// supporting connection management, data storage, retrieval, and caching.
 /// </remarks>
-public class RedisDatabase : DatabaseTemplate
+public class RedisDatabase : IDatabaseTemplate
 {
     private readonly DatabaseCredentials _credentials;
 

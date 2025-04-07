@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 
 namespace Ares.Ares.Core.Database.Collection;
 
-internal interface CollectionTemplate
+internal interface ICollectionTemplate
 {
     Task<Guild?> SaveAsync(string id);
     Task<Guild?> SaveAsync(ulong id);

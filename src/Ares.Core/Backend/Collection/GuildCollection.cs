@@ -20,7 +20,7 @@ namespace Ares.Core.Database.Collection;
 /// <summary>
 /// Class responsible for managing guild data in MongoDB database.
 /// </summary>
-internal class GuildCollection : CollectionTemplate
+internal class GuildCollection : ICollectionTemplate
 {
     /// <summary>
     /// Represents the "guilds" collection in MongoDB database.

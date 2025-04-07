@@ -6,7 +6,7 @@
 
 namespace Ares.Ares.Core.Backend.Database;
 
-internal interface DatabaseTemplate
+internal interface IDatabaseTemplate
 {
     Task ConnectAsync();
     Task CloseAsync();
