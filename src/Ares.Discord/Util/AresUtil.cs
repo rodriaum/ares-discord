@@ -14,6 +14,8 @@ public class AresUtil
             ModelCategory.DeepSeek => Color.Blue,
             ModelCategory.xAI => Color.Orange,
             ModelCategory.Google => Color.DarkBlue,
+            ModelCategory.MetaAI => Color.Blue,
+            ModelCategory.Microsoft => Color.Blue,
             _ => Color.Default
         };
     }

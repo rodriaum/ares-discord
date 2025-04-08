@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Objects.Message;
 using Ares.Ares.Core.Objects.Model;
 using Ares.Ares.Core.Util;
 using Ares.Core.Database.Model;
@@ -25,6 +26,7 @@ using OpenAI.Chat;
 using OpenAI.Images;
 using System.ClientModel;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Ares.Core.Service;
 
@@ -293,7 +295,7 @@ public class AiService
         };
 
         // Use appropriate method based on streaming capability
-        if (botMessage != null && model.Category.HasStreamingResponses())
+        if (botMessage != null && model.Category.HasLocalStreamingResponses())
         {
             return await HandleLocalStreamingResponseAsync(guild, user, model, prompt, botMessage, ollama, chatOptions, info, messages);
         }
@@ -359,7 +361,7 @@ public class AiService
         ChatCompletionOptions chatOptions = new ChatCompletionOptions { MaxOutputTokenCount = 2048 };
 
         // Use appropriate method based on streaming capability
-        if (botMessage != null && model.Category.HasStreamingResponses())
+        if (botMessage != null && model.Category.HasRemoteStreamingResponses())
         {
             return await HandleRemoteStreamingResponseAsync(guild, user, model, prompt, botMessage, client, chatOptions, info, messages);
         }
@@ -475,11 +477,11 @@ public class AiService
         GChatInfoModel info,
         List<Microsoft.Extensions.AI.ChatMessage> messages)
     {
-        StringBuilder responseBuilder = new StringBuilder();
+        StringBuilder responseBuilder = new();
         EmbedBuilder embed = CreateResponseEmbed(guild);
 
         ChatTokenUsage? lastTokenUsage = null;
-        var messageUpdater = new MessageUpdater(botMessage, embed, TimeSpan.FromSeconds(1));
+        MessageUpdater messageUpdater = new(botMessage, embed, TimeSpan.FromSeconds(1));
 
         await foreach (var response in client.GetStreamingResponseAsync(messages, chatOptions))
         {
@@ -496,13 +498,17 @@ public class AiService
 
         // Save to history
         ChatValueUsage usage = lastTokenUsage != null
-            ? new ChatValueUsage(lastTokenUsage.OutputTokenCount, lastTokenUsage.InputTokenCount)
-            : new ChatValueUsage();
+            ? new(lastTokenUsage.OutputTokenCount, lastTokenUsage.InputTokenCount)
+            : new();
 
         info.Historics.Add(new GChatHistoricModel(prompt: prompt, response: responseBuilder.ToString(), usage: usage));
         await guild.UpdateChatInfoAsync(user, info);
 
-        return (responseBuilder.ToString(), true);
+        // Regular expression to remove everything between <think> and </think>
+        string pattern = @"<think>.*?</think>";
+        string responseFixed = Regex.Replace(responseBuilder.ToString(), pattern, string.Empty, RegexOptions.Singleline);
+
+        return (responseFixed, true);
     }
 
     /// <summary>
@@ -547,9 +553,13 @@ public class AiService
             return (guild.GetTranslation(LangKeys.InvalidRequest) + $"  {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
+        // Regular expression to remove everything between <think> and </think>
+        string pattern = @"<think>.*?</think>";
+        string responseFixed = Regex.Replace(message.Text, pattern, string.Empty, RegexOptions.Singleline);
+
         string result = finishReason.ToString() switch
         {
-            "stop" => message.Text,
+            "stop" => responseFixed,
             "length" => guild.GetTranslation(LangKeys.RateLimitExceeded),
             "content_filter" => guild.GetTranslation(LangKeys.ContentPolityViolation),
             "tool_calls" => guild.GetTranslation(LangKeys.FunctionCall),
@@ -568,46 +578,6 @@ public class AiService
             .WithTitle(guild.GetTranslation(LangKeys.AI))
             .WithColor(Color.Gold)
             .WithFooter(guild.GetTranslation(LangKeys.TakeUpMinutes));
-    }
-
-    /// <summary>
-    /// Helper class to handle message updates with rate limiting.
-    /// </summary>
-    private class MessageUpdater
-    {
-        private readonly RestUserMessage? _message;
-        private readonly EmbedBuilder _embed;
-        private readonly TimeSpan _cooldown;
-        private DateTime _lastEditDate = DateTime.UtcNow;
-
-        public MessageUpdater(RestUserMessage? message, EmbedBuilder embed, TimeSpan cooldown)
-        {
-            _message = message;
-            _embed = embed;
-            _cooldown = cooldown;
-        }
-
-        public async Task UpdateMessageAsync(string text)
-        {
-            if (_message == null) return;
-
-            // Apply text length limits for embeds
-            string displayText = text;
-            if (displayText.Length > 4096)
-            {
-                displayText = displayText.Substring(0, 4095);
-                _embed.WithFooter($"{DateTime.Now.Year} - Ares | (♾️)");
-            }
-
-            _embed.WithDescription(displayText);
-
-            // Update message if cooldown has passed
-            if ((DateTime.UtcNow - _lastEditDate) > _cooldown)
-            {
-                await _message.ModifyAsync(message => message.Embed = _embed.Build());
-                _lastEditDate = DateTime.UtcNow;
-            }
-        }
     }
 
     /*
