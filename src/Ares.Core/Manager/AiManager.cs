@@ -10,8 +10,8 @@ using Ares.Core.Objects.Chat.Price;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
-using OllamaSharp;
-using OllamaSharp.Models;
+using Microsoft.Extensions.AI;
+using MongoDB.Bson;
 using System.Collections.ObjectModel;
 
 namespace Ares.Core.Manager;
@@ -542,25 +542,8 @@ public class AiManager
         // Empty Message
         Console.WriteLine();
 
-        OllamaApiClient? ollama = AresCore.OllamaClient;
-        IEnumerable<Model> localModels = (ollama != null ? await ollama.ListLocalModelsAsync() : new List<Model>());
-
         foreach (ChatModel model in models)
         {
-            if (ollama != null && model.RequestType == ChatRequestType.Local)
-            {
-                if (localModels.Any(m => m.Name.Equals(model.Model, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
-                await AresLogger.LogAsync($"Ollama: {model.Model}", "Ollama model not found, pulling it....\n");
-
-                await foreach (var status in ollama.PullModelAsync(model.Model))
-                {
-                    if (status == null) continue;
-                    await AresLogger.LogAsync($"Ollama: {model.Model}", $"{status.Percent}% {status.Status}");
-                }
-            }
-
             AresLogger.Log(
                 $"AI: {model.Category.ToString()}",
                 $"Type \"{model.Type.ToString().ToLower()}\" with model \"{model.Model.ToString().ToLower()}\" registered."

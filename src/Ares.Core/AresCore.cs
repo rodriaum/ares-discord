@@ -13,8 +13,7 @@ using Ares.Core.Database.Collection;
 using Ares.Core.Manager;
 using Discord;
 using DotNetEnv;
-using OllamaSharp;
-using System.Runtime.CompilerServices;
+using Microsoft.Extensions.AI;
 
 namespace Ares.Core;
 
@@ -25,9 +24,9 @@ namespace Ares.Core;
 internal class AresCore
 {
     /// <summary>
-    /// Gets or sets the OllamaAPI client instance.
+    /// Gets or sets the Ollama client instance.
     /// </summary>
-    public static OllamaApiClient? OllamaClient { get; private set; }
+    public static IChatClient? OllamaClient { get; private set; }
 
     /// <summary>
     /// Gets or sets the MongoDB database instance.
@@ -60,6 +59,9 @@ internal class AresCore
     /// <returns>True if the initialization was successful, otherwise false.</returns>
     public static async Task<bool> Init()
     {
+        Uri ollamaUri = new Uri($"http://{Env.GetString("OLLAMA_HOST", fallback: "127.0.0.1")}:{Env.GetInt("OLLAMA_PORT", 11434)}");
+        OllamaClient = new OllamaChatClient(ollamaUri);
+
         SystemMonitor monitor = new SystemMonitor();
         _ = monitor.Init();
 
@@ -87,13 +89,6 @@ internal class AresCore
     /// <returns>True if the connection was successful, otherwise false.</returns>
     private static async Task<bool> InitDatabase()
     {
-        /*
-         * Ollama connection
-         */
-
-        Uri ollamaUri = new Uri($"http://{Env.GetString("OLLAMA_HOST", fallback: "127.0.0.1")}:{Env.GetInt("OLLAMA_PORT", 11434)}");
-        OllamaClient = new OllamaApiClient(ollamaUri);
-
         /*
          * MongoDB connection 
          */

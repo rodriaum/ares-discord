@@ -20,20 +20,20 @@ public class ChatValueUsage
     /// <summary> Número de tokens na conclusão gerada. </summary>
     [JsonInclude]
     [JsonPropertyName("outputTokens")]
-    public int OutputTokens { get; }
+    public long OutputTokens { get; }
 
     /// <summary> Número de tokens no prompt. </summary>
     [JsonInclude]
     [JsonPropertyName("inputTokens")]
-    public int InputTokens { get; }
+    public long InputTokens { get; }
 
-    public ChatValueUsage(int outputTokens = 0, int inputTokens = 0)
+    public ChatValueUsage(long outputTokens = 0, long inputTokens = 0)
     {
         OutputTokens = outputTokens;
         InputTokens = inputTokens;
     }
 
-    public int TotalTokens()
+    public long TotalTokens()
     {
         return OutputTokens + InputTokens;
     }

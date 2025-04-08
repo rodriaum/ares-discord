@@ -18,15 +18,13 @@ using Ares.Core.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using OllamaSharp;
+using Microsoft.Extensions.AI;
 using OpenAI;
 using OpenAI.Audio;
 using OpenAI.Chat;
 using OpenAI.Images;
-using Sprache;
 using System.ClientModel;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Ares.Core.Service;
 
@@ -234,7 +232,7 @@ public class AiService
             // Handle different model request types
             if (model.RequestType == ChatRequestType.Local)
             {
-                return await HandleLocalModelRequestAsync(guild, model, prompt, botMessage);
+                return await HandleLocalModelRequestAsync(guild, user, model, channel, prompt, botMessage);
             }
             else
             {
@@ -254,42 +252,55 @@ public class AiService
     /// </summary>
     private static async Task<(string, bool)> HandleLocalModelRequestAsync(
         Guild guild,
+        SocketGuildUser user,
         ChatModel model,
+        ulong channel,
         string prompt,
         RestUserMessage? botMessage)
     {
-        OllamaApiClient? ollama = AresCore.OllamaClient;
+        // Get chat history and info
+        List<GChatHistoricModel>? historics = guild.ChatHistorics(user, channel: channel);
+
+        GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
+
+        if (info == null)
+        {
+            AresLogger.Error(nameof(HandleLocalModelRequestAsync), "Chat information could not be accessed.");
+            return (guild.GetTranslation(LangKeys.CouldNotFindInfo), false);
+        }
+
+        // Prepare messages for the API request
+        List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? GChatHistoricModel.ToLocal(historics) : new();
+
+        Microsoft.Extensions.AI.ChatMessage userMessage = new(Microsoft.Extensions.AI.ChatRole.User, prompt);
+        userMessage.AuthorName = user.GlobalName;
+
+        messages.Add(userMessage);
+
+        // Configure the API client
+        IChatClient? ollama = AresCore.OllamaClient;
 
         if (ollama == null)
         {
-            AresLogger.Error("Ollama", "Ollama client was not initialized.");
-            return (guild.GetTranslation(LangKeys.ModelUnavailable), false);
+            AresLogger.Error(nameof(HandleLocalModelRequestAsync), "Ollama client is null.");
+            return (guild.GetTranslation(LangKeys.UnablePerformTask), false);
         }
 
-        ollama.SelectedModel = model.Model;
-        Chat chat = new Chat(ollama);
-
-        // Create response tracking objects
-        StringBuilder responseBuilder = new StringBuilder();
-        EmbedBuilder embed = CreateResponseEmbed(guild);
-
-        // Process streaming response with rate-limited updates
-        var messageUpdater = new MessageUpdater(botMessage, embed, TimeSpan.FromSeconds(1));
-
-        await foreach (var answer in chat.SendAsync(prompt))
+        ChatOptions chatOptions = new ChatOptions
         {
-            if (!string.IsNullOrEmpty(answer))
-            {
-                responseBuilder.Append(answer);
-                await messageUpdater.UpdateMessageAsync(responseBuilder.ToString());
-            }
+            ModelId = model.Model,
+            MaxOutputTokens = 2048
+        };
+
+        // Use appropriate method based on streaming capability
+        if (botMessage != null && model.Category.HasStreamingResponses())
+        {
+            return await HandleLocalStreamingResponseAsync(guild, user, model, prompt, botMessage, ollama, chatOptions, info, messages);
         }
-
-        // Regular expression to remove everything between <think> and </think>
-        string pattern = @"<think>.*?</think>";
-        string responseFixed = Regex.Replace(responseBuilder.ToString(), pattern, string.Empty, RegexOptions.Singleline);
-
-        return (responseFixed, true);
+        else
+        {
+            return await HandleLocalNonStreamingResponseAsync(guild, user, model, prompt, ollama, chatOptions, info, messages);
+        }
     }
 
     /// <summary>
@@ -304,12 +315,14 @@ public class AiService
         RestUserMessage? botMessage)
     {
         GTokenModel? tokenData = guild.Token;
+
         if (tokenData == null)
         {
             return (guild.GetTranslation(LangKeys.CouldNotFindToken), false);
         }
 
         string? modelToken = CoreUtil.GetTokenByModelCategory(model.Category, tokenData);
+
         if (string.IsNullOrWhiteSpace(modelToken))
         {
             return (guild.GetTranslation(LangKeys.CouldNotFindToken), false);
@@ -318,6 +331,7 @@ public class AiService
         // Get chat history and info
         List<GChatHistoricModel>? historics = guild.ChatHistorics(user, channel: channel);
         GChatInfoModel? info = guild.ChatInfoByChannel(user, channel);
+
         if (info == null)
         {
             AresLogger.Error("GenerateConversationAsync", "Chat information could not be accessed.");
@@ -325,27 +339,40 @@ public class AiService
         }
 
         // Prepare messages for the API request
-        List<ChatMessage> messages = PrepareMessageList(historics, user, prompt);
+        List<OpenAI.Chat.ChatMessage> messages = historics != null ? GChatHistoricModel.ToRemote(historics) : new();
+
+        UserChatMessage userMessage = new(prompt) { ParticipantName = user.GlobalName };
+        messages.Add(userMessage);
 
         // Configure the API client
-        ChatClient client = CreateChatClient(model, modelToken);
+        OpenAIClientOptions clientOptions = new OpenAIClientOptions
+        {
+            Endpoint = model.Category.GetEndpoint()
+        };
+
+        ChatClient client = new(
+            model: model.Model,
+            credential: new(modelToken),
+            options: clientOptions
+        );
+
         ChatCompletionOptions chatOptions = new ChatCompletionOptions { MaxOutputTokenCount = 2048 };
 
         // Use appropriate method based on streaming capability
         if (botMessage != null && model.Category.HasStreamingResponses())
         {
-            return await HandleStreamingResponseAsync(guild, user, model, prompt, botMessage, client, chatOptions, info, messages);
+            return await HandleRemoteStreamingResponseAsync(guild, user, model, prompt, botMessage, client, chatOptions, info, messages);
         }
         else
         {
-            return await HandleNonStreamingResponseAsync(guild, user, model, prompt, client, chatOptions, info, messages);
+            return await HandleRemoteNonStreamingResponseAsync(guild, user, model, prompt, client, chatOptions, info, messages);
         }
     }
 
     /// <summary>
     /// Handles streaming API responses with real-time updates.
     /// </summary>
-    private static async Task<(string, bool)> HandleStreamingResponseAsync(
+    private static async Task<(string, bool)> HandleRemoteStreamingResponseAsync(
         Guild guild,
         SocketGuildUser user,
         ChatModel model,
@@ -354,12 +381,13 @@ public class AiService
         ChatClient client,
         ChatCompletionOptions chatOptions,
         GChatInfoModel info,
-        List<ChatMessage> messages)
+        List<OpenAI.Chat.ChatMessage> messages)
     {
-        StringBuilder responseBuilder = new StringBuilder();
+        StringBuilder responseBuilder = new();
         EmbedBuilder embed = CreateResponseEmbed(guild);
+
         ChatTokenUsage? lastTokenUsage = null;
-        var messageUpdater = new MessageUpdater(botMessage, embed, TimeSpan.FromSeconds(1));
+        MessageUpdater messageUpdater = new(botMessage, embed, TimeSpan.FromSeconds(1));
 
         await foreach (StreamingChatCompletionUpdate response in client.CompleteChatStreamingAsync(messages, chatOptions))
         {
@@ -367,11 +395,103 @@ public class AiService
             {
                 ChatMessageContentPart content = response.ContentUpdate[0];
                 responseBuilder.Append(content.Text);
+
                 await messageUpdater.UpdateMessageAsync(responseBuilder.ToString());
             }
 
             // Save the latest token usage information
             lastTokenUsage = response.Usage;
+        }
+
+        // Save to history
+        ChatValueUsage usage = lastTokenUsage != null
+            ? new(lastTokenUsage.OutputTokenCount, lastTokenUsage.InputTokenCount)
+            : new();
+
+        info.Historics.Add(new GChatHistoricModel(prompt: prompt, response: responseBuilder.ToString(), usage: usage));
+        await guild.UpdateChatInfoAsync(user, info);
+
+        return (responseBuilder.ToString(), true);
+    }
+
+    /// <summary>
+    /// Handles non-streaming API responses.
+    /// </summary>
+    private static async Task<(string, bool)> HandleRemoteNonStreamingResponseAsync(
+        Guild guild,
+        SocketGuildUser user,
+        ChatModel model,
+        string prompt,
+        ChatClient client,
+        ChatCompletionOptions chatOptions,
+        GChatInfoModel info,
+        List<OpenAI.Chat.ChatMessage> messages)
+    {
+        ChatCompletion completion = await client.CompleteChatAsync(messages, options: chatOptions);
+
+        if (completion == null)
+        {
+            AresLogger.Error("OpenAI", "Unable to get response.");
+            return (guild.GetTranslation(LangKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
+        }
+
+        // Save to history
+        GChatHistoricModel historic = GChatHistoricModel.From(prompt, responseOpenAi: completion)[0];
+
+        info.Historics.Add(historic);
+
+        await guild.UpdateChatInfoAsync(user, info);
+
+        ChatMessageContentPart? content = completion.Content.FirstOrDefault();
+
+        if (content == null)
+        {
+            return (guild.GetTranslation(LangKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
+        }
+
+        string result = completion.FinishReason switch
+        {
+            OpenAI.Chat.ChatFinishReason.Stop => content.Text,
+            OpenAI.Chat.ChatFinishReason.Length => guild.GetTranslation(LangKeys.RateLimitExceeded),
+            OpenAI.Chat.ChatFinishReason.ContentFilter => guild.GetTranslation(LangKeys.ContentPolityViolation),
+            OpenAI.Chat.ChatFinishReason.FunctionCall => guild.GetTranslation(LangKeys.FunctionCall),
+            _ => guild.GetTranslation(LangKeys.UnableGenerateOrder).Replace("{0}", completion.FinishReason.ToString() ?? "-/-")
+        };
+
+        return (result, true);
+    }
+
+    /// <summary>
+    /// Handles streaming API responses with real-time updates.
+    /// </summary>
+    private static async Task<(string, bool)> HandleLocalStreamingResponseAsync(
+        Guild guild,
+        SocketGuildUser user,
+        ChatModel model,
+        string prompt,
+        RestUserMessage botMessage,
+        IChatClient client,
+        ChatOptions chatOptions,
+        GChatInfoModel info,
+        List<Microsoft.Extensions.AI.ChatMessage> messages)
+    {
+        StringBuilder responseBuilder = new StringBuilder();
+        EmbedBuilder embed = CreateResponseEmbed(guild);
+
+        ChatTokenUsage? lastTokenUsage = null;
+        var messageUpdater = new MessageUpdater(botMessage, embed, TimeSpan.FromSeconds(1));
+
+        await foreach (var response in client.GetStreamingResponseAsync(messages, chatOptions))
+        {
+            if (response.Contents.Count > 0)
+            {
+                string content = response.Text;
+                responseBuilder.Append(content);
+                await messageUpdater.UpdateMessageAsync(responseBuilder.ToString());
+            }
+
+            // Save the latest token usage information
+            // lastTokenUsage = response.Usage;
         }
 
         // Save to history
@@ -388,43 +508,52 @@ public class AiService
     /// <summary>
     /// Handles non-streaming API responses.
     /// </summary>
-    private static async Task<(string, bool)> HandleNonStreamingResponseAsync(
+    private static async Task<(string, bool)> HandleLocalNonStreamingResponseAsync(
         Guild guild,
         SocketGuildUser user,
         ChatModel model,
         string prompt,
-        ChatClient client,
-        ChatCompletionOptions chatOptions,
+        IChatClient client,
+        ChatOptions chatOptions,
         GChatInfoModel info,
-        List<ChatMessage> messages)
+        List<Microsoft.Extensions.AI.ChatMessage> messages)
     {
-        ChatCompletion completion = await client.CompleteChatAsync(messages, options: chatOptions);
+        ChatResponse response = await client.GetResponseAsync(messages, options: chatOptions);
 
-        if (completion == null)
+        if (response == null)
         {
             AresLogger.Error("OpenAI", "Unable to get response.");
-            return (guild.GetTranslation(LangKeys.InvalidRequest) + $"(GenerateConversationAsync)", false);
+            return (guild.GetTranslation(LangKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
         // Save to history
-        GChatHistoricModel historic = GChatHistoricModel.From(prompt, responseOpenAi: completion)[0];
+        GChatHistoricModel historic = GChatHistoricModel.From(prompt, ollamaResponse: response)[0];
+
         info.Historics.Add(historic);
+
         await guild.UpdateChatInfoAsync(user, info);
 
-        ChatMessageContentPart? content = completion.Content.FirstOrDefault();
+        Microsoft.Extensions.AI.ChatMessage? message = response.Messages.FirstOrDefault();
 
-        if (content == null)
+        if (message == null)
         {
-            return (guild.GetTranslation(LangKeys.InvalidRequest) + $"({nameof(GenerateConversationAsync)})", false);
+            return (guild.GetTranslation(LangKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
-        string result = completion.FinishReason switch
+        Microsoft.Extensions.AI.ChatFinishReason? finishReason = response.FinishReason;
+
+        if (finishReason == null)
         {
-            ChatFinishReason.Stop => content.Text,
-            ChatFinishReason.Length => guild.GetTranslation(LangKeys.RateLimitExceeded),
-            ChatFinishReason.ContentFilter => guild.GetTranslation(LangKeys.ContentPolityViolation),
-            ChatFinishReason.FunctionCall => guild.GetTranslation(LangKeys.FunctionCall),
-            _ => guild.GetTranslation(LangKeys.UnableGenerateOrder).Replace("{0}", completion.FinishReason.ToString())
+            return (guild.GetTranslation(LangKeys.InvalidRequest) + $"  {nameof(HandleLocalNonStreamingResponseAsync)}", false);
+        }
+
+        string result = finishReason.ToString() switch
+        {
+            "stop" => message.Text,
+            "length" => guild.GetTranslation(LangKeys.RateLimitExceeded),
+            "content_filter" => guild.GetTranslation(LangKeys.ContentPolityViolation),
+            "tool_calls" => guild.GetTranslation(LangKeys.FunctionCall),
+            _ => guild.GetTranslation(LangKeys.UnableGenerateOrder).Replace("{0}", finishReason.ToString() ?? "-/-")
         };
 
         return (result, true);
@@ -439,34 +568,6 @@ public class AiService
             .WithTitle(guild.GetTranslation(LangKeys.AI))
             .WithColor(Color.Gold)
             .WithFooter(guild.GetTranslation(LangKeys.TakeUpMinutes));
-    }
-
-    /// <summary>
-    /// Prepares message list for API request, including chat history.
-    /// </summary>
-    private static List<ChatMessage> PrepareMessageList(List<GChatHistoricModel>? historics, SocketGuildUser user, string prompt)
-    {
-        List<ChatMessage> messages = historics != null ? GChatHistoricModel.To(historics) : new List<ChatMessage>();
-        UserChatMessage userMessage = new UserChatMessage(prompt) { ParticipantName = user.GlobalName };
-        messages.Add(userMessage);
-        return messages;
-    }
-
-    /// <summary>
-    /// Creates and configures a ChatClient with appropriate settings.
-    /// </summary>
-    private static ChatClient CreateChatClient(ChatModel model, string modelToken)
-    {
-        OpenAIClientOptions clientOptions = new OpenAIClientOptions
-        {
-            Endpoint = model.Category.GetEndpoint()
-        };
-
-        return new ChatClient(
-            model: model.Model,
-            credential: new ApiKeyCredential(modelToken),
-            options: clientOptions
-        );
     }
 
     /// <summary>
