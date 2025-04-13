@@ -6,7 +6,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Database.Model.Config;
+namespace Ares.Ares.Core.Models.Database.Config;
 
 public partial class GuildConfigData
 {
@@ -49,6 +49,6 @@ public partial class GuildConfigData
     public GuildConfigData()
     {
         // By default, the language is Portuguese.
-        this.Lang = "pt";
+        Lang = "pt";
     }
 }

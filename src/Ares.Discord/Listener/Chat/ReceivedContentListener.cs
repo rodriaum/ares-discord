@@ -4,11 +4,11 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Models.Database;
+using Ares.Ares.Core.Models.Database.Chat.Sub;
 using Ares.Ares.Discord.Util;
 using Ares.Core;
 using Ares.Core.Database.Collection;
-using Ares.Core.Database.Model;
-using Ares.Core.Database.Model.Chat.Sub;
 using Ares.Core.Objects.Chat;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Chat.Price;

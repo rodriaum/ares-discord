@@ -86,4 +86,5 @@ public class LangKeys
     public static readonly string GoodNight = "good-night";
     public static readonly string OverloadedError = "overloaded-error";
     public static readonly string ModelDevMode = "model-dev-mode";
+    public static readonly string PremiumChatLimit = "premium-chat-limit";
 }

@@ -6,7 +6,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Database.Model.Token;
+namespace Ares.Ares.Core.Models.Database.Token;
 
 public class GTokenModel
 {
@@ -36,11 +36,11 @@ public class GTokenModel
 
     public GTokenModel(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? google = "", string? imgur = "")
     {
-        this.OpenAi = openai;
-        this.Anthropic = anthropic;
-        this.Deepseek = deepseek;
-        this.xAI = xai;
-        this.Google = google;
-        this.Imgur = imgur;
+        OpenAi = openai;
+        Anthropic = anthropic;
+        Deepseek = deepseek;
+        xAI = xai;
+        Google = google;
+        Imgur = imgur;
     }
 }

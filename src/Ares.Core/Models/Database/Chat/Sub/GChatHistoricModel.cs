@@ -11,7 +11,7 @@ using OpenAI.Chat;
 using OpenAI.Images;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Database.Model.Chat.Sub;
+namespace Ares.Ares.Core.Models.Database.Chat.Sub;
 
 /// <summary>
 /// Representa o histórico de conversas.
@@ -81,12 +81,12 @@ public class GChatHistoricModel
             ChatValueUsage? usage = null,
             long timestamp = -1)
     {
-        this.System = system;
-        this.Prompt = prompt;
-        this.Response = response;
-        this.ImageUrl = imageUrl;
-        this.Usage = usage;
-        this.Timestamp = timestamp;
+        System = system;
+        Prompt = prompt;
+        Response = response;
+        ImageUrl = imageUrl;
+        Usage = usage;
+        Timestamp = timestamp;
 
         if (timestamp == -1)
         {

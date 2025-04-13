@@ -11,7 +11,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Database.Model;
+using Ares.Ares.Core.Models.Database;
 
 namespace Ares.Ares.Core.Database.Repository;
 

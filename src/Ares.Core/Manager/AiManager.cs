@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Objects.Model;
+using Ares.Ares.Core.Models.Model;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Chat.Price;
 using Ares.Core.Objects.Language;

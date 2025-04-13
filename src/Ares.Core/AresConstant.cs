@@ -35,4 +35,10 @@ internal class AresConstant
     {
         "1065788770739294289" // Rodriaum
     };
+
+    /*
+     * Limits
+     */
+
+    public static readonly int MaxPremiumConversations = 5;
 }

@@ -1,4 +1,4 @@
-﻿using Ares.Core.Database.Model.Token;
+﻿using Ares.Ares.Core.Models.Database.Token;
 using Ares.Core.Objects.Model;
 
 namespace Ares.Ares.Core.Util;

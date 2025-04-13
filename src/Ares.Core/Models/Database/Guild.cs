@@ -4,17 +4,19 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Database.Model.Chat;
-using Ares.Core.Database.Model.Chat.Sub;
-using Ares.Core.Database.Model.Config;
-using Ares.Core.Database.Model.Token;
+using Ares.Ares.Core.Models.Database.Chat;
+using Ares.Ares.Core.Models.Database.Chat.Sub;
+using Ares.Ares.Core.Models.Database.Config;
+using Ares.Ares.Core.Models.Database.Token;
+using Ares.Core;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using Discord;
 using System.Text.Json.Serialization;
+using System.Threading.Channels;
 
-namespace Ares.Core.Database.Model;
+namespace Ares.Ares.Core.Models.Database;
 
 /// <summary>
 /// Represents a Discord guild (server) with its associated data and operations.
@@ -55,11 +57,11 @@ public class Guild
     /// <param name="id">The identifier of the guild.</param>
     public Guild(string id)
     {
-        this.Id = id;
+        Id = id;
 
-        this.Token = new GTokenModel();
-        this.Config = new GuildConfigData();
-        this.Chat = new GChatModel();
+        Token = new GTokenModel();
+        Config = new GuildConfigData();
+        Chat = new GChatModel();
     }
 
     /// <summary>
@@ -123,7 +125,7 @@ public class Guild
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (token != null)
         {
-            this.Token = token;
+            Token = token;
         }
 
         return await SaveAsync("token");
@@ -139,7 +141,7 @@ public class Guild
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (config != null)
         {
-            this.Config = config;
+            Config = config;
         }
 
         return await SaveAsync("config");
@@ -155,7 +157,7 @@ public class Guild
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (chat != null)
         {
-            this.Chat = chat;
+            Chat = chat;
         }
 
         return await SaveAsync("chat");
@@ -170,7 +172,7 @@ public class Guild
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public async Task<bool> SaveInfoAsync(IUser user, List<GChatInfoModel> infos, bool onlyCached = false)
     {
-        this.Chat.Infos[user.Id] = infos;
+        Chat.Infos[user.Id] = infos;
         return !onlyCached ? await SaveChatDataAsync() : true;
     }
 
@@ -210,12 +212,12 @@ public class Guild
         GChatInfoModel? existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
 
         // It seems strange, but it is done so as not to add the same information as the chat.
-        if (existingInfo != null && this.Chat.Infos.ContainsKey(user.Id))
+        if (existingInfo != null && Chat.Infos.ContainsKey(user.Id))
         {
-            this.Chat.Infos[user.Id].Remove(existingInfo);
+            Chat.Infos[user.Id].Remove(existingInfo);
         }
 
-        this.Chat.Infos[user.Id].Add(info);
+        Chat.Infos[user.Id].Add(info);
         return await SaveChatDataAsync();
     }
 
@@ -227,7 +229,7 @@ public class Guild
     /// <returns>Dictionary containing conversation histories or null if they don't exist.</returns>
     public Dictionary<ulong, List<GChatInfoModel>>? Infos()
     {
-        return this.Chat.Infos;
+        return Chat.Infos;
     }
 
     /// <summary>
@@ -365,13 +367,7 @@ public class Guild
             return await Task.FromResult(false);
         }
 
-        if (HasActiveUserConversation(user))
-        {
-            AresLogger.Log(nameof(CreateChatData), "User already has a conversation or template. No action required.");
-            return await Task.FromResult(false);
-        }
-
-        GChatModel chat = this.Chat;
+        GChatModel chat = Chat;
 
         if (chat == null)
         {
@@ -426,7 +422,7 @@ public class Guild
             return false;
         }
 
-        if (this.Chat is not { } chat)
+        if (Chat is not { } chat)
             return false;
 
         GChatInfoModel? info = ChatInfoByChannel(user, channel);
@@ -439,7 +435,7 @@ public class Guild
 
         info.Historics = historics;
 
-        this.Chat = chat;
+        Chat = chat;
         return await SaveChatDataAsync();
     }
 
@@ -539,6 +535,34 @@ public class Guild
     }
 
     /// <summary>
+    /// Gets the count of conversations for a user.
+    /// </summary>
+    /// <param name="user">The user whose conversations are being queried.</param>
+    /// <param name="active">Whether to filter by active conversations.</param>
+    /// <returns>The number of conversations or -1 on error.</returns>
+    public int GetConversationsCount(IUser user, bool active = false)
+    {
+        if (user == null)
+        {
+            AresLogger.Error(nameof(GetConversationsCount), "User is null.");
+            return -1;
+        }
+
+        var infos = Infos();
+
+        if (infos == null)
+        {
+            AresLogger.Error(nameof(GetConversationsCount), "Unable to get historical information.");
+            return -1;
+        }
+
+        if (!infos.TryGetValue(user.Id, out var userChats) || userChats == null)
+            return 0;
+
+        return userChats.Count(chat => chat.Active == active);
+    }
+
+    /// <summary>
     /// Gets the last chat model used by a specific user, optionally filtered by channel.
     /// </summary>
     /// <param name="user">The user to get the model for.</param>
@@ -568,7 +592,7 @@ public class Guild
     /// <returns>The language code string.</returns>
     public string Language()
     {
-        return this.Config.Lang;
+        return Config.Lang;
     }
 
     /// <summary>
@@ -577,7 +601,7 @@ public class Guild
     /// <returns>The language category object or null if not found.</returns>
     public LangCategory? LangCategory()
     {
-        return AresCore.LangManager.GetCategoryByCode(this.Language());
+        return AresCore.LangManager.GetCategoryByCode(Language());
     }
 
     /// <summary>

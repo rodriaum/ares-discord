@@ -4,7 +4,6 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Database.Model;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using System.Text;
@@ -51,8 +50,8 @@ internal class JsonUtil
 
     public static async Task<T?> DictionaryToObjectAsync<T>
         (
-            Dictionary<string, string> map, 
-            JsonSerializerOptions? serializerOptions = null, 
+            Dictionary<string, string> map,
+            JsonSerializerOptions? serializerOptions = null,
             JsonSerializerOptions? deserializeOptions = null
         )
     {

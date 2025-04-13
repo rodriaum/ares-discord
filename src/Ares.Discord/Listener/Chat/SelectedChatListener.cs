@@ -4,12 +4,12 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Models.Database;
+using Ares.Ares.Core.Models.Database.Chat.Sub;
+using Ares.Ares.Core.Models.Database.Config;
 using Ares.Ares.Discord.Util;
 using Ares.Core;
 using Ares.Core.Database.Collection;
-using Ares.Core.Database.Model;
-using Ares.Core.Database.Model.Chat.Sub;
-using Ares.Core.Database.Model.Config;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
@@ -105,10 +105,32 @@ internal class SelectedChatListener
                 return;
             }
 
+            IRole exclusiveRole = socketGuild.GetRole(gid.ExclusiveRoleId);
+
+            if (exclusiveRole == null)
+            {
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.RoleEliminated));
+                return;
+            }
+
             if (guild.HasActiveUserConversation(user))
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.ActiveConversation));
-                return;
+                bool isPremium = member.Roles.Contains(exclusiveRole);
+                int conversations = guild.GetConversationsCount(user, active: true);
+
+                if (!isPremium)
+                {
+                    await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.ActiveConversation));
+                    return;
+                }
+                else
+                {
+                    if (conversations >= AresConstant.MaxPremiumConversations)
+                    {
+                        await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.PremiumChatLimit));
+                        return;
+                    }
+                }
             }
 
             ChatModel? model = ChatModel.GetByModel(args.Data.Values.First());
@@ -131,21 +153,10 @@ internal class SelectedChatListener
                 return;
             }
 
-            if (model.Exclusive)
+            if (model.Exclusive && !member.Roles.Contains(exclusiveRole))
             {
-                IRole exclusiveRole = socketGuild.GetRole(gid.ExclusiveRoleId);
-
-                if (exclusiveRole == null)
-                {
-                    await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.RoleEliminated));
-                    return;
-                }
-
-                if (!member.Roles.Contains(exclusiveRole))
-                {
-                    await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
-                    return;
-                }
+                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
+                return;
             }
 
             string emojiUnicode = AresUtil.GetEmojiByModelType(model.Type).ToString();

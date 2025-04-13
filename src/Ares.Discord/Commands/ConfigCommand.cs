@@ -4,11 +4,11 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Models.Database;
+using Ares.Ares.Core.Models.Database.Config;
+using Ares.Ares.Core.Models.Database.Token;
 using Ares.Core;
 using Ares.Core.Database.Collection;
-using Ares.Core.Database.Model;
-using Ares.Core.Database.Model.Config;
-using Ares.Core.Database.Model.Token;
 using Ares.Core.Objects.Language;
 using Discord;
 using Discord.Rest;

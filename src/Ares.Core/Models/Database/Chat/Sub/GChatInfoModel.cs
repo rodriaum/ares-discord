@@ -8,7 +8,7 @@ using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Model;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Database.Model.Chat.Sub;
+namespace Ares.Ares.Core.Models.Database.Chat.Sub;
 
 public class GChatInfoModel
 {
@@ -46,10 +46,10 @@ public class GChatInfoModel
 
         if (
                 ImageGenOptions == null &&
-                (ChatModel.GetByModel(model) != null && ChatModel.GetByModel(model)?.Type == ModelType.Image)
+                ChatModel.GetByModel(model) != null && ChatModel.GetByModel(model)?.Type == ModelType.Image
             )
         {
-            this.ImageGenOptions = new ImageGenOptions();
+            ImageGenOptions = new ImageGenOptions();
         }
 
         Historics = historics ?? new List<GChatHistoricModel>();
