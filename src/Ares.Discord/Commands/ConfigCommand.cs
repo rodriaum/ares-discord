@@ -35,7 +35,7 @@ internal class ConfigCommand
             .WithTitle("Config")
             .WithDescription("Aguarde...")
             .WithColor(Color.Gold)
-            .WithFooter($"{DateTime.Now.Year} - Ares");
+            .WithFooter($"{DateTime.Now.Year} - {AresConstant.AppName}");
 
         await command.RespondAsync(ephemeral: true, embed: embed.Build());
         RestInteractionMessage message = await command.GetOriginalResponseAsync();

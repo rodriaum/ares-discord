@@ -29,7 +29,7 @@ public class MessageUpdater
         if (displayText.Length > 4096)
         {
             displayText = displayText.Substring(0, 4095);
-            _embed.WithFooter($"{DateTime.Now.Year} - Ares | (♾️)");
+            _embed.WithFooter($"{DateTime.Now.Year} - {AresConstant.AppName} | (♾️)");
         }
 
         _embed.WithDescription(displayText);

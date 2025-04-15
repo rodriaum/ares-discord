@@ -184,13 +184,13 @@ internal class ReceivedContentListener
             {
                 embed.WithDescription(responseText.Substring(0, 4096))
                     .WithColor(color)
-                    .WithFooter($"{date.Year} - Ares | {model.DisplayName} (♾️)");
+                    .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName} (♾️)");
             }
             else
             {
                 embed.WithDescription(responseText)
                     .WithColor(color)
-                    .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
+                    .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
             }
 
             // Atualiza o historico de chat após a geracão.
@@ -203,7 +203,7 @@ internal class ReceivedContentListener
         {
             embed.WithDescription(responseText)
                 .WithColor(Color.Red)
-                .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
+                .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
         }
 
         await UpdateBotMessage(botMessage, embed, priceEmbed);
@@ -272,7 +272,7 @@ internal class ReceivedContentListener
         if (string.IsNullOrEmpty(responseBinary) || !isAudio)
         {
             embed.WithDescription(guild.GetTranslation(LangKeys.UnableGenerateOrder))
-                .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
+                .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
         }
         else
         {
@@ -290,7 +290,7 @@ internal class ReceivedContentListener
                 memory.Position = 0;
 
                 embed.WithDescription($"🔊 TTS: {prompt}")
-                    .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
+                    .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
 
                 long fileSize = memory.Length;
 
@@ -311,7 +311,7 @@ internal class ReceivedContentListener
             catch (Exception ex)
             {
                 embed.WithDescription(guild.GetTranslation(LangKeys.UnableGenerateOrder))
-                    .WithFooter($"{date.Year} - Ares | {model.DisplayName}");
+                    .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
 
                 AresLogger.Error("TTS", "Unable to generate TTS audio.", ex.Message);
             }
@@ -382,7 +382,7 @@ internal class ReceivedContentListener
 
         EmbedBuilder priceEmbed = new EmbedBuilder()
             .AddField(guild.GetTranslation(LangKeys.Total), $"$ {FormatterUtil.FormatPrice(priceDetail.Price)}", true)
-            .WithFooter("Ares");
+            .WithFooter(AresConstant.AppName);
 
         return priceEmbed;
     }

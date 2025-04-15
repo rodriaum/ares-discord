@@ -192,7 +192,7 @@ internal class SelectedChatListener
             EmbedBuilder infoEmbed = new EmbedBuilder()
                 .WithTitle("Informação")
                 .WithColor(Color.Green)
-                .WithFooter(footer => footer.WithText($"{time.Year} - Ares"));
+                .WithFooter(footer => footer.WithText($"{time.Year} - {AresConstant.AppName}"));
 
             infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldModel), model.DisplayName);
             infoEmbed.AddField(guild.GetTranslation(LangKeys.FieldRules), guild.GetTranslation(LangKeys.ChatDescriptionRules));
@@ -303,7 +303,7 @@ internal class SelectedChatListener
                 .WithTitle("Ares")
                 .WithDescription(helloMessage)
                 .WithColor(AresUtil.GetColorByModelCategory(model.Category))
-                .WithFooter(footer => footer.WithText($"{time.Year} - Ares | {model.DisplayName}"));
+                .WithFooter(footer => footer.WithText($"{time.Year} - {AresConstant.AppName} | {model.DisplayName}"));
 
             await channel.SendMessageAsync(embed: helloEmbed.Build());
 
