@@ -4,9 +4,9 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Ares.Core.Backend.Database;
+namespace Ares.Ares.Core.Interfaces;
 
-internal interface IDatabaseTemplate
+internal interface IDatabase
 {
     Task ConnectAsync();
     Task CloseAsync();

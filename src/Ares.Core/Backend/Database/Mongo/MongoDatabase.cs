@@ -4,14 +4,14 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Backend.Database;
+using Ares.Ares.Core.Interfaces;
 using Ares.Core.Util;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
 
 namespace Ares.Ares.Core.Backend.Database.Mongo;
 
-internal class MongoDatabase : IDatabaseTemplate
+internal class MongoDatabase : IDatabase
 {
     private static readonly string _pattern = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
     private static readonly Regex _ipPattern = new Regex(_pattern + "\\." + _pattern + "\\." + _pattern + "\\." + _pattern);

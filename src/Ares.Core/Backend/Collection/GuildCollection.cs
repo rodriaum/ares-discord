@@ -6,8 +6,8 @@
 
 using Ares.Ares.Core.Backend.Database.Mongo;
 using Ares.Ares.Core.Backend.Database.Redis;
-using Ares.Ares.Core.Database.Collection;
 using Ares.Ares.Core.Database.Repository;
+using Ares.Ares.Core.Interfaces;
 using Ares.Ares.Core.Models.Database;
 using Ares.Core.Util;
 using MongoDB.Bson;
@@ -20,7 +20,7 @@ namespace Ares.Core.Database.Collection;
 /// <summary>
 /// Class responsible for managing guild data in MongoDB database.
 /// </summary>
-internal class GuildCollection : ICollectionTemplate
+internal class GuildCollection : ICollection
 {
     /// <summary>
     /// Represents the "guilds" collection in MongoDB database.

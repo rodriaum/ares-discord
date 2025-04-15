@@ -1,8 +1,8 @@
 ﻿using Ares.Ares.Core.Models.Database;
 
-namespace Ares.Ares.Core.Database.Collection;
+namespace Ares.Ares.Core.Interfaces;
 
-internal interface ICollectionTemplate
+internal interface ICollection
 {
     Task<Guild?> SaveAsync(string id);
     Task<Guild?> SaveAsync(ulong id);

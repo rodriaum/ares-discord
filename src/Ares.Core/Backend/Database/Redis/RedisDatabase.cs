@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Ares.Core.Interfaces;
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
 using StackExchange.Redis;
@@ -18,12 +19,12 @@ namespace Ares.Ares.Core.Backend.Database.Redis;
 /// This class implements database operations using StackExchange.Redis library,
 /// supporting connection management, data storage, retrieval, and caching.
 /// </remarks>
-public class RedisDatabase : IDatabaseTemplate
+public class RedisDatabase : IDatabase
 {
     private readonly DatabaseCredentials _credentials;
 
     private ConnectionMultiplexer? _connection;
-    private IDatabase? _database;
+    private StackExchange.Redis.IDatabase? _database;
 
     /// <summary>
     /// Initializes a new instance of the RedisDatabase with specified credentials.
