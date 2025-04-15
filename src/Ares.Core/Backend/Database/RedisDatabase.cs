@@ -4,13 +4,14 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Interfaces;
+using Ares.Core.Models.Database;
+using Ares.Core.Interfaces;
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace Ares.Ares.Core.Backend.Database.Redis;
+namespace Ares.Core.Backend.Database;
 
 /// <summary>
 /// Represents a Redis database connection and provides methods for interacting with Redis.
@@ -19,7 +20,7 @@ namespace Ares.Ares.Core.Backend.Database.Redis;
 /// This class implements database operations using StackExchange.Redis library,
 /// supporting connection management, data storage, retrieval, and caching.
 /// </remarks>
-public class RedisDatabase : IDatabase
+public class RedisDatabase : Interfaces.IDatabase
 {
     private readonly DatabaseCredentials _credentials;
 
@@ -111,7 +112,7 @@ public class RedisDatabase : IDatabase
         {
             try
             {
-                await this.FlushAsync();
+                await FlushAsync();
                 await _connection.CloseAsync();
                 await _connection.DisposeAsync();
             }

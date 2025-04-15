@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Ares.Ares.Core.Monitor;
+namespace Ares.Core.Monitor;
 
 public class SystemMonitor
 {

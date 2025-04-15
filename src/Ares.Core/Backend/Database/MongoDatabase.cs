@@ -4,12 +4,13 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Interfaces;
+using Ares.Core.Models.Database;
+using Ares.Core.Interfaces;
 using Ares.Core.Util;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
 
-namespace Ares.Ares.Core.Backend.Database.Mongo;
+namespace Ares.Core.Backend.Database;
 
 internal class MongoDatabase : IDatabase
 {

@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Models.Database;
+using Ares.Core.Models.Database;
 using Ares.Core;
 using Ares.Core.Database.Collection;
 using Ares.Core.Util;

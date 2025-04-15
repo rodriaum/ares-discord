@@ -1,6 +1,6 @@
-﻿using Ares.Ares.Core.Models.Database;
+﻿using Ares.Core.Models.Database;
 
-namespace Ares.Ares.Core.Interfaces;
+namespace Ares.Core.Interfaces;
 
 internal interface ICollection
 {

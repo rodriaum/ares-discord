@@ -4,10 +4,10 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Models.Database.Chat;
-using Ares.Ares.Core.Models.Database.Chat.Sub;
-using Ares.Ares.Core.Models.Database.Config;
-using Ares.Ares.Core.Models.Database.Token;
+using Ares.Core.Models.Database.Chat;
+using Ares.Core.Models.Database.Chat.Sub;
+using Ares.Core.Models.Database.Config;
+using Ares.Core.Models.Database.Token;
 using Ares.Core;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
@@ -16,7 +16,7 @@ using Discord;
 using System.Text.Json.Serialization;
 using System.Threading.Channels;
 
-namespace Ares.Ares.Core.Models.Database;
+namespace Ares.Core.Models.Database;
 
 /// <summary>
 /// Represents a Discord guild (server) with its associated data and operations.

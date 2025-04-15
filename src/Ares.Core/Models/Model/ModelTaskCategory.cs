@@ -1,4 +1,4 @@
-﻿namespace Ares.Ares.Core.Models.Model;
+﻿namespace Ares.Core.Models.Model;
 
 public enum ModelTaskCategory
 {

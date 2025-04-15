@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.Rest;
 
-namespace Ares.Ares.Core.Models.Message;
+namespace Ares.Core.Models.Message;
 
 /// <summary>
 /// Helper class to handle message updates with rate limiting.

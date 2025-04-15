@@ -11,9 +11,9 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Models.Database;
+using Ares.Core.Models.Database;
 
-namespace Ares.Ares.Core.Database.Repository;
+namespace Ares.Core.Database.Repository;
 
 internal class GuildManager
 {

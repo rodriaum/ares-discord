@@ -1,7 +1,7 @@
 ﻿using Ares.Core.Objects.Model;
 using Discord;
 
-namespace Ares.Ares.Discord.Util;
+namespace Ares.Discord.Util;
 
 public class AresUtil
 {

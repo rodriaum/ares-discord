@@ -1,4 +1,4 @@
-﻿namespace Ares.Ares.Core.Util;
+﻿namespace Ares.Core.Util;
 
 public class StringUtil
 {

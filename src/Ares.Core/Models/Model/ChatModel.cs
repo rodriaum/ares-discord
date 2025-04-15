@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Models.Model;
+using Ares.Core.Models.Model;
 using Ares.Core.Manager;
 using Ares.Core.Objects.Chat.Price;
 using MongoDB.Driver.Linq;

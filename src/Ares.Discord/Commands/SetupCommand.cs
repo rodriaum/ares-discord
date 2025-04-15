@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Discord.Util;
+using Ares.Discord.Util;
 using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Objects.Model;

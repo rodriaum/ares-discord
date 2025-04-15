@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Ares.Core.Interfaces;
+namespace Ares.Core.Interfaces;
 
 internal interface IDatabase
 {

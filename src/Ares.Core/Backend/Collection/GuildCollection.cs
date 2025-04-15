@@ -4,11 +4,10 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Backend.Database.Mongo;
-using Ares.Ares.Core.Backend.Database.Redis;
-using Ares.Ares.Core.Database.Repository;
-using Ares.Ares.Core.Interfaces;
-using Ares.Ares.Core.Models.Database;
+using Ares.Core.Backend.Database;
+using Ares.Core.Database.Repository;
+using Ares.Core.Interfaces;
+using Ares.Core.Models.Database;
 using Ares.Core.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -121,11 +120,13 @@ internal class GuildCollection : ICollection
         }
         else
         {
-            string json = await JsonUtil.ObjectToStringAsync<Guild>(guild);
-            BsonDocument document = BsonDocument.Parse(json);
+            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(guild);
 
-            // Insert the document in the database if it doesn't exist.
-            await _collection.InsertOneAsync(document);
+            if (document != null)
+            {
+                // Insert the document in the database if it doesn't exist.
+                await _collection.InsertOneAsync(document);
+            }
 
             await _redisDatabase.SaveAsync(GRedisKey + id, guild);
             _manager.Save(guild);

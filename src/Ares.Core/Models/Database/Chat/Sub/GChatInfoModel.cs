@@ -8,7 +8,7 @@ using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Model;
 using System.Text.Json.Serialization;
 
-namespace Ares.Ares.Core.Models.Database.Chat.Sub;
+namespace Ares.Core.Models.Database.Chat.Sub;
 
 public class GChatInfoModel
 {

@@ -4,10 +4,10 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Models.Database.Chat.Sub;
+using Ares.Core.Models.Database.Chat.Sub;
 using System.Text.Json.Serialization;
 
-namespace Ares.Ares.Core.Models.Database.Chat;
+namespace Ares.Core.Models.Database.Chat;
 
 public class GChatModel
 {

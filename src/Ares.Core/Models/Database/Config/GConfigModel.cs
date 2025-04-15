@@ -6,7 +6,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Ares.Ares.Core.Models.Database.Config;
+namespace Ares.Core.Models.Database.Config;
 
 public partial class GuildConfigData
 {

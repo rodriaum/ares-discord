@@ -4,12 +4,12 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Models.Database;
-using Ares.Ares.Core.Models.Database.Chat.Sub;
-using Ares.Ares.Core.Models.Database.Token;
-using Ares.Ares.Core.Models.Message;
-using Ares.Ares.Core.Models.Model;
-using Ares.Ares.Core.Util;
+using Ares.Core.Models.Database;
+using Ares.Core.Models.Database.Chat.Sub;
+using Ares.Core.Models.Database.Token;
+using Ares.Core.Models.Message;
+using Ares.Core.Models.Model;
+using Ares.Core.Util;
 using Ares.Core.Manager;
 using Ares.Core.Objects.Chat;
 using Ares.Core.Objects.Chat.Image;

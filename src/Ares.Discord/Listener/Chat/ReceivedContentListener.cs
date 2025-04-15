@@ -4,9 +4,9 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Models.Database;
-using Ares.Ares.Core.Models.Database.Chat.Sub;
-using Ares.Ares.Discord.Util;
+using Ares.Core.Models.Database;
+using Ares.Core.Models.Database.Chat.Sub;
+using Ares.Discord.Util;
 using Ares.Core;
 using Ares.Core.Database.Collection;
 using Ares.Core.Objects.Chat;

@@ -4,13 +4,12 @@
  * Proprietary and confidential
  */
 
-using Ares.Ares.Core.Backend.Database;
-using Ares.Ares.Core.Backend.Database.Mongo;
-using Ares.Ares.Core.Backend.Database.Redis;
-using Ares.Ares.Core.Database.Repository;
-using Ares.Ares.Core.Monitor;
+using Ares.Core.Backend.Database;
 using Ares.Core.Database.Collection;
+using Ares.Core.Database.Repository;
 using Ares.Core.Manager;
+using Ares.Core.Models.Database;
+using Ares.Core.Monitor;
 using Discord;
 using DotNetEnv;
 using Microsoft.Extensions.AI;
