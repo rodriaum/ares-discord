@@ -39,109 +39,114 @@ public class ReceivedContentListener
     /// <summary>
     /// Handler for incoming messages.
     /// </summary>
-    private async Task MessageReceivedHandler(SocketMessage args)
+    private Task MessageReceivedHandler(SocketMessage args)
     {
-        try
+        _ = Task.Run(async () =>
         {
-            if (args is not SocketUserMessage message)
-                return;
-
-            if (!(args.Channel is SocketTextChannel channel))
-                return;
-
-            IUser user = args.Author;
-            if (user.Id.Equals(_client.CurrentUser.Id))
-                return;
-
-            SocketGuild socketGuild = channel.Guild;
-            if (socketGuild == null)
+            try
             {
-                await channel.SendMessageAsync(AresConstant.UnableGetMember);
-                return;
-            }
+                if (args is not SocketUserMessage message)
+                    return;
 
-            GuildRepository? repository = AresCore.GuildRepository;
-            if (repository == null)
+                if (!(args.Channel is SocketTextChannel channel))
+                    return;
+
+                IUser user = args.Author;
+                if (user.Id.Equals(_client.CurrentUser.Id))
+                    return;
+
+                SocketGuild socketGuild = channel.Guild;
+                if (socketGuild == null)
+                {
+                    await channel.SendMessageAsync(AresConstant.UnableGetMember);
+                    return;
+                }
+
+                GuildRepository? repository = AresCore.GuildRepository;
+                if (repository == null)
+                {
+                    await channel.SendMessageAsync(AresConstant.UnablePerformTask);
+                    return;
+                }
+
+                Guild? guild = await repository.FetchAsync(socketGuild.Id);
+                if (guild == null)
+                    return;
+
+                // Check if the channel is in the correct category and the user has an active conversation
+                // Alert: This code must be right here, if you move it to another place there may be problems.
+                if (!(channel.CategoryId.Equals(guild.Config?.ChatsCategoryId) &&
+                      GuildService.HasActiveUserConversation(guild, user.Id, channelId: channel.Id)))
+                    return;
+
+                // Check if the channel belongs to the user
+                if (!channel.Name.Contains(user.GlobalName.ToLower()))
+                    return;
+
+                // Create initial embed
+                EmbedBuilder embed = CreateInitialEmbed(guild);
+                RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
+
+                // Search for necessary information
+                GChatInfo? info = GuildService.ChatInfoByChannel(guild, user.Id, channel.Id);
+                if (info == null)
+                {
+                    await ModifyMessageWithError(botMessage, embed, GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfo));
+                    return;
+                }
+
+                ChatModel? model = GuildService.GetLastModelByUser(guild, user.Id, channel: channel.Id);
+                if (model == null)
+                {
+                    await ModifyMessageWithError(botMessage, embed, GuildService.GetTranslation(guild, LangKeys.CouldNotFindLastModel));
+                    return;
+                }
+
+                string prompt = message.Content;
+
+                // Future: Compatibility with files, etc.
+                if (string.IsNullOrWhiteSpace(prompt))
+                {
+                    await ModifyMessageWithError(botMessage, embed, "Atualmente o sistema de chat só está disponível por mensagem.");
+                    return;
+                }
+
+                SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
+                List<GChatHistoricModel>? historics = GuildService.ChatHistoricsByChannel(guild, user.Id, channel.Id);
+
+                // Process message based on template type
+                switch (model.Type)
+                {
+                    case ModelType.Chat:
+                        await ProcessChatModel(guild, guildUser, model, channel.Id, prompt, botMessage, embed, historics);
+                        break;
+
+                    case ModelType.Image:
+                        await ProcessImageModel(guild, guildUser, model, info, channel.Id, prompt, botMessage, embed, historics);
+                        break;
+
+                    case ModelType.TTS:
+                        await ProcessTTSModel(guild, guildUser, model, channel.Id, prompt, botMessage, embed, historics);
+                        break;
+
+                    default:
+                        await UpdateBotMessage
+                            (
+                                botMessage,
+                                new EmbedBuilder()
+                                    .WithDescription(GuildService.GetTranslation(guild, LangKeys.CouldNotFindModel))
+                                    .WithColor(Color.Red)
+                            );
+                        break;
+                }
+            }
+            catch (Exception e)
             {
-                await channel.SendMessageAsync(AresConstant.UnablePerformTask);
-                return;
+                await AresLogger.ErrorAsync(nameof(MessageReceivedHandler), "Can't process the content receiver.", e.Message);
             }
+        });
 
-            Guild? guild = await repository.FetchAsync(socketGuild.Id);
-            if (guild == null)
-                return;
-
-            // Check if the channel is in the correct category and the user has an active conversation
-            // Alert: This code must be right here, if you move it to another place there may be problems.
-            if (!(channel.CategoryId.Equals(guild.Config?.ChatsCategoryId) &&
-                  GuildService.HasActiveUserConversation(guild, user.Id, channelId: channel.Id)))
-                return;
-
-            // Check if the channel belongs to the user
-            if (!channel.Name.Contains(user.GlobalName.ToLower()))
-                return;
-
-            // Create initial embed
-            EmbedBuilder embed = CreateInitialEmbed(guild);
-            RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
-
-            // Search for necessary information
-            GChatInfo? info = GuildService.ChatInfoByChannel(guild, user.Id, channel.Id);
-            if (info == null)
-            {
-                await ModifyMessageWithError(botMessage, embed, GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfo));
-                return;
-            }
-
-            ChatModel? model = GuildService.GetLastModelByUser(guild, user.Id, channel: channel.Id);
-            if (model == null)
-            {
-                await ModifyMessageWithError(botMessage, embed, GuildService.GetTranslation(guild, LangKeys.CouldNotFindLastModel));
-                return;
-            }
-
-            string prompt = message.Content;
-
-            // Future: Compatibility with files, etc.
-            if (string.IsNullOrWhiteSpace(prompt))
-            {
-                await ModifyMessageWithError(botMessage, embed, "Atualmente o sistema de chat só está disponível por mensagem.");
-                return;
-            }
-
-            SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
-            List<GChatHistoricModel>? historics = GuildService.ChatHistoricsByChannel(guild, user.Id, channel.Id);
-
-            // Process message based on template type
-            switch (model.Type)
-            {
-                case ModelType.Chat:
-                    await ProcessChatModel(guild, guildUser, model, channel.Id, prompt, botMessage, embed, historics);
-                    break;
-
-                case ModelType.Image:
-                    await ProcessImageModel(guild, guildUser, model, info, channel.Id, prompt, botMessage, embed, historics);
-                    break;
-
-                case ModelType.TTS:
-                    await ProcessTTSModel(guild, guildUser, model, channel.Id, prompt, botMessage, embed, historics);
-                    break;
-
-                default:
-                    await UpdateBotMessage
-                        (
-                            botMessage,
-                            new EmbedBuilder()
-                                .WithDescription(GuildService.GetTranslation(guild, LangKeys.CouldNotFindModel))
-                                .WithColor(Color.Red)
-                        );
-                    break;
-            }
-        }
-        catch (Exception e)
-        {
-            await AresLogger.ErrorAsync(nameof(MessageReceivedHandler), "Can't process the content receiver.", e.Message);
-        }
+        return Task.CompletedTask;
     }
 
     private EmbedBuilder CreateInitialEmbed(Guild guild)

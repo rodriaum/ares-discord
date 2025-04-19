@@ -27,31 +27,41 @@ class GuildListener
         _client.GuildUnavailable += GuildUnavailable;
     }
 
-    private async Task GuildAvailable(SocketGuild sguild)
+    private Task GuildAvailable(SocketGuild sguild)
     {
-        if (sguild == null) return;
+        _ = Task.Run(async () =>
+        {
+            if (sguild == null) return;
 
-        GuildRepository? repository = AresCore.GuildRepository;
-        if (repository == null) return;
+            GuildRepository? repository = AresCore.GuildRepository;
+            if (repository == null) return;
 
-        await AresLogger.LogAsync("DB", $"Searching and caching guild \"{sguild.Id}\" in Redis.");
+            await AresLogger.LogAsync("DB", $"Searching and caching guild \"{sguild.Id}\" in Redis.");
 
-        Guild? guild = await repository.FetchAsync(sguild.Id, saveInRedis: true);
-        if (guild != null) return;
+            Guild? guild = await repository.FetchAsync(sguild.Id, saveInRedis: true);
+            if (guild != null) return;
 
-        await AresLogger.LogAsync("DB: Mongo", $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
+            await AresLogger.LogAsync("DB: Mongo", $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
 
-        await repository.SaveAsync(sguild.Id);
+            await repository.SaveAsync(sguild.Id);
+        });
+
+        return Task.CompletedTask;
     }
 
-    private async Task GuildUnavailable(SocketGuild guild)
+    private Task GuildUnavailable(SocketGuild guild)
     {
-        if (guild == null) return;
+        _ = Task.Run(async () =>
+        {
+            if (guild == null) return;
 
-        GuildRepository? repository = AresCore.GuildRepository;
-        if (repository == null) return;
+            GuildRepository? repository = AresCore.GuildRepository;
+            if (repository == null) return;
 
-        await AresLogger.LogAsync("DB: Redis", $"Guild \"{guild.Id}\" is not available, cache will be deleted.");
-        await repository.DeleteCache(guild.Id);
+            await AresLogger.LogAsync("DB: Redis", $"Guild \"{guild.Id}\" is not available, cache will be deleted.");
+            await repository.DeleteCache(guild.Id);
+        });
+
+        return Task.CompletedTask;
     }
 }

@@ -19,23 +19,28 @@ public class PingCommand
         _client = client;
     }
 
-    private async Task SlashCommandHandler(SocketSlashCommand command)
+    private Task SlashCommandHandler(SocketSlashCommand command)
     {
-        if (_client == null || !command.Data.Name.Equals("ping")) return;
-
-        int ms = _client.Latency;
-
-        Color color = ms < 30 ? Color.Green : ms >= 30 && ms <= 150 ? Color.Gold : ms > 150 ? Color.Red : Color.Default;
-
-        Embed embed = new EmbedBuilder
+        _ = Task.Run(async () =>
         {
-            Title = "Ping",
-            Description = $"O ping do gateway atual é {ms}ms",
-            Color = color,
-        }
-        .WithCurrentTimestamp()
-        .Build();
+            if (_client == null || !command.Data.Name.Equals("ping")) return;
 
-        await command.RespondAsync(embed: embed, ephemeral: true);
+            int ms = _client.Latency;
+
+            Color color = ms < 30 ? Color.Green : ms >= 30 && ms <= 150 ? Color.Gold : ms > 150 ? Color.Red : Color.Default;
+
+            Embed embed = new EmbedBuilder
+            {
+                Title = "Ping",
+                Description = $"O ping do gateway atual é {ms}ms",
+                Color = color,
+            }
+            .WithCurrentTimestamp()
+            .Build();
+
+            await command.RespondAsync(embed: embed, ephemeral: true);
+        });
+
+        return Task.CompletedTask;
     }
-} 
+}
