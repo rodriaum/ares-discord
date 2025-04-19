@@ -41,6 +41,16 @@ public class ModelsProvider
                 request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
+                display: "GPT-4.1",
+                model: "gpt-4.1",
+                task: ModelTaskCategory.Flagship,
+                exclusive: true
+            ),
+
+            new(
+                request: ChatRequestType.Web,
+                category: ModelCategory.OpenAI,
+                type: ModelType.Chat,
                 display: "o1 Pro",
                 model: "o1-pro",
                 descriptionKey: LangKeys.ModelDescO1Pro,
@@ -65,7 +75,7 @@ public class ModelsProvider
                 request: ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "o1-mini",
+                display: "o1 Mini",
                 model: "o1-mini",
                 task: ModelTaskCategory.Reasoning,
                 price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.0000011m),
@@ -76,11 +86,41 @@ public class ModelsProvider
                 request : ChatRequestType.Web,
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "o3-mini",
+                display: "o3",
+                model: "o3",
+                task: ModelTaskCategory.Reasoning,
+                exclusive: true
+            ),
+
+            new(
+                request : ChatRequestType.Web,
+                category: ModelCategory.OpenAI,
+                type: ModelType.Chat,
+                display: "o3 Mini",
                 model: "o3-mini",
                 descriptionKey: LangKeys.ModelDescO3Mini,
                 task: ModelTaskCategory.Reasoning,
                 price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.0000011m),
+                available: true
+            ),
+
+            new(
+                request : ChatRequestType.Web,
+                category: ModelCategory.OpenAI,
+                type: ModelType.Chat,
+                display: "o4 Mini",
+                model: "o4-mini",
+                task: ModelTaskCategory.Reasoning,
+                exclusive: true
+            ),
+
+            new(
+                request : ChatRequestType.Web,
+                category: ModelCategory.OpenAI,
+                type: ModelType.Chat,
+                display: "Chat GPT 4o Latest",
+                model: "chatgpt-4o-latest",
+                task: ModelTaskCategory.Flagship,
                 available: true
             ),
 
