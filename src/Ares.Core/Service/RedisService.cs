@@ -24,7 +24,7 @@ public class RedisService : Interfaces.IDatabase
     private readonly DatabaseCredentials _credentials;
 
     private ConnectionMultiplexer? _connection;
-    private StackExchange.Redis.IDatabase? _database;
+    private IDatabase? _database;
 
     /// <summary>
     /// Initializes a new instance of the RedisDatabase with specified credentials.
@@ -64,7 +64,10 @@ public class RedisService : Interfaces.IDatabase
         await AresLogger.LogAsync("DB: Redis", "Starting connection to Redis...");
 
         int time = 15;
-        int tries = 1;
+
+        int currentTries = 1;
+        int maxTries = 3;
+
         bool connected = false;
 
         while (!connected)
@@ -83,7 +86,7 @@ public class RedisService : Interfaces.IDatabase
                 _connection = await ConnectionMultiplexer.ConnectAsync(options);
                 _database = _connection.GetDatabase();
 
-                await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({tries}x/{FormatterUtil.FormatSeconds(start)})");
+                await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})");
                 connected = true;
             }
             catch (Exception ex)
@@ -91,7 +94,14 @@ public class RedisService : Interfaces.IDatabase
                 await AresLogger.ErrorAsync("DB: Redis", "Could not connect to Redis.", extra: ex.Message);
 
                 connected = false;
-                tries++;
+                currentTries++;
+
+                if (currentTries > maxTries)
+                {
+                    await AresLogger.ErrorAsync("DB: Redis", "Max tries reached, stopping connection attempts.");
+                    Environment.Exit(1);
+                    break;
+                }
 
                 await AresLogger.ErrorAsync("DB: Redis", $"Trying to connect in {time}s...");
                 await Task.Delay(time);
@@ -112,7 +122,7 @@ public class RedisService : Interfaces.IDatabase
             try
             {
                 await FlushAsync();
-                await _connection?.CloseAsync()!;
+                await _connection.CloseAsync();
                 await _connection.DisposeAsync();
             }
             catch (Exception ex)
@@ -136,7 +146,7 @@ public class RedisService : Interfaces.IDatabase
     /// </summary>
     public async Task<RedisResult> FlushAsync()
     {
-        return await _database?.ExecuteAsync("FLUSHDB")!;
+        return await _database.ExecuteAsync("FLUSHDB");
     }
 
     /// <summary>
@@ -146,7 +156,7 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>True if the key exists, false otherwise.</returns>
     public async Task<bool> ExistsAsync(string key)
     {
-        return await _database?.KeyExistsAsync(key)!;
+        return await _database.KeyExistsAsync(key);
     }
 
     /// <summary>
@@ -159,7 +169,7 @@ public class RedisService : Interfaces.IDatabase
         if (await ExistsAsync(key)) return;
 
         HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
-        await _database?.HashSetAsync(key, fields)!;
+        await _database?.HashSetAsync(key, fields);
     }
 
     /// <summary>
@@ -172,7 +182,7 @@ public class RedisService : Interfaces.IDatabase
         if (await ExistsAsync(key))
         {
             HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
-            await _database?.HashSetAsync(key, fields)!;
+            await _database.HashSetAsync(key, fields);
         }
     }
 
@@ -183,7 +193,7 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="message">The message to publish.</param>
     public async Task<long> PublishAsync(string channel, string message)
     {
-        return await _connection?.GetSubscriber()?.PublishAsync(RedisChannel.Pattern(channel), message)!;
+        return await _connection.GetSubscriber().PublishAsync(RedisChannel.Pattern(channel), message);
     }
 
     /// <summary>
@@ -204,7 +214,7 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="key">The key to delete.</param
     public async Task<bool> DeleteAsync(string key)
     {
-        return await _database?.KeyDeleteAsync(key)!;
+        return await _database.KeyDeleteAsync(key);
     }
 
     /// <summary>
@@ -214,7 +224,7 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="seconds">The number of seconds until expiration.</param>
     public async Task CacheAsync(string key, int seconds)
     {
-        await _database?.KeyExpireAsync(key, TimeSpan.FromSeconds(seconds))!;
+        await _database.KeyExpireAsync(key, TimeSpan.FromSeconds(seconds));
     }
 
     /// <summary>
@@ -238,7 +248,7 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="fields">The fields to delete.</param>
     public async Task<long> DeleteAsync(string key, params string[] fields)
     {
-        return await _database?.HashDeleteAsync(key, fields.Select(f => (RedisValue)f).ToArray())!;
+        return await _database.HashDeleteAsync(key, fields.Select(f => (RedisValue)f).ToArray());
     }
 
     /// <summary>
@@ -249,7 +259,7 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>The loaded object, or null if not found.</returns>
     public async Task<T?> LoadAsync<T>(string key) where T : class
     {
-        HashEntry[] fields = await _database?.HashGetAllAsync(key)!;
+        HashEntry[] fields = await _database.HashGetAllAsync(key);
 
         if (fields.Length == 0)
             return null;
@@ -265,12 +275,12 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>A list of matching objects.</returns>
     public async Task<List<T>> LoadAllAsync<T>(string key) where T : class
     {
-        RedisResult keys = await _database?.ExecuteAsync("KEYS", $"{key}*")!;
+        RedisResult keys = await _database.ExecuteAsync("KEYS", $"{key}*");
         List<T> results = new List<T>();
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
-            HashEntry[] fields = await _database?.HashGetAllAsync(value.Key)!;
+            HashEntry[] fields = await _database.HashGetAllAsync(value.Key);
 
             if (fields.Length > 0)
             {
@@ -289,11 +299,11 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="key">The key pattern to match and remove.</param>
     public async Task RemoveAllAsync(string key)
     {
-        RedisResult keys = await _database?.ExecuteAsync("KEYS", $"{key}*")!;
+        RedisResult keys = await _database.ExecuteAsync("KEYS", $"{key}*");
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
-            await _database?.KeyDeleteAsync(value.Key)!;
+            await _database.KeyDeleteAsync(value.Key);
         }
     }
 
@@ -304,7 +314,7 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>The number of elements in the set.</returns>
     public async Task<int> GetTotalCountAsync(string key)
     {
-        long lenght = await _database?.SetLengthAsync(key)!;
+        long lenght = await _database.SetLengthAsync(key);
         return (int)lenght;
     }
 

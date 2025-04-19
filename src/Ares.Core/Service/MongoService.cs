@@ -49,7 +49,10 @@ public class MongoService : IDatabase
         await AresLogger.LogAsync("DB: Mongo", "Connecting...");
 
         int time = 15;
-        int tries = 1;
+
+        int currentTries = 1;
+        int maxTries = 3;
+
         bool connected = false;
 
         while (!connected)
@@ -61,7 +64,7 @@ public class MongoService : IDatabase
                 client = new MongoClient(settings);
                 mongoDatabase = client.GetDatabase(credentials.Database);
 
-                await AresLogger.LogAsync("DB: Mongo", $"Connection established. ({tries}x/{FormatterUtil.FormatSeconds(start)})");
+                await AresLogger.LogAsync("DB: Mongo", $"Connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})");
                 connected = true;
             }
             catch (Exception e)
@@ -69,7 +72,14 @@ public class MongoService : IDatabase
                 await AresLogger.ErrorAsync("DB: Mongo", "Unable to connect.", e.Message);
                 
                 connected = false;
-                tries++;
+                currentTries++;
+
+                if (currentTries > maxTries)
+                {
+                    await AresLogger.ErrorAsync("DB: Mongo", "Max tries reached, stopping connection attempts.");
+                    Environment.Exit(1);
+                    break;
+                }
 
                 await AresLogger.ErrorAsync("DB: Mongo", $"Trying to connect in {time}s...");
                 await Task.Delay(time);

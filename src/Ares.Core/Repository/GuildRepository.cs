@@ -147,7 +147,7 @@ public class GuildRepository : IRepository
     {
         Guild? guild = await _redisDatabase.LoadAsync<Guild>(GRedisKey + id);
 
-        if (guild != null)
+        if (guild == null)
         {
             FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
@@ -206,7 +206,7 @@ public class GuildRepository : IRepository
             await _collection.UpdateOneAsync(filter, update);
 
             // Update Redis
-            await _redisDatabase.UpdateAsync(GRedisKey + guild, guild);
+            await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
 
             return true;
         }
