@@ -44,7 +44,7 @@ public class ConfigCommand
             await command.RespondAsync(ephemeral: true, embed: embed.Build());
             RestInteractionMessage message = await command.GetOriginalResponseAsync();
 
-            GuildRepository? repository = AresCore.GuildRepository;
+            GuildRepository? repository = AresCore.GRepository;
 
             if (repository == null)
             {

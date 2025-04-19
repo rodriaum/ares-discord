@@ -38,7 +38,7 @@ public class AresCore
     /// <summary>
     /// Gets or sets the guild collection for database operations.
     /// </summary>
-    public static GuildRepository? GuildRepository { get; private set; }
+    public static GuildRepository? GRepository { get; private set; }
 
     /// <summary>
     /// Language manager instance for handling localization.
@@ -115,7 +115,7 @@ public class AresCore
          * Database collections
          */
 
-        GuildRepository = new GuildRepository(mongoDatabase, redisDatabase);
+        GRepository = new GuildRepository(mongoDatabase, redisDatabase);
 
         return mongoDatabase != null && redisDatabase != null;
     }

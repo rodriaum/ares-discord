@@ -43,7 +43,7 @@ public class ChatButtonListener
                     return;
                 }
 
-                GuildRepository? repository = AresCore.GuildRepository;
+                GuildRepository? repository = AresCore.GRepository;
 
                 if (repository == null)
                 {

@@ -33,7 +33,7 @@ class GuildListener
         {
             if (sguild == null) return;
 
-            GuildRepository? repository = AresCore.GuildRepository;
+            GuildRepository? repository = AresCore.GRepository;
             if (repository == null) return;
 
             await AresLogger.LogAsync("DB", $"Searching and caching guild \"{sguild.Id}\" in Redis.");
@@ -55,7 +55,7 @@ class GuildListener
         {
             if (guild == null) return;
 
-            GuildRepository? repository = AresCore.GuildRepository;
+            GuildRepository? repository = AresCore.GRepository;
             if (repository == null) return;
 
             await AresLogger.LogAsync("DB: Redis", $"Guild \"{guild.Id}\" is not available, cache will be deleted.");

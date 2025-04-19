@@ -26,15 +26,15 @@ public class GuildService
     /// <param name="guild">The guild to save.</param>
     /// <param name="fields">List of field names to be saved.</param>
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveAsync(Guild guild, List<string> fields)
+    public static async Task<bool> SaveAsync(Guild guild, params string[] fields)
     {
-        if (fields == null || fields.Count == 0)
+        if (fields == null || fields.Length == 0)
         {
             AresLogger.Error(nameof(SaveAsync), "The field list is null or empty.");
             return false;
         }
 
-        if (AresCore.GuildRepository is not { } guildData)
+        if (AresCore.GRepository is not { } repository)
         {
             AresLogger.Error(nameof(SaveAsync), "Guild data is null. Unable to save fields.");
             return false;
@@ -50,7 +50,7 @@ public class GuildService
                     continue;
                 }
 
-                await guildData.UpdateAsync(guild, field);
+                await repository.UpdateAsync(guild, field);
             }
 
             return true;
@@ -60,17 +60,6 @@ public class GuildService
             AresLogger.Error(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message);
             return false;
         }
-    }
-
-    /// <summary>
-    /// Saves a single field of the guild to the database.
-    /// </summary>
-    /// <param name="guild">The guild to save.</param>
-    /// <param name="field">The field name to be saved.</param>
-    /// <returns>Returns true if the field was successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveAsync(Guild guild, string field)
-    {
-        return await SaveAsync(guild, new List<string> { field });
     }
 
     /// <summary>

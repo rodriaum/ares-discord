@@ -49,7 +49,7 @@ public class ChatImageOptionListener
                     return;
                 }
 
-                GuildRepository? repository = AresCore.GuildRepository;
+                GuildRepository? repository = AresCore.GRepository;
 
                 if (repository == null)
                 {
