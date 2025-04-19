@@ -11,8 +11,6 @@ namespace Ares.Core.Util;
 
 public class WebUtil
 {
-    private const string ImgurApiUrl = "https://api.imgur.com/3/image";
-
     public static async Task<string?> UploadMediaFromUrl(string token, string imageUrl)
     {
         using (HttpClient client = new HttpClient())
@@ -24,7 +22,7 @@ public class WebUtil
                 { new StringContent(imageUrl), "image" }
             };
 
-            HttpResponseMessage response = await client.PostAsync(ImgurApiUrl, content);
+            HttpResponseMessage response = await client.PostAsync(AresConstant.ImgurApiUrl, content);
             string jsonResponse = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)

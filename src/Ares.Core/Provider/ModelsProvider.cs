@@ -9,34 +9,16 @@ using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Chat.Price;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
-using Ares.Core.Util;
-using Microsoft.Extensions.AI;
-using MongoDB.Bson;
-using System.Collections.ObjectModel;
 
-namespace Ares.Core.Manager;
+namespace Ares.Core.Provider;
 
-public class AiManager
+public class ModelsProvider
 {
-    private static IReadOnlyCollection<ChatModel> _chatModels;
+    public static IReadOnlyCollection<ChatModel> Models;
 
-    public static IReadOnlyCollection<ChatModel> Models => _chatModels;
-
-    static AiManager()
+    public ModelsProvider()
     {
-        _chatModels = new ReadOnlyCollection<ChatModel>(new List<ChatModel>());
-    }
-
-    public async Task Init()
-    {
-        _chatModels = new ReadOnlyCollection<ChatModel>(await InitializeModels());
-    }
-
-    private async static Task<List<ChatModel>> InitializeModels()
-    {
-        AresLogger.Log("AI", "Starting AI model registration...");
-
-        List<ChatModel> models = new List<ChatModel>
+        Models = new List<ChatModel>
         {
 
             /*
@@ -538,24 +520,5 @@ public class AiManager
                 dev: true
             ),
         };
-
-        // Empty Message
-        Console.WriteLine();
-
-        foreach (ChatModel model in models)
-        {
-            AresLogger.Log(
-                $"AI: {model.Category.ToString()}",
-                $"Type \"{model.Type.ToString().ToLower()}\" with model \"{model.Model.ToString().ToLower()}\" registered."
-            );
-        }
-
-        // Empty Message
-        Console.WriteLine();
-
-        AresLogger.Log("AI", "Registered AI models.");
-
-        return models;
     }
-
 }

@@ -6,11 +6,11 @@
 
 using Ares.Discord.Util;
 using Ares.Core;
-using Ares.Core.Manager;
 using Ares.Core.Objects.Model;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
+using Ares.Core.Provider;
 
 namespace Ares.Discord.Commands;
 
@@ -62,7 +62,7 @@ public class SetupCommand
 
                 ComponentBuilder builder = new ComponentBuilder();
 
-                if (AiManager.Models == null || !AiManager.Models.Any())
+                if (ModelsProvider.Models == null || !ModelsProvider.Models.Any())
                 {
                     await message.ModifyAsync(it => it.Embed = embed.WithDescription("Nenhum modelo de IA disponível.").Build());
                     return;
@@ -76,7 +76,7 @@ public class SetupCommand
                         .WithPlaceholder(name)
                         .WithCustomId($"chat-menu-{name.ToLower()}");
 
-                    foreach (ChatModel model in AiManager.Models)
+                    foreach (ChatModel model in ModelsProvider.Models)
                     {
                         if (model.Category != category) continue;
 

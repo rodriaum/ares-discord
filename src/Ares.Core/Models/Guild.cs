@@ -22,21 +22,21 @@ public class Guild
     /// </summary>
     [JsonInclude]
     [JsonPropertyName("token")]
-    public GTokenModel Token;
+    public GToken Token;
 
     /// <summary>
     /// Config data for the guild.
     /// </summary>
     [JsonInclude]
     [JsonPropertyName("config")]
-    public GuildConfigData Config;
+    public GConfig Config;
 
     /// <summary>
     /// Chat data for the guild.
     /// </summary>
     [JsonInclude]
     [JsonPropertyName("chat")]
-    public GChatModel Chat;
+    public GChat Chat;
 
     /// <summary>
     /// Initializes a new instance of the Guild class.
@@ -46,8 +46,8 @@ public class Guild
     {
         Id = id;
 
-        Token = new GTokenModel();
-        Config = new GuildConfigData();
-        Chat = new GChatModel();
+        Token = new GToken();
+        Config = new GConfig();
+        Chat = new GChat();
     }
 }

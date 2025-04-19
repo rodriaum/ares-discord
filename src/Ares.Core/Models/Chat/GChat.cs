@@ -9,14 +9,14 @@ using System.Text.Json.Serialization;
 
 namespace Ares.Core.Models.Chat;
 
-public class GChatModel
+public class GChat
 {
     [JsonInclude]
     [JsonPropertyName("infos")]
-    public Dictionary<ulong, List<GChatInfoModel>> Infos { get; set; }
+    public Dictionary<ulong, List<GChatInfo>> Infos { get; set; }
 
-    public GChatModel()
+    public GChat()
     {
-        Infos = new Dictionary<ulong, List<GChatInfoModel>>();
+        Infos = new Dictionary<ulong, List<GChatInfo>>();
     }
 }

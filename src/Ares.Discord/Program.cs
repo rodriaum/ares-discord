@@ -5,9 +5,8 @@
  */
 
 using Ares.Core;
-using Ares.Core.Manager;
 using Ares.Core.Objects.Model;
-using Ares.Core.Service;
+using Ares.Core.Provider;
 using Ares.Core.Util;
 using Ares.Discord.Commands;
 using Ares.Discord.Listener;
@@ -118,8 +117,8 @@ public class Program
         // Register commands
         await RegisterCommands();
 
-        // Initialize managers
-        await new AiManager().Init();
+        // Register models
+        new ModelsProvider();
 
         // Configure bot status
         await ConfigureBotStatus();

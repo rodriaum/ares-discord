@@ -94,8 +94,8 @@ public class ConfigCommand
 
         IReadOnlyCollection<SocketSlashCommandDataOption> options = command.Data.Options;
 
-        GTokenModel tokenData = guild.Token;
-        GuildConfigData configData = guild.Config;
+        GToken tokenData = guild.Token;
+        GConfig configData = guild.Config;
 
         StringBuilder sb = new StringBuilder();
 

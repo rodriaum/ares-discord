@@ -9,10 +9,14 @@ namespace Ares.Core;
 public class AresConstant
 {
     /*
-     * General 
+     * App
      */
 
     public static readonly string AppName = "Ares";
+
+    /*
+     * Messages
+     */
 
     public static readonly string UnablePerformTask = "Ops! Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.";
     public static readonly string UnableGetMember = "Ops! Não foi possível encontrar as informações do seu perfil.";
@@ -43,4 +47,11 @@ public class AresConstant
      */
 
     public static readonly int MaxPremiumConversations = 5;
+    public static readonly int MaxFreeConversations = 1;
+
+    /*
+     * URLs
+     */
+
+    public static readonly string ImgurApiUrl = "https://api.imgur.com/3/image";
 }

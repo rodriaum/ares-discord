@@ -81,7 +81,7 @@ public class ChatButtonListener
                 return;
             }
 
-            GChatInfoModel? info = GuildService.ChatInfoByChannel(guild, user.Id, channel.Id);
+            GChatInfo? info = GuildService.ChatInfoByChannel(guild, user.Id, channel.Id);
 
             if (info == null)
             {

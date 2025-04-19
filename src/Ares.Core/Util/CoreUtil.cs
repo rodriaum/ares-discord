@@ -5,7 +5,7 @@ namespace Ares.Core.Util;
 
 public class CoreUtil
 {
-    public static string? GetTokenByModelCategory(ModelCategory category, GTokenModel data)
+    public static string? GetTokenByModelCategory(ModelCategory category, GToken data)
     {
         return category switch
         {

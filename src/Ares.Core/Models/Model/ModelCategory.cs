@@ -13,43 +13,41 @@ public enum ModelCategory
     /// <summary>
     /// OpenAI
     /// </summary>
-    [WebApi(endpoint: "https://api.openai.com/v1", remoteStreaming: true)]
+    [WebApi(endpoint: "https://api.openai.com/v1")]
     OpenAI,
 
     /// <summary>
     /// Anthropic
     /// </summary>
-    [WebApi(endpoint: "https://api.anthropic.com/v1/", remoteStreaming: false)]
+    [WebApi(endpoint: "https://api.anthropic.com/v1/")]
     Anthropic,
 
     /// <summary>
     /// DeepSeek
     /// </summary>
-    [WebApi(endpoint: "https://api.deepseek.com", remoteStreaming: true, localStreaming: true)]
+    [WebApi(endpoint: "https://api.deepseek.com")]
     DeepSeek,
 
     /// <summary>
     /// xAI
     /// </summary>
-    [WebApi(endpoint: "https://api.x.ai/v1", remoteStreaming: true)]
+    [WebApi(endpoint: "https://api.x.ai/v1")]
     xAI,
 
     /// <summary>
     /// Google
     /// </summary>
-    [WebApi(endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/", remoteStreaming: true)]
+    [WebApi(endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/")]
     Google,
 
     /// <summary>
     /// Meta AI
     /// </summary>
-    [WebApi(localStreaming: true)]
     MetaAI,
 
     /// <summary>
     /// Microsoft
     /// </summary>
-    [WebApi(localStreaming: true)]
     Microsoft,
 
     /// <summary>
@@ -62,15 +60,10 @@ public enum ModelCategory
 public class WebApiAttribute : Attribute
 {
     public string? RemoteEndpoint { get; }
-    public bool RemoteStreamingResponses { get; }
 
-    public bool LocalStreamingResponses { get; }
-
-    public WebApiAttribute(string? endpoint = null, bool remoteStreaming = false, bool localStreaming = false)
+    public WebApiAttribute(string? endpoint = null)
     {
         this.RemoteEndpoint = endpoint;
-        this.RemoteStreamingResponses = remoteStreaming;
-        this.LocalStreamingResponses = localStreaming;
     }
 }
 
@@ -87,26 +80,6 @@ public static class ModelCategoryExtensions
         if (string.IsNullOrEmpty(endpoint)) return null;
 
         return new Uri(endpoint) ?? null;
-    }
-
-    public static bool HasRemoteStreamingResponses(this ModelCategory category)
-    {
-        WebApiAttribute? attribute = GetWebApiAttribute(category);
-
-        if (attribute == null)
-            return false;
-
-        return attribute.RemoteStreamingResponses;
-    }
-
-    public static bool HasLocalStreamingResponses(this ModelCategory category)
-    {
-        WebApiAttribute? attribute = GetWebApiAttribute(category);
-
-        if (attribute == null)
-            return false;
-
-        return attribute.LocalStreamingResponses;
     }
 
     private static WebApiAttribute? GetWebApiAttribute(this ModelCategory category)

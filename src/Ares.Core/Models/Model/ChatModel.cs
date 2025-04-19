@@ -5,9 +5,9 @@
  */
 
 using Ares.Core.Models.Model;
-using Ares.Core.Manager;
 using Ares.Core.Objects.Chat.Price;
 using MongoDB.Driver.Linq;
+using Ares.Core.Provider;
 
 namespace Ares.Core.Objects.Model;
 
@@ -60,14 +60,14 @@ public class ChatModel
 
     public static List<ChatModel> GetModelsByCategory(ModelType category)
     {
-        return AiManager.Models
+        return ModelsProvider.Models
             .Where(model => model.Type.Equals(category))
             .ToList();
     }
 
     public static ChatModel? GetByDisplayName(string displayName)
     {
-        return AiManager.Models
+        return ModelsProvider.Models
                 .Where(model => model.DisplayName.Equals(displayName))
                 .First();
     }
@@ -81,7 +81,7 @@ public class ChatModel
     /// <returns>O modelo correspondente ou null caso não encontrado.</returns>
     public static ChatModel? GetByModel(string model)
     {
-        return AiManager.Models
+        return ModelsProvider.Models
                 .Where(it => it.Model.Equals(model, StringComparison.OrdinalIgnoreCase))
                 .FirstOrDefault();
     }
@@ -97,7 +97,7 @@ public class ChatModel
     /// <returns>O modelo correspondente ou null caso não encontrado.</returns>
     public static ChatModel? GetByNearestModel(string model)
     {
-        return AiManager.Models
+        return ModelsProvider.Models
                 .Where(it => model.StartsWith(it.Model))
                 .FirstOrDefault();
     }

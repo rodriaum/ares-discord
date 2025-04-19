@@ -86,7 +86,7 @@ public class ReceivedContentListener
             RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
 
             // Search for necessary information
-            GChatInfoModel? info = GuildService.ChatInfoByChannel(guild, user.Id, channel.Id);
+            GChatInfo? info = GuildService.ChatInfoByChannel(guild, user.Id, channel.Id);
             if (info == null)
             {
                 await ModifyMessageWithError(botMessage, embed, GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfo));
@@ -213,7 +213,7 @@ public class ReceivedContentListener
         Guild guild,
         SocketGuildUser user,
         ChatModel model,
-        GChatInfoModel info,
+        GChatInfo info,
         ulong channelId,
         string prompt,
         RestUserMessage botMessage,

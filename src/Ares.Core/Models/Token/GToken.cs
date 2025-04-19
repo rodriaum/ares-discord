@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 
 namespace Ares.Core.Models.Token;
 
-public class GTokenModel
+public class GToken
 {
     [JsonInclude]
     [JsonPropertyName("openai")]
@@ -34,7 +34,7 @@ public class GTokenModel
     [JsonPropertyName("imgur")]
     public string? Imgur { get; set; }
 
-    public GTokenModel(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? google = "", string? imgur = "")
+    public GToken(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? google = "", string? imgur = "")
     {
         OpenAi = openai;
         Anthropic = anthropic;

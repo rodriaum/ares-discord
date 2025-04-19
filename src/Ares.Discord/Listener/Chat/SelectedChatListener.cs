@@ -82,7 +82,7 @@ public class SelectedChatListener
                 return;
             }
 
-            GuildConfigData? gid = guild.Config;
+            GConfig? gid = guild.Config;
 
             if (gid == null)
             {
@@ -121,8 +121,11 @@ public class SelectedChatListener
 
                 if (!isPremium)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ActiveConversation));
-                    return;
+                    if (conversations >= AresConstant.MaxFreeConversations)
+                    {
+                        await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ActiveConversation));
+                        return;
+                    }
                 }
                 else
                 {
@@ -165,7 +168,7 @@ public class SelectedChatListener
             SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
             RestTextChannel channel = await socketGuild.CreateTextChannelAsync($"{emojiUnicode}┃{user.GlobalName}", properties => properties.CategoryId = category.Id);
 
-            GChatInfoModel info = new GChatInfoModel
+            GChatInfo info = new GChatInfo
                 (
                     active: true,
                     channel: channel.Id,

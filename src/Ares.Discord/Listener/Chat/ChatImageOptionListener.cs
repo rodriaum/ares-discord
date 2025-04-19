@@ -81,7 +81,7 @@ public class ChatImageOptionListener
 
             IUser user = args.User;
 
-            GChatInfoModel? chat = GuildService.ChatInfoByChannel(guild, user.Id, channelId.Value);
+            GChatInfo? chat = GuildService.ChatInfoByChannel(guild, user.Id, channelId.Value);
 
             if (chat == null)
             {

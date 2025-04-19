@@ -79,7 +79,7 @@ public class GuildService
     /// <param name="guild">The guild to save the config data.</param>
     /// <param name="token">Object containing guild token data.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveTokenDataAsync(Guild guild, GTokenModel? token = null)
+    public static async Task<bool> SaveTokenDataAsync(Guild guild, GToken? token = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (token != null)
@@ -96,7 +96,7 @@ public class GuildService
     /// <param name="guild">The guild to save the config data.</param>
     /// <param name="config">Object containing guild token data.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveConfigDataAsync(Guild guild, GuildConfigData? config = null)
+    public static async Task<bool> SaveConfigDataAsync(Guild guild, GConfig? config = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (config != null)
@@ -113,7 +113,7 @@ public class GuildService
     /// <param name="guild">The guild to save the chat data.</param>
     /// <param name="chat">Object containing the guild's chat data.</param>
     /// <returns>Returns true if data was successfully updated, false otherwise.</returns>
-    public static async Task<bool> SaveChatDataAsync(Guild guild, GChatModel? chat = null)
+    public static async Task<bool> SaveChatDataAsync(Guild guild, GChat? chat = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (chat != null)
@@ -131,7 +131,7 @@ public class GuildService
     /// <param name="infos">List of information to be added.</param>
     /// <param name="onlyCached">Optional: If true, data is stored locally instead of in the database.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveInfoAsync(Guild guild, ulong userId, List<GChatInfoModel> infos, bool onlyCached = false)
+    public static async Task<bool> SaveInfoAsync(Guild guild, ulong userId, List<GChatInfo> infos, bool onlyCached = false)
     {
         guild.Chat.Infos[userId] = infos;
         return !onlyCached ? await SaveChatDataAsync(guild) : true;
@@ -144,9 +144,9 @@ public class GuildService
     /// <param name="userId">The user to save history for.</param>
     /// <param name="info">Chat information to be saved.</param>
     /// <returns>Returns true if the history was successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveHistoricAsync(Guild guild, ulong userId, GChatInfoModel info)
+    public static async Task<bool> SaveHistoricAsync(Guild guild, ulong userId, GChatInfo info)
     {
-        List<GChatInfoModel>? list = ChatInfos(guild, userId);
+        List<GChatInfo>? list = ChatInfos(guild, userId);
 
         if (list == null) return await Task.FromResult(false);
 
@@ -162,17 +162,17 @@ public class GuildService
     /// <param name="userId">The user whose information should be updated.</param>
     /// <param name="info">The updated chat information.</param>
     /// <returns>Returns true if information was successfully updated, false otherwise.</returns>
-    public static async Task<bool> UpdateChatInfoAsync(Guild guild, ulong userId, GChatInfoModel info)
+    public static async Task<bool> UpdateChatInfoAsync(Guild guild, ulong userId, GChatInfo info)
     {
-        List<GChatInfoModel>? infos = ChatInfos(guild, userId);
+        List<GChatInfo>? infos = ChatInfos(guild, userId);
 
         if (infos == null)
         {
-            infos = new List<GChatInfoModel>();
+            infos = new List<GChatInfo>();
             await SaveInfoAsync(guild, userId, infos, onlyCached: true);
         }
 
-        GChatInfoModel? existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
+        GChatInfo? existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
 
         // It seems strange, but it is done so as not to add the same information as the chat.
         if (existingInfo != null && guild.Chat.Infos.ContainsKey(userId))
@@ -191,7 +191,7 @@ public class GuildService
     /// </summary>
     /// <param name="guild">The guild to get the information.</param>
     /// <returns>Dictionary containing conversation histories or null if they don't exist.</returns>
-    public static Dictionary<ulong, List<GChatInfoModel>>? Infos(Guild guild)
+    public static Dictionary<ulong, List<GChatInfo>>? Infos(Guild guild)
     {
         return guild.Chat.Infos;
     }
@@ -204,7 +204,7 @@ public class GuildService
     /// <returns>List of chat history records or null if not found.</returns>
     public static List<GChatHistoricModel>? ChatHistorics(Guild guild, ulong userId, ulong channel = 0)
     {
-        List<GChatInfoModel>? infos = Infos(guild)?.GetValueOrDefault(userId);
+        List<GChatInfo>? infos = Infos(guild)?.GetValueOrDefault(userId);
         if (infos == null) return null;
 
         if (channel != 0)
@@ -223,7 +223,7 @@ public class GuildService
     /// <param name="guild">The guild to get the information.</param>
     /// <param name="userId">The user to get chat information for.</param>
     /// <returns>List of chat information objects or null if not found.</returns>
-    public static List<GChatInfoModel>? ChatInfos(Guild guild, ulong userId)
+    public static List<GChatInfo>? ChatInfos(Guild guild, ulong userId)
     {
         var infos = Infos(guild);
         if (infos == null) return null;
@@ -253,9 +253,9 @@ public class GuildService
     /// <param name="userId">The user to get chat information for.</param>
     /// <param name="channel">The channel ID to filter information by.</param>
     /// <returns>Chat information object or null if not found.</returns>
-    public static GChatInfoModel? ChatInfoByChannel(Guild guild, ulong userId, ulong channel)
+    public static GChatInfo? ChatInfoByChannel(Guild guild, ulong userId, ulong channel)
     {
-        List<GChatInfoModel>? userInfos = Infos(guild)?.GetValueOrDefault(userId);
+        List<GChatInfo>? userInfos = Infos(guild)?.GetValueOrDefault(userId);
         if (userInfos == null || !userInfos.Any()) return null;
 
         return userInfos.Find(historic => historic.Channel == channel);
@@ -271,14 +271,14 @@ public class GuildService
     /// <returns>Returns true if status was successfully changed, false otherwise.</returns>
     public static Task<bool> ToggleChatInfo(Guild guild, ulong userId, ulong channel, bool active)
     {
-        List<GChatInfoModel>? infos = ChatInfos(guild, userId);
+        List<GChatInfo>? infos = ChatInfos(guild, userId);
         if (infos == null)
         {
             AresLogger.Error(nameof(ToggleChatInfo), "Unable to change the status of a chat information.");
             return Task.FromResult(false);
         }
 
-        GChatInfoModel? info = infos.LastOrDefault(i => i.Channel == channel);
+        GChatInfo? info = infos.LastOrDefault(i => i.Channel == channel);
 
         if (info != null)
         {
@@ -312,9 +312,9 @@ public class GuildService
     /// <param name="userId">The user to get the last chat information for.</param>
     /// <param name="channel">Optional: Channel ID to filter by. If 0, returns the last information from any channel.</param>
     /// <returns>The last chat information or null if not found.</returns>
-    public static GChatInfoModel? LastChatInfo(Guild guild, ulong userId, ulong channel = 0)
+    public static GChatInfo? LastChatInfo(Guild guild, ulong userId, ulong channel = 0)
     {
-        List<GChatInfoModel>? infos = ChatInfos(guild, userId);
+        List<GChatInfo>? infos = ChatInfos(guild, userId);
 
         if (infos == null || infos.Count == 0)
             return null;
@@ -330,9 +330,9 @@ public class GuildService
     /// <param name="info">The chat information to be created.</param>
     /// <returns>Returns true if chat data was successfully created, false otherwise.</returns>
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
-    public static async Task<bool> CreateChatData(Guild guild, ulong userId, GChatInfoModel info)
+    public static async Task<bool> CreateChatData(Guild guild, ulong userId, GChatInfo info)
     {
-        GChatModel chat = guild.Chat;
+        GChat chat = guild.Chat;
 
         if (chat == null)
         {
@@ -342,9 +342,9 @@ public class GuildService
 
         try
         {
-            if (!chat.Infos.TryGetValue(userId, out List<GChatInfoModel>? infos))
+            if (!chat.Infos.TryGetValue(userId, out List<GChatInfo>? infos))
             {
-                infos = new List<GChatInfoModel>();
+                infos = new List<GChatInfo>();
                 chat.Infos[userId] = infos;
             }
 
@@ -391,7 +391,7 @@ public class GuildService
         if (guild.Chat is not { } chat)
             return false;
 
-        GChatInfoModel? info = ChatInfoByChannel(guild, userId, channel);
+        GChatInfo? info = ChatInfoByChannel(guild, userId, channel);
 
         if (info == null)
         {
@@ -415,7 +415,7 @@ public class GuildService
     /// <returns>Returns true if history was successfully added, false otherwise.</returns>
     public static async Task<bool> UpdateChatHistoricsAsync(Guild guild, ulong userId, ulong channel, GChatHistoricModel historic)
     {
-        GChatInfoModel? info = ChatInfoByChannel(guild, userId, channel);
+        GChatInfo? info = ChatInfoByChannel(guild, userId, channel);
 
         if (info == null)
         {
@@ -446,7 +446,7 @@ public class GuildService
     /// <returns>Returns true if the record was successfully removed, false otherwise.</returns>
     public static async Task<bool> RemoveConversationAsync(Guild guild, ulong userId, ulong channel, GChatHistoricModel historic)
     {
-        GChatInfoModel? info = ChatInfoByChannel(guild, userId, channel);
+        GChatInfo? info = ChatInfoByChannel(guild, userId, channel);
 
         if (info == null)
         {
@@ -477,7 +477,7 @@ public class GuildService
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
     public static bool HasActiveUserConversation(Guild guild, ulong userId, ulong channelId = 0)
     {
-        Dictionary<ulong, List<GChatInfoModel>>? infos = Infos(guild);
+        Dictionary<ulong, List<GChatInfo>>? infos = Infos(guild);
 
         if (infos == null)
         {
@@ -485,7 +485,7 @@ public class GuildService
             return false;
         }
 
-        if (!infos.TryGetValue(userId, out List<GChatInfoModel>? value) || value == null || value.Count == 0)
+        if (!infos.TryGetValue(userId, out List<GChatInfo>? value) || value == null || value.Count == 0)
             return false;
 
         if (channelId == 0)
@@ -493,7 +493,7 @@ public class GuildService
             return value[value.Count - 1].Active;
         }
 
-        GChatInfoModel? chat = value.Find(x => x.Channel == channelId);
+        GChatInfo? chat = value.Find(x => x.Channel == channelId);
         return chat?.Active ?? value[value.Count - 1].Active;
     }
 
@@ -530,7 +530,7 @@ public class GuildService
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
     public static ChatModel? GetLastModelByUser(Guild guild, ulong userId, ulong channel = 0)
     {
-        GChatInfoModel? info = LastChatInfo(guild, userId, channel: channel);
+        GChatInfo? info = LastChatInfo(guild, userId, channel: channel);
         if (info == null) return null;
 
         string model = info.Model;

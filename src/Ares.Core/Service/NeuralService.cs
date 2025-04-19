@@ -60,7 +60,7 @@ public class NeuralService
             return (GuildService.GetTranslation(guild, LangKeys.ModelUnavailable), false);
         }
 
-        GTokenModel? tokenData = guild.Token;
+        GToken? tokenData = guild.Token;
 
         if (tokenData == null)
         {
@@ -149,7 +149,7 @@ public class NeuralService
             return (GuildService.GetTranslation(guild, LangKeys.ModelUnavailable), false);
         }
 
-        GTokenModel? tokenData = guild.Token;
+        GToken? tokenData = guild.Token;
 
         if (tokenData == null)
         {
@@ -254,7 +254,7 @@ public class NeuralService
         // Get chat history and info
         List<GChatHistoricModel>? historics = GuildService.ChatHistorics(guild, user, channel: channel);
 
-        GChatInfoModel? info = GuildService.ChatInfoByChannel(guild, user, channel);
+        GChatInfo? info = GuildService.ChatInfoByChannel(guild, user, channel);
 
         if (info == null)
         {
@@ -294,7 +294,7 @@ public class NeuralService
         ulong channel,
         string prompt)
     {
-        GTokenModel? tokenData = guild.Token;
+        GToken? tokenData = guild.Token;
 
         if (tokenData == null)
         {
@@ -310,7 +310,7 @@ public class NeuralService
 
         // Get chat history and info
         List<GChatHistoricModel>? historics = GuildService.ChatHistorics(guild, user, channel: channel);
-        GChatInfoModel? info = GuildService.ChatInfoByChannel(guild, user, channel);
+        GChatInfo? info = GuildService.ChatInfoByChannel(guild, user, channel);
 
         if (info == null)
         {
@@ -349,7 +349,7 @@ public class NeuralService
         string prompt,
         ChatClient client,
         ChatCompletionOptions chatOptions,
-        GChatInfoModel info,
+        GChatInfo info,
         List<OpenAI.Chat.ChatMessage> messages)
     {
         ChatCompletion completion = await client.CompleteChatAsync(messages, options: chatOptions);
@@ -396,7 +396,7 @@ public class NeuralService
         string prompt,
         IChatClient client,
         ChatOptions chatOptions,
-        GChatInfoModel info,
+        GChatInfo info,
         List<Microsoft.Extensions.AI.ChatMessage> messages)
     {
         ChatResponse response = await client.GetResponseAsync(messages, options: chatOptions);
@@ -539,7 +539,7 @@ public class NeuralService
         ChatCompletion? responseOpenAi = null,
         ChatValueUsage? usage = null)
     {
-        GChatInfoModel? info = GuildService.ChatInfoByChannel(guild, user, channel);
+        GChatInfo? info = GuildService.ChatInfoByChannel(guild, user, channel);
 
         if (info == null)
         {

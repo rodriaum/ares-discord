@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 
 namespace Ares.Core.Models.Chat.Sub;
 
-public class GChatInfoModel
+public class GChatInfo
 {
     [JsonInclude]
     [JsonPropertyName("id")]
@@ -37,7 +37,7 @@ public class GChatInfoModel
     [JsonPropertyName("historics")]
     public List<GChatHistoricModel> Historics { get; set; }
 
-    public GChatInfoModel(ulong channel, string model, bool active = false, ImageGenOptions? imageGenOptions = null, List<GChatHistoricModel>? historics = null)
+    public GChatInfo(ulong channel, string model, bool active = false, ImageGenOptions? imageGenOptions = null, List<GChatHistoricModel>? historics = null)
     {
         Id = Guid.NewGuid().ToString();
         Channel = channel;
