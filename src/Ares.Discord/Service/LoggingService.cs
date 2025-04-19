@@ -4,14 +4,15 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Models;
+using Ares.Core.Util;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Discord;
-using Ares.Core.Util;
 
-namespace Ares.Core.Service;
+namespace Ares.Discord.Service;
 
-internal class LoggingService
+public class LoggingService
 {
     public LoggingService(DiscordSocketClient? client = null, CommandService? command = null)
     {
@@ -24,13 +25,17 @@ internal class LoggingService
 
     private Task LogAsync(LogMessage message)
     {
+        Severity severity = Enum.GetValues(typeof(Severity))
+            .Cast<Severity>()
+            .FirstOrDefault(x => x.ToString().ToLower() == message.Severity.ToString().ToLower(), Severity.Error);
+
         if (message.Exception is CommandException ex)
         {
             AresLogger.Error(
-                $"Command: {message.Source}", 
+                $"Command: {message.Source}",
                 $"{ex.Command.Aliases.First()} failed to execute in {ex.Context.Channel}.",
                 ex.Message,
-                severity: message.Severity
+                severity: severity
                 );
         }
         else
@@ -42,10 +47,10 @@ internal class LoggingService
 
                 AresLogger.Error
                     (
-                        $"General: {message.Source}", 
-                        message.Message, 
-                        extra: (exception != null ? exception.Message : ""), 
-                        severity: message.Severity
+                        $"General: {message.Source}",
+                        message.Message,
+                        extra: (exception != null ? exception.Message : ""),
+                        severity: severity
                     );
             }
         }

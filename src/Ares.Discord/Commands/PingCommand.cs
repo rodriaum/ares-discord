@@ -9,7 +9,7 @@ using Discord.WebSocket;
 
 namespace Ares.Discord.Commands;
 
-internal class PingCommand
+public class PingCommand
 {
     private static DiscordSocketClient? _client;
 

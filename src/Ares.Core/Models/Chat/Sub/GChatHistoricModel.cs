@@ -11,7 +11,7 @@ using OpenAI.Chat;
 using OpenAI.Images;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Models.Database.Chat.Sub;
+namespace Ares.Core.Models.Chat.Sub;
 
 /// <summary>
 /// Representa o histórico de conversas.

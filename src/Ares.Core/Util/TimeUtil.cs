@@ -6,7 +6,7 @@
 
 namespace Ares.Core.Util;
 
-internal class TimeUtil
+public class TimeUtil
 {
     public static long CurrentTimeMillis()
     {

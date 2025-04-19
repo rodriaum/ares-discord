@@ -12,7 +12,7 @@ using System.Text.Json.Nodes;
 
 namespace Ares.Core.Util;
 
-internal class JsonUtil
+public class JsonUtil
 {
     public static async Task<JsonNode?> JsonTreeAsync(object src)
     {
@@ -138,7 +138,7 @@ internal class JsonUtil
         return await reader.ReadToEndAsync();
     }
 
-    public static async Task<T?> BsonDocumentToObjectAsync<T>(BsonDocument document)
+    public static async Task<T?> BsonDocToObjectAsync<T>(BsonDocument document)
     {
         try
         {

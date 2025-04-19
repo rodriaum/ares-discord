@@ -4,11 +4,11 @@
  * Proprietary and confidential
  */
 
-using Discord;
+using Ares.Core.Models;
 
 namespace Ares.Core.Util;
 
-internal class AresLogger
+public class AresLogger
 {
     /* Variables */
 
@@ -26,19 +26,19 @@ internal class AresLogger
         await Console.Out.WriteLineAsync(Output(prefix, message));
     }
 
-    public static void Error(string prefix, string message, string extra = "", LogSeverity severity = LogSeverity.Error)
+    public static void Error(string prefix, string message, string extra = "", Severity severity = Severity.Error)
     {
         Console.Error.WriteLine("\n" + Output(prefix, message, extra: extra, severity: severity) + "\n");
     }
 
-    public static async Task ErrorAsync(string prefix, string message, string extra = "", LogSeverity severity = LogSeverity.Error)
+    public static async Task ErrorAsync(string prefix, string message, string extra = "", Severity severity = Severity.Error)
     {
         await Console.Error.WriteLineAsync("\n" + Output(prefix, message, extra: extra, severity: severity) + "\n");
     }
 
     /* Helpers */
 
-    private static string Output(string prefix, string message, string extra = "", LogSeverity severity = LogSeverity.Info)
+    private static string Output(string prefix, string message, string extra = "", Severity severity = Severity.Info)
     {
         string date = $"{time.Hour}:{time.Minute}:{time.Second}";
 

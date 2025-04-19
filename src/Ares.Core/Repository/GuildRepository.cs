@@ -4,22 +4,21 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Backend.Database;
-using Ares.Core.Database.Repository;
 using Ares.Core.Interfaces;
-using Ares.Core.Models.Database;
+using Ares.Core.Models;
+using Ares.Core.Service;
 using Ares.Core.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
-namespace Ares.Core.Database.Collection;
+namespace Ares.Core.Repository;
 
 /// <summary>
 /// Class responsible for managing guild data in MongoDB database.
 /// </summary>
-internal class GuildCollection : ICollection
+public class GuildRepository : IRepository
 {
     /// <summary>
     /// Represents the "guilds" collection in MongoDB database.
@@ -29,12 +28,7 @@ internal class GuildCollection : ICollection
     /// <summary>
     /// Reference to the Redis database used for caching operations and related logic.
     /// </summary>
-    private readonly RedisDatabase _redisDatabase;
-
-    /// <summary>
-    /// Reference to the guild manager used for caching operations and related logic.
-    /// </summary>
-    private readonly GuildManager _manager;
+    private readonly RedisService _redisDatabase;
 
     /// <summary>
     /// Key prefix used for guild data in Redis.
@@ -46,19 +40,17 @@ internal class GuildCollection : ICollection
      */
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GuildCollection"/> class with the guilds collection and guild manager.
+    /// Initializes a new instance of the <see cref="GuildRepository"/> class with the guilds collection and guild manager.
     /// </summary>
     /// <param name="mongoDatabase">MongoDB database instance that contains the "guilds" collection.</param>
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
-    public GuildCollection(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
+    public GuildRepository(MongoService mongoDatabase, RedisService redisDatabase)
     {
-        this._collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("guilds");
-        this._redisDatabase = redisDatabase;
-
-        this._manager = AresCore.GuildManager;
+        _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("guilds");
+        _redisDatabase = redisDatabase;
 
         // Create indexes in the collection to optimize queries.
-        this.CreateIndexesAsync();
+        CreateIndexesAsync();
     }
 
     /// <summary>
@@ -69,7 +61,7 @@ internal class GuildCollection : ICollection
         await AresLogger.LogAsync("DB: Mongo", "Creating indexes in the database...");
 
         // Check if the collection was initialized before trying to create indexes.
-        if (this._collection == null)
+        if (_collection == null)
         {
             await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when creating guild data indexes.");
             return;
@@ -116,7 +108,7 @@ internal class GuildCollection : ICollection
 
         if (element != null)
         {
-            guild = await JsonUtil.BsonDocumentToObjectAsync<Guild>(element) ?? guild;
+            guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element) ?? guild;
         }
         else
         {
@@ -129,7 +121,6 @@ internal class GuildCollection : ICollection
             }
 
             await _redisDatabase.SaveAsync(GRedisKey + id, guild);
-            _manager.Save(guild);
         }
 
         return guild;
@@ -139,7 +130,7 @@ internal class GuildCollection : ICollection
     /// Saves or updates a guild in the database, returning the updated object.
     /// </summary>
     /// <param name="id">Ulong of the guild.</param>
-    /// <returns>A <see cref="Guild"/> object representing the saved or updated guild.</returns>
+    /// <returns>A <see cref="GuildService"/> object representing the saved or updated guild.</returns>
     public async Task<Guild?> SaveAsync(ulong id)
     {
         return await SaveAsync(id.ToString());
@@ -154,28 +145,21 @@ internal class GuildCollection : ICollection
     /// <seealso cref="FetchAsync(ulong, bool)"/>
     public async Task<Guild?> FetchAsync(string id, bool saveInRedis = false)
     {
-        Guild? guild = _manager.Fetch(id);
+        Guild? guild = await _redisDatabase.LoadAsync<Guild>(GRedisKey + id);
 
-        if (guild == null)
+        if (guild != null)
         {
-            guild = await _redisDatabase.LoadAsync<Guild>(GRedisKey + id);
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
-            if (guild == null)
+            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+            BsonDocument element = await cursor.FirstOrDefaultAsync();
+
+            if (element != null)
             {
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+                guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element);
 
-                IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-                BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-                if (element != null)
-                {
-                    guild = await JsonUtil.BsonDocumentToObjectAsync<Guild>(element);
-
-                    if (saveInRedis && guild != null)
-                    {
-                        await _redisDatabase.SaveAsync(GRedisKey + id, guild);
-                    }
-                }
+                if (saveInRedis && guild != null)
+                    await _redisDatabase.SaveAsync(GRedisKey + id, guild);
             }
         }
 
@@ -222,7 +206,7 @@ internal class GuildCollection : ICollection
             await _collection.UpdateOneAsync(filter, update);
 
             // Update Redis
-            await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
+            await _redisDatabase.UpdateAsync(GRedisKey + guild, guild);
 
             return true;
         }
@@ -240,8 +224,6 @@ internal class GuildCollection : ICollection
     public async Task DeleteCache(string id)
     {
         await _redisDatabase.CacheAsync(GRedisKey + id, 300);
-        // Maybe not much lag. It may change in the future.
-        _manager?.Delete(id);
     }
 
     /// <summary>
@@ -284,7 +266,7 @@ internal class GuildCollection : ICollection
         {
             try
             {
-                Guild? guild = await JsonUtil.BsonDocumentToObjectAsync<Guild>(document);
+                Guild? guild = await JsonUtil.BsonDocToObjectAsync<Guild>(document);
 
                 if (guild != null)
                     accounts.Add(guild);

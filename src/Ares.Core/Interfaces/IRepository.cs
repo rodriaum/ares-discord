@@ -1,8 +1,8 @@
-﻿using Ares.Core.Models.Database;
+﻿using Ares.Core.Models;
 
 namespace Ares.Core.Interfaces;
 
-internal interface ICollection
+internal interface IRepository
 {
     Task<Guild?> SaveAsync(string id);
     Task<Guild?> SaveAsync(ulong id);

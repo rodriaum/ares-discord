@@ -6,7 +6,7 @@
 
 namespace Ares.Core;
 
-internal class AresConstant
+public class AresConstant
 {
     /*
      * General 

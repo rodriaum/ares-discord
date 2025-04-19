@@ -4,72 +4,29 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models.Database.Chat;
-using Ares.Core.Models.Database.Chat.Sub;
-using Ares.Core.Models.Database.Config;
-using Ares.Core.Models.Database.Token;
-using Ares.Core;
+using Ares.Core.Models;
+using Ares.Core.Models.Chat;
+using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Config;
+using Ares.Core.Models.Token;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
-using Discord;
-using System.Text.Json.Serialization;
-using System.Threading.Channels;
 
-namespace Ares.Core.Models.Database;
+namespace Ares.Core.Service;
 
 /// <summary>
-/// Represents a Discord guild (server) with its associated data and operations.
+/// Guild service to manage data and operations of an guild.
 /// </summary>
-public class Guild
+public class GuildService
 {
-    /// <summary>
-    /// The unique identifier of the guild.
-    /// </summary>
-    [JsonInclude]
-    [JsonPropertyName("id")]
-    public readonly string Id;
-
-    /// <summary>
-    /// Token data for the guild.
-    /// </summary>
-    [JsonInclude]
-    [JsonPropertyName("token")]
-    public GTokenModel Token;
-
-    /// <summary>
-    /// Config data for the guild.
-    /// </summary>
-    [JsonInclude]
-    [JsonPropertyName("config")]
-    public GuildConfigData Config;
-
-    /// <summary>
-    /// Chat data for the guild.
-    /// </summary>
-    [JsonInclude]
-    [JsonPropertyName("chat")]
-    public GChatModel Chat;
-
-    /// <summary>
-    /// Initializes a new instance of the Guild class.
-    /// </summary>
-    /// <param name="id">The identifier of the guild.</param>
-    public Guild(string id)
-    {
-        Id = id;
-
-        Token = new GTokenModel();
-        Config = new GuildConfigData();
-        Chat = new GChatModel();
-    }
-
     /// <summary>
     /// Saves the specified fields of the guild to the database.
     /// </summary>
+    /// <param name="guild">The guild to save.</param>
     /// <param name="fields">List of field names to be saved.</param>
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
-    public async Task<bool> SaveAsync(List<string> fields)
+    public static async Task<bool> SaveAsync(Guild guild, List<string> fields)
     {
         if (fields == null || fields.Count == 0)
         {
@@ -77,7 +34,7 @@ public class Guild
             return false;
         }
 
-        if (AresCore.GuildCollection is not { } guildData)
+        if (AresCore.GuildRepository is not { } guildData)
         {
             AresLogger.Error(nameof(SaveAsync), "Guild data is null. Unable to save fields.");
             return false;
@@ -93,7 +50,7 @@ public class Guild
                     continue;
                 }
 
-                await guildData.UpdateAsync(this, field);
+                await guildData.UpdateAsync(guild, field);
             }
 
             return true;
@@ -108,117 +65,123 @@ public class Guild
     /// <summary>
     /// Saves a single field of the guild to the database.
     /// </summary>
+    /// <param name="guild">The guild to save.</param>
     /// <param name="field">The field name to be saved.</param>
     /// <returns>Returns true if the field was successfully saved, false otherwise.</returns>
-    public async Task<bool> SaveAsync(string field)
+    public static async Task<bool> SaveAsync(Guild guild, string field)
     {
-        return await SaveAsync(new List<string> { field });
+        return await SaveAsync(guild, new List<string> { field });
     }
 
     /// <summary>
     /// Saves token data about the guild to the database.
     /// </summary>
+    /// <param name="guild">The guild to save the config data.</param>
     /// <param name="token">Object containing guild token data.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public async Task<bool> SaveTokenDataAsync(GTokenModel? token = null)
+    public static async Task<bool> SaveTokenDataAsync(Guild guild, GTokenModel? token = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (token != null)
         {
-            Token = token;
+            guild.Token = token;
         }
 
-        return await SaveAsync("token");
+        return await SaveAsync(guild, "token");
     }
 
     /// <summary>
     /// Saves token data about the guild to the database.
     /// </summary>
+    /// <param name="guild">The guild to save the config data.</param>
     /// <param name="config">Object containing guild token data.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public async Task<bool> SaveConfigDataAsync(GuildConfigData? config = null)
+    public static async Task<bool> SaveConfigDataAsync(Guild guild, GuildConfigData? config = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (config != null)
         {
-            Config = config;
+            guild.Config = config;
         }
 
-        return await SaveAsync("config");
+        return await SaveAsync(guild, "config");
     }
 
     /// <summary>
     /// Updates the chat data of the guild in the database.
     /// </summary>
-    /// <param name="chatData">Object containing the guild's chat data.</param>
+    /// <param name="guild">The guild to save the chat data.</param>
+    /// <param name="chat">Object containing the guild's chat data.</param>
     /// <returns>Returns true if data was successfully updated, false otherwise.</returns>
-    public async Task<bool> SaveChatDataAsync(GChatModel? chat = null)
+    public static async Task<bool> SaveChatDataAsync(Guild guild, GChatModel? chat = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (chat != null)
         {
-            Chat = chat;
+            guild.Chat = chat;
         }
 
-        return await SaveAsync("chat");
+        return await SaveAsync(guild, "chat");
     }
 
     /// <summary>
     /// Adds new information to the database for a specific user.
     /// </summary>
-    /// <param name="user">User to update in the database.</param>
+    /// <param name="userId">User to update in the database.</param>
     /// <param name="infos">List of information to be added.</param>
     /// <param name="onlyCached">Optional: If true, data is stored locally instead of in the database.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public async Task<bool> SaveInfoAsync(IUser user, List<GChatInfoModel> infos, bool onlyCached = false)
+    public static async Task<bool> SaveInfoAsync(Guild guild, ulong userId, List<GChatInfoModel> infos, bool onlyCached = false)
     {
-        Chat.Infos[user.Id] = infos;
-        return !onlyCached ? await SaveChatDataAsync() : true;
+        guild.Chat.Infos[userId] = infos;
+        return !onlyCached ? await SaveChatDataAsync(guild) : true;
     }
 
     /// <summary>
     /// Saves chat history information for a specific user.
     /// </summary>
-    /// <param name="user">The user to save history for.</param>
+    /// <param name="guild">The guild to save the chat history.</param>
+    /// <param name="userId">The user to save history for.</param>
     /// <param name="info">Chat information to be saved.</param>
     /// <returns>Returns true if the history was successfully saved, false otherwise.</returns>
-    public async Task<bool> SaveHistoricAsync(IUser user, GChatInfoModel info)
+    public static async Task<bool> SaveHistoricAsync(Guild guild, ulong userId, GChatInfoModel info)
     {
-        List<GChatInfoModel>? list = ChatInfos(user);
+        List<GChatInfoModel>? list = ChatInfos(guild, userId);
 
         if (list == null) return await Task.FromResult(false);
 
         list.Add(info);
 
-        return await SaveInfoAsync(user, list);
+        return await SaveInfoAsync(guild, userId, list);
     }
 
     /// <summary>
     /// Updates chat information for a specific user and channel.
     /// </summary>
-    /// <param name="user">The user whose information should be updated.</param>
+    /// <param name="guild">The guild to update the chat information.</param>
+    /// <param name="userId">The user whose information should be updated.</param>
     /// <param name="info">The updated chat information.</param>
     /// <returns>Returns true if information was successfully updated, false otherwise.</returns>
-    public async Task<bool> UpdateChatInfoAsync(IUser user, GChatInfoModel info)
+    public static async Task<bool> UpdateChatInfoAsync(Guild guild, ulong userId, GChatInfoModel info)
     {
-        List<GChatInfoModel>? infos = ChatInfos(user);
+        List<GChatInfoModel>? infos = ChatInfos(guild, userId);
 
         if (infos == null)
         {
             infos = new List<GChatInfoModel>();
-            await SaveInfoAsync(user, infos, onlyCached: true);
+            await SaveInfoAsync(guild, userId, infos, onlyCached: true);
         }
 
         GChatInfoModel? existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
 
         // It seems strange, but it is done so as not to add the same information as the chat.
-        if (existingInfo != null && Chat.Infos.ContainsKey(user.Id))
+        if (existingInfo != null && guild.Chat.Infos.ContainsKey(userId))
         {
-            Chat.Infos[user.Id].Remove(existingInfo);
+            guild.Chat.Infos[userId].Remove(existingInfo);
         }
 
-        Chat.Infos[user.Id].Add(info);
-        return await SaveChatDataAsync();
+        guild.Chat.Infos[userId].Add(info);
+        return await SaveChatDataAsync(guild);
     }
 
     /** Conversation System **/
@@ -226,21 +189,22 @@ public class Guild
     /// <summary>
     /// Retrieves the conversation history of the guild.
     /// </summary>
+    /// <param name="guild">The guild to get the information.</param>
     /// <returns>Dictionary containing conversation histories or null if they don't exist.</returns>
-    public Dictionary<ulong, List<GChatInfoModel>>? Infos()
+    public static Dictionary<ulong, List<GChatInfoModel>>? Infos(Guild guild)
     {
-        return Chat.Infos;
+        return guild.Chat.Infos;
     }
 
     /// <summary>
     /// Retrieves chat history records for a specific user, optionally filtered by channel.
     /// </summary>
-    /// <param name="user">The user to get chat history for.</param>
+    /// <param name="userId">The user to get chat history for.</param>
     /// <param name="channel">Optional: Channel ID to filter history by. If 0, returns all channels.</param>
     /// <returns>List of chat history records or null if not found.</returns>
-    public List<GChatHistoricModel>? ChatHistorics(IUser user, ulong channel = 0)
+    public static List<GChatHistoricModel>? ChatHistorics(Guild guild, ulong userId, ulong channel = 0)
     {
-        List<GChatInfoModel>? infos = Infos()?.GetValueOrDefault(user.Id);
+        List<GChatInfoModel>? infos = Infos(guild)?.GetValueOrDefault(userId);
         if (infos == null) return null;
 
         if (channel != 0)
@@ -256,25 +220,27 @@ public class Guild
     /// <summary>
     /// Retrieves all chat information for a specific user.
     /// </summary>
-    /// <param name="user">The user to get chat information for.</param>
+    /// <param name="guild">The guild to get the information.</param>
+    /// <param name="userId">The user to get chat information for.</param>
     /// <returns>List of chat information objects or null if not found.</returns>
-    public List<GChatInfoModel>? ChatInfos(IUser user)
+    public static List<GChatInfoModel>? ChatInfos(Guild guild, ulong userId)
     {
-        var infos = Infos();
+        var infos = Infos(guild);
         if (infos == null) return null;
 
-        return infos.GetValueOrDefault(user.Id);
+        return infos.GetValueOrDefault(userId);
     }
 
     /// <summary>
     /// Retrieves chat history records for a specific user in a specific channel.
     /// </summary>
-    /// <param name="user">The user to get chat history for.</param>
+    /// <param name="guild">The guild to get the information.</param>
+    /// <param name="userId">The user to get chat history for.</param>
     /// <param name="channel">The channel ID to filter history by.</param>
     /// <returns>List of chat history records or null if not found.</returns>
-    public List<GChatHistoricModel>? ChatHistoricsByChannel(IUser user, ulong channel)
+    public static List<GChatHistoricModel>? ChatHistoricsByChannel(Guild guild, ulong userId, ulong channel)
     {
-        List<GChatHistoricModel>? historics = ChatHistorics(user, channel: channel);
+        List<GChatHistoricModel>? historics = ChatHistorics(guild, userId, channel: channel);
         if (historics == null) return null;
 
         return historics;
@@ -283,12 +249,13 @@ public class Guild
     /// <summary>
     /// Retrieves the latest chat information for a specific user in a specific channel.
     /// </summary>
-    /// <param name="user">The user to get chat information for.</param>
+    /// <param name="guild">The guild to get the information.</param>
+    /// <param name="userId">The user to get chat information for.</param>
     /// <param name="channel">The channel ID to filter information by.</param>
     /// <returns>Chat information object or null if not found.</returns>
-    public GChatInfoModel? ChatInfoByChannel(IUser user, ulong channel)
+    public static GChatInfoModel? ChatInfoByChannel(Guild guild, ulong userId, ulong channel)
     {
-        List<GChatInfoModel>? userInfos = Infos()?.GetValueOrDefault(user.Id);
+        List<GChatInfoModel>? userInfos = Infos(guild)?.GetValueOrDefault(userId);
         if (userInfos == null || !userInfos.Any()) return null;
 
         return userInfos.Find(historic => historic.Channel == channel);
@@ -297,13 +264,14 @@ public class Guild
     /// <summary>
     /// Toggles the active status of a chat for a specific user and channel.
     /// </summary>
-    /// <param name="user">The user whose chat status should be toggled.</param>
+    /// <param name="guild">The guild to toggle the chat information.</param>
+    /// <param name="userId">The user whose chat status should be toggled.</param>
     /// <param name="channel">The channel ID for the chat.</param>
     /// <param name="active">The new active status: true to activate, false to deactivate.</param>
     /// <returns>Returns true if status was successfully changed, false otherwise.</returns>
-    public Task<bool> ToggleChatInfo(IUser user, ulong channel, bool active)
+    public static Task<bool> ToggleChatInfo(Guild guild, ulong userId, ulong channel, bool active)
     {
-        List<GChatInfoModel>? infos = ChatInfos(user);
+        List<GChatInfoModel>? infos = ChatInfos(guild, userId);
         if (infos == null)
         {
             AresLogger.Error(nameof(ToggleChatInfo), "Unable to change the status of a chat information.");
@@ -317,34 +285,36 @@ public class Guild
             info.Active = active;
         }
 
-        return SaveInfoAsync(user, infos);
+        return SaveInfoAsync(guild, userId, infos);
     }
 
     /// <summary>
     /// Retrieves the last chat history record for a specific user, optionally filtered by channel.
     /// </summary>
-    /// <param name="user">The user to get the last chat history for.</param>
+    /// <param name="guild">The guild to get the information.</param>
+    /// <param name="userId">The user to get the last chat history for.</param>
     /// <param name="channel">Optional: Channel ID to filter by. If 0, returns the last record from any channel.</param>
     /// <returns>The last chat history record or null if not found.</returns>
-    public GChatHistoricModel? LastChatHistoric(IUser user, ulong channel = 0)
+    public static GChatHistoricModel? LastChatHistoric(Guild guild, ulong userId, ulong channel = 0)
     {
         if (channel != 0)
         {
-            return ChatInfoByChannel(user, channel)?.Historics.LastOrDefault();
+            return ChatInfoByChannel(guild, userId, channel)?.Historics.LastOrDefault();
         }
 
-        return ChatHistorics(user)?.LastOrDefault();
+        return ChatHistorics(guild, userId)?.LastOrDefault();
     }
 
     /// <summary>
     /// Retrieves the last chat information for a specific user, optionally filtered by channel.
     /// </summary>
-    /// <param name="user">The user to get the last chat information for.</param>
+    /// <param name="guild">The guild to get the information.</param>
+    /// <param name="userId">The user to get the last chat information for.</param>
     /// <param name="channel">Optional: Channel ID to filter by. If 0, returns the last information from any channel.</param>
     /// <returns>The last chat information or null if not found.</returns>
-    public GChatInfoModel? LastChatInfo(IUser user, ulong channel = 0)
+    public static GChatInfoModel? LastChatInfo(Guild guild, ulong userId, ulong channel = 0)
     {
-        List<GChatInfoModel>? infos = ChatInfos(user);
+        List<GChatInfoModel>? infos = ChatInfos(guild, userId);
 
         if (infos == null || infos.Count == 0)
             return null;
@@ -355,19 +325,14 @@ public class Guild
     /// <summary>
     /// Creates new chat data for a user.
     /// </summary>
-    /// <param name="user">The user to create chat data for.</param>
+    /// <param name="guild">The guild to create the chat data for.</param>
+    /// <param name="userId">The user to create chat data for.</param>
     /// <param name="info">The chat information to be created.</param>
     /// <returns>Returns true if chat data was successfully created, false otherwise.</returns>
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
-    public async Task<bool> CreateChatData(IUser user, GChatInfoModel info)
+    public static async Task<bool> CreateChatData(Guild guild, ulong userId, GChatInfoModel info)
     {
-        if (user == null)
-        {
-            AresLogger.Error(nameof(CreateChatData), "User is null. Unable to create chat data.");
-            return await Task.FromResult(false);
-        }
-
-        GChatModel chat = Chat;
+        GChatModel chat = guild.Chat;
 
         if (chat == null)
         {
@@ -377,10 +342,10 @@ public class Guild
 
         try
         {
-            if (!chat.Infos.TryGetValue(user.Id, out List<GChatInfoModel>? infos))
+            if (!chat.Infos.TryGetValue(userId, out List<GChatInfoModel>? infos))
             {
                 infos = new List<GChatInfoModel>();
-                chat.Infos[user.Id] = infos;
+                chat.Infos[userId] = infos;
             }
 
             if (info.Historics == null)
@@ -390,11 +355,11 @@ public class Guild
 
             infos.Add(info);
 
-            bool success = await SaveChatDataAsync(chat);
+            bool success = await SaveChatDataAsync(guild, chat);
 
             if (success)
             {
-                AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{user.Username}\"");
+                AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{userId}\"");
             }
 
             return success;
@@ -409,50 +374,52 @@ public class Guild
     /// <summary>
     /// Updates chat history records for a specific user and channel.
     /// </summary>
-    /// <param name="user">The user whose chat history should be updated.</param>
+    /// <param name="guild">The guild to update the chat history.</param>
+    /// <param name="userId">The user whose chat history should be updated.</param>
     /// <param name="channel">The channel ID for the chat.</param>
     /// <param name="historics">The updated list of chat history records.</param>
     /// <returns>Returns true if history was successfully updated, false otherwise.</returns>
     /// <exception cref="ArgumentNullException">Thrown when user or historics is null.</exception>
-    public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, List<GChatHistoricModel> historics)
+    public static async Task<bool> UpdateChatHistoricsAsync(Guild guild, ulong userId, ulong channel, List<GChatHistoricModel> historics)
     {
-        if (user == null || historics == null)
+        if (historics == null)
         {
-            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), "User or historics is null. Unable to update chat history.");
+            AresLogger.Error(nameof(UpdateChatHistoricsAsync), "Historics is null. Unable to update chat history.");
             return false;
         }
 
-        if (Chat is not { } chat)
+        if (guild.Chat is not { } chat)
             return false;
 
-        GChatInfoModel? info = ChatInfoByChannel(user, channel);
+        GChatInfoModel? info = ChatInfoByChannel(guild, userId, channel);
 
         if (info == null)
         {
-            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
+            AresLogger.Error(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {userId} and channel {channel}.");
             return false;
         }
 
         info.Historics = historics;
 
-        Chat = chat;
-        return await SaveChatDataAsync();
+        guild.Chat = chat;
+        return await SaveChatDataAsync(guild);
     }
 
     /// <summary>
     /// Adds a single chat history record for a specific user and channel.
     /// </summary>
-    /// <param name="user">The user to add chat history for.</param>
+    /// <param name="guild">The guild to update the chat history.</param>
+    /// <param name="userId">The user to add chat history for.</param>
     /// <param name="channel">The channel ID for the chat.</param>
     /// <param name="historic">The chat history record to add.</param>
     /// <returns>Returns true if history was successfully added, false otherwise.</returns>
-    public async Task<bool> UpdateChatHistoricsAsync(IUser user, ulong channel, GChatHistoricModel historic)
+    public static async Task<bool> UpdateChatHistoricsAsync(Guild guild, ulong userId, ulong channel, GChatHistoricModel historic)
     {
-        GChatInfoModel? info = ChatInfoByChannel(user, channel);
+        GChatInfoModel? info = ChatInfoByChannel(guild, userId, channel);
 
         if (info == null)
         {
-            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
+            AresLogger.Error(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {userId} and channel {channel}.");
             return false;
         }
 
@@ -460,29 +427,30 @@ public class Guild
 
         if (historics == null)
         {
-            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), "Conversation historics are null.");
+            AresLogger.Error(nameof(UpdateChatHistoricsAsync), "Conversation historics are null.");
             return false;
         }
 
         historics.Add(historic);
 
-        return await UpdateChatHistoricsAsync(user, channel, historics);
+        return await UpdateChatHistoricsAsync(guild, userId, channel, historics);
     }
 
     /// <summary>
     /// Removes a specific conversation history record for a user and channel.
     /// </summary>
-    /// <param name="user">The user whose conversation record should be removed.</param>
+    /// <param name="guild">The guild to remove the conversation from.</param>
+    /// <param name="userId">The user whose conversation record should be removed.</param>
     /// <param name="channel">The channel ID for the conversation.</param>
     /// <param name="historic">The specific history record to remove.</param>
     /// <returns>Returns true if the record was successfully removed, false otherwise.</returns>
-    public async Task<bool> RemoveConversationAsync(IUser user, ulong channel, GChatHistoricModel historic)
+    public static async Task<bool> RemoveConversationAsync(Guild guild, ulong userId, ulong channel, GChatHistoricModel historic)
     {
-        GChatInfoModel? info = ChatInfoByChannel(user, channel);
+        GChatInfoModel? info = ChatInfoByChannel(guild, userId, channel);
 
         if (info == null)
         {
-            AresLogger.Error(nameof(this.UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {user.Id} and channel {channel}.");
+            AresLogger.Error(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {userId} and channel {channel}.");
             return false;
         }
 
@@ -490,31 +458,26 @@ public class Guild
 
         if (historics == null)
         {
-            AresLogger.Error(nameof(this.RemoveConversationAsync), "Conversation historics are null.");
+            AresLogger.Error(nameof(RemoveConversationAsync), "Conversation historics are null.");
             return false;
         }
 
         historics.Remove(historic);
 
-        return await UpdateChatHistoricsAsync(user, channel, historics);
+        return await UpdateChatHistoricsAsync(guild, userId, channel, historics);
     }
 
     /// <summary>
     /// Checks if a user has an active conversation.
     /// </summary>
-    /// <param name="user">The user to check.</param>
-    /// <param name="channel">Optional: Channel ID to filter by. If 0, returns the active check of the last chat used.</param>
+    /// <param name="guild">The guild to check the conversation in.</param>
+    /// <param name="userId">The user to check.</param>
+    /// <param name="channelId">Optional: Channel ID to filter by. If 0, returns the active check of the last chat used.</param>
     /// <returns>Returns true if an active conversation exists, false otherwise.</returns>
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
-    public bool HasActiveUserConversation(IUser user, ulong channel = 0)
+    public static bool HasActiveUserConversation(Guild guild, ulong userId, ulong channelId = 0)
     {
-        if (user == null)
-        {
-            AresLogger.Error(nameof(this.HasActiveUserConversation), "User is null.");
-            return false;
-        }
-
-        Dictionary<ulong, List<GChatInfoModel>>? infos = Infos();
+        Dictionary<ulong, List<GChatInfoModel>>? infos = Infos(guild);
 
         if (infos == null)
         {
@@ -522,33 +485,28 @@ public class Guild
             return false;
         }
 
-        if (!infos.TryGetValue(user.Id, out List<GChatInfoModel>? value) || value == null || value.Count == 0)
+        if (!infos.TryGetValue(userId, out List<GChatInfoModel>? value) || value == null || value.Count == 0)
             return false;
 
-        if (channel == 0)
+        if (channelId == 0)
         {
             return value[value.Count - 1].Active;
         }
 
-        GChatInfoModel? chat = value.Find(x => x.Channel == channel);
+        GChatInfoModel? chat = value.Find(x => x.Channel == channelId);
         return chat?.Active ?? value[value.Count - 1].Active;
     }
 
     /// <summary>
     /// Gets the count of conversations for a user.
     /// </summary>
-    /// <param name="user">The user whose conversations are being queried.</param>
+    /// <param name="guild">The guild to check the conversations in.</param>
+    /// <param name="userId">The user whose conversations are being queried.</param>
     /// <param name="active">Whether to filter by active conversations.</param>
     /// <returns>The number of conversations or -1 on error.</returns>
-    public int GetConversationsCount(IUser user, bool active = false)
+    public static int GetConversationsCount(Guild guild, ulong userId, bool active = false)
     {
-        if (user == null)
-        {
-            AresLogger.Error(nameof(GetConversationsCount), "User is null.");
-            return -1;
-        }
-
-        var infos = Infos();
+        var infos = Infos(guild);
 
         if (infos == null)
         {
@@ -556,7 +514,7 @@ public class Guild
             return -1;
         }
 
-        if (!infos.TryGetValue(user.Id, out var userChats) || userChats == null)
+        if (!infos.TryGetValue(userId, out var userChats) || userChats == null)
             return 0;
 
         return userChats.Count(chat => chat.Active == active);
@@ -565,19 +523,14 @@ public class Guild
     /// <summary>
     /// Gets the last chat model used by a specific user, optionally filtered by channel.
     /// </summary>
-    /// <param name="user">The user to get the model for.</param>
+    /// <param name="guild">The guild to get the model for.</param>
+    /// <param name="userId">The user to get the model for.</param>
     /// <param name="channel">Optional: Channel ID to filter by. If 0, returns the last model from any channel.</param>
     /// <returns>The last chat model or null if not found.</returns>
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
-    public ChatModel? GetLastModelByUser(IUser user, ulong channel = 0)
+    public static ChatModel? GetLastModelByUser(Guild guild, ulong userId, ulong channel = 0)
     {
-        if (user == null)
-        {
-            AresLogger.Error(nameof(this.GetLastModelByUser), "User is null.");
-            return null;
-        }
-
-        GChatInfoModel? info = LastChatInfo(user, channel: channel);
+        GChatInfoModel? info = LastChatInfo(guild, userId, channel: channel);
         if (info == null) return null;
 
         string model = info.Model;
@@ -589,29 +542,32 @@ public class Guild
     /// <summary>
     /// Gets the language code configured for this guild.
     /// </summary>
+    /// <param name="guild">The guild to get the language for.</param>
     /// <returns>The language code string.</returns>
-    public string Language()
+    public static string Language(Guild guild)
     {
-        return Config.Lang;
+        return guild.Config.Lang;
     }
 
     /// <summary>
     /// Gets the language category object based on the guild's configured language.
     /// </summary>
+    /// <param name="guild">The guild to get the language category for.</param>
     /// <returns>The language category object or null if not found.</returns>
-    public LangCategory? LangCategory()
+    public static LangCategory? LangCategory(Guild guild)
     {
-        return AresCore.LangManager.GetCategoryByCode(Language());
+        return AresCore.LangManager.GetCategoryByCode(Language(guild));
     }
 
     /// <summary>
     /// Gets a translated string based on the guild's configured language.
     /// </summary>
+    /// <param name="guild">The guild to get the translation for.</param>
     /// <param name="code">The translation code to look up.</param>
     /// <returns>The translated string or the original code if translation was not found.</returns>
-    public string GetTranslation(string code)
+    public static string GetTranslation(Guild guild, string code)
     {
-        LangCategory? category = LangCategory();
+        LangCategory? category = LangCategory(guild);
         if (category == null) return code;
 
         return AresCore.LangManager.GetTranslation(category, code);

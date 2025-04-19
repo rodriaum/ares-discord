@@ -4,13 +4,11 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Backend.Database;
-using Ares.Core.Database.Collection;
-using Ares.Core.Database.Repository;
 using Ares.Core.Manager;
-using Ares.Core.Models.Database;
+using Ares.Core.Models;
 using Ares.Core.Monitor;
-using Discord;
+using Ares.Core.Repository;
+using Ares.Core.Service;
 using DotNetEnv;
 using Microsoft.Extensions.AI;
 
@@ -20,7 +18,7 @@ namespace Ares.Core;
 /// It has the function of managing all types of data,
 /// as well as offering a variety of usable features.
 /// </summary>
-internal class AresCore
+public class AresCore
 {
     /// <summary>
     /// Gets or sets the Ollama client instance.
@@ -30,22 +28,17 @@ internal class AresCore
     /// <summary>
     /// Gets or sets the MongoDB database instance.
     /// </summary>
-    public static MongoDatabase? MongoDatabase { get; private set; }
+    public static MongoService? MongoService { get; private set; }
 
     /// <summary>
     /// Gets or sets the Redis database instance.
     /// </summary>
-    public static RedisDatabase? RedisDatabase { get; private set; }
+    public static RedisService? RedisService { get; private set; }
 
     /// <summary>
     /// Gets or sets the guild collection for database operations.
     /// </summary>
-    public static GuildCollection? GuildCollection { get; private set; }
-
-    /// <summary>
-    /// Guild manager instance for handling guild-related operations.
-    /// </summary>
-    public static GuildManager GuildManager = new GuildManager();
+    public static GuildRepository? GuildRepository { get; private set; }
 
     /// <summary>
     /// Language manager instance for handling localization.
@@ -58,11 +51,11 @@ internal class AresCore
     /// <returns>True if the initialization was successful, otherwise false.</returns>
     public static async Task<bool> Init()
     {
-        Uri ollamaUri = new Uri($"http://{Env.GetString("OLLAMA_HOST", fallback: "127.0.0.1")}:{Env.GetInt("OLLAMA_PORT", 11434)}");
-        OllamaClient = new OllamaChatClient(ollamaUri);
-
         SystemMonitor monitor = new SystemMonitor();
         _ = monitor.Init();
+
+        Uri? ollamaUri = new Uri($"http://{Env.GetString("OLLAMA_HOST")}:{Env.GetInt("OLLAMA_PORT")}");
+        OllamaClient = new OllamaChatClient(ollamaUri);
 
         await LangManager.Init();
         return await InitDatabase();
@@ -70,16 +63,16 @@ internal class AresCore
 
     public static async Task Close()
     {
-        if (MongoDatabase == null || RedisDatabase == null)
+        if (MongoService == null || RedisService == null)
             return;
 
-        await MongoDatabase.CloseAsync();
-        await RedisDatabase.CloseAsync();
+        await MongoService.CloseAsync();
+        await RedisService.CloseAsync();
     }
 
-    public static bool IsDeveloper(IUser user)
+    public static bool IsDeveloper(ulong userId)
     {
-        return AresConstant.DeveloperUserIds.Any(id => id.Equals(user.Id.ToString()));
+        return AresConstant.DeveloperUserIds.Any(id => id.Equals(userId.ToString()));
     }
 
     /// <summary>
@@ -92,37 +85,37 @@ internal class AresCore
          * MongoDB connection 
          */
 
-        MongoDatabase mongoDatabase = new MongoDatabase(new DatabaseCredentials
+        MongoService mongoDatabase = new MongoService(new DatabaseCredentials
         {
-            Host = Env.GetString("MONGO_HOST", fallback: "127.0.0.1"),
+            Host = Env.GetString("MONGO_HOST"),
             User = Env.GetString("MONGO_USERNAME"),
-            Database = Env.GetString("MONGO_DATABASE", fallback: "ares"),
+            Database = Env.GetString("MONGO_DATABASE"),
             Password = Env.GetString("MONGO_PASSWORD"),
-            Port = Env.GetInt("MONGO_PORT", fallback: 27017),
+            Port = Env.GetInt("MONGO_PORT"),
         });
 
         await mongoDatabase.ConnectAsync();
-        MongoDatabase = mongoDatabase;
+        MongoService = mongoDatabase;
 
         /*
          * Redis connection
          */
 
-        RedisDatabase redisDatabase = new RedisDatabase(new DatabaseCredentials
+        RedisService redisDatabase = new RedisService(new DatabaseCredentials
         {
-            Host = Env.GetString("REDIS_HOST", fallback: "127.0.0.1"),
+            Host = Env.GetString("REDIS_HOST"),
             Password = Env.GetString("REDIS_PASSWORD"),
-            Port = Env.GetInt("REDIS_PORT", fallback: 6379),
+            Port = Env.GetInt("REDIS_PORT"),
         });
 
         await redisDatabase.ConnectAsync();
-        RedisDatabase = redisDatabase;
+        RedisService = redisDatabase;
 
         /*
          * Database collections
          */
 
-        GuildCollection = new GuildCollection(mongoDatabase, redisDatabase);
+        GuildRepository = new GuildRepository(mongoDatabase, redisDatabase);
 
         return mongoDatabase != null && redisDatabase != null;
     }

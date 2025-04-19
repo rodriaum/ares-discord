@@ -4,13 +4,14 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models.Database;
-using Ares.Core.Models.Database.Chat.Sub;
 using Ares.Core;
-using Ares.Core.Database.Collection;
+using Ares.Core.Models;
+using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
+using Ares.Core.Repository;
+using Ares.Core.Service;
 using Ares.Core.Util;
 using Discord;
 using Discord.Rest;
@@ -18,7 +19,7 @@ using Discord.WebSocket;
 
 namespace Ares.Discord.Listener.Chat;
 
-internal class ChatImageOptionListener
+public class ChatImageOptionListener
 {
     public ChatImageOptionListener(DiscordSocketClient client)
     {
@@ -46,22 +47,22 @@ internal class ChatImageOptionListener
                 return;
             }
 
-            GuildCollection? data = AresCore.GuildCollection;
+            GuildRepository? repository = AresCore.GuildRepository;
 
-            if (data == null)
+            if (repository == null)
             {
                 await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
                 return;
             }
 
-            Guild? guild = await data.FetchAsync(guildId.Value);
+            Guild? guild = await repository.FetchAsync(guildId.Value);
             const int maxAttempts = 3;
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
             {
                 await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                 await Task.Delay(1500);
-                guild = await data.SaveAsync(guildId.Value);
+                guild = await repository.SaveAsync(guildId.Value);
             }
 
             if (guild == null)
@@ -74,17 +75,17 @@ internal class ChatImageOptionListener
 
             if (!channelId.HasValue)
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnablePerformTask));
+                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnablePerformTask));
                 return;
             }
 
             IUser user = args.User;
 
-            GChatInfoModel? chat = guild.ChatInfoByChannel(user, channelId.Value);
+            GChatInfoModel? chat = GuildService.ChatInfoByChannel(guild, user.Id, channelId.Value);
 
             if (chat == null)
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.CouldNotFindChat));
+                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.CouldNotFindChat));
                 return;
             }
 
@@ -92,7 +93,7 @@ internal class ChatImageOptionListener
 
             if (model == null || model != null && model.Type != ModelType.Image)
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.ChatIncompatibleOption));
+                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ChatIncompatibleOption));
                 return;
             }
 
@@ -130,14 +131,14 @@ internal class ChatImageOptionListener
 
             if (!success)
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnablePerformTask) + $" (#{optionValue})");
+                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnablePerformTask) + $" (#{optionValue})");
                 return;
             }
 
             chat.ImageGenOptions = options;
-            await guild.UpdateChatInfoAsync(user, chat);
+            await GuildService.UpdateChatInfoAsync(guild, user.Id, chat);
 
-            await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.Success));
+            await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.Success));
         }
         catch (Exception e)
         {

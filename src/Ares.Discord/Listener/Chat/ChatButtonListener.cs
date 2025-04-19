@@ -4,11 +4,12 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models.Database;
-using Ares.Core.Models.Database.Chat.Sub;
 using Ares.Core;
-using Ares.Core.Database.Collection;
+using Ares.Core.Models;
+using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Objects.Language;
+using Ares.Core.Repository;
+using Ares.Core.Service;
 using Ares.Core.Util;
 using Discord;
 using Discord.Rest;
@@ -16,7 +17,7 @@ using Discord.WebSocket;
 
 namespace Ares.Discord.Listener.Chat;
 
-internal class ChatButtonListener
+public class ChatButtonListener
 {
     public ChatButtonListener(DiscordSocketClient client)
     {
@@ -40,22 +41,22 @@ internal class ChatButtonListener
                 return;
             }
 
-            GuildCollection? data = AresCore.GuildCollection;
+            GuildRepository? repository = AresCore.GuildRepository;
 
-            if (data == null)
+            if (repository == null)
             {
                 await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
                 return;
             }
 
-            Guild? guild = await data.FetchAsync(guildId.Value);
+            Guild? guild = await repository.FetchAsync(guildId.Value);
             const int maxAttempts = 3;
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
             {
                 await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                 await Task.Delay(1500);
-                guild = await data.SaveAsync(guildId.Value);
+                guild = await repository.SaveAsync(guildId.Value);
             }
 
             if (guild == null)
@@ -68,29 +69,29 @@ internal class ChatButtonListener
 
             if (channel == null)
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnablePerformTask));
+                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnablePerformTask));
                 return;
             }
 
             IUser user = args.User;
 
-            if (!await guild.ToggleChatInfo(user, channel.Id, false))
+            if (!await GuildService.ToggleChatInfo(guild, user.Id, channel.Id, false))
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.UnableFindChat));
+                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnableFindChat));
                 return;
             }
 
-            GChatInfoModel? info = guild.ChatInfoByChannel(user, channel.Id);
+            GChatInfoModel? info = GuildService.ChatInfoByChannel(guild, user.Id, channel.Id);
 
             if (info == null)
             {
-                await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.NotChatOwner));
+                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.NotChatOwner));
                 return;
             }
 
             AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Username}\"");
 
-            await message.ModifyAsync(it => it.Content = guild.GetTranslation(LangKeys.CloseChat));
+            await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.CloseChat));
 
             await Task.Delay(TimeSpan.FromSeconds(1));
             await channel.DeleteAsync();

@@ -4,9 +4,9 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models.Database;
 using Ares.Core;
-using Ares.Core.Database.Collection;
+using Ares.Core.Models;
+using Ares.Core.Repository;
 using Ares.Core.Util;
 using Discord.WebSocket;
 
@@ -31,27 +31,27 @@ class GuildListener
     {
         if (sguild == null) return;
 
-        GuildCollection? data = AresCore.GuildCollection;
-        if (data == null) return;
+        GuildRepository? repository = AresCore.GuildRepository;
+        if (repository == null) return;
 
         await AresLogger.LogAsync("DB", $"Searching and caching guild \"{sguild.Id}\" in Redis.");
 
-        Guild? guild = await data.FetchAsync(sguild.Id, saveInRedis: true);
+        Guild? guild = await repository.FetchAsync(sguild.Id, saveInRedis: true);
         if (guild != null) return;
 
         await AresLogger.LogAsync("DB: Mongo", $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
 
-        await data.SaveAsync(sguild.Id);
+        await repository.SaveAsync(sguild.Id);
     }
 
     private async Task GuildUnavailable(SocketGuild guild)
     {
         if (guild == null) return;
 
-        GuildCollection? data = AresCore.GuildCollection;
-        if (data == null) return;
+        GuildRepository? repository = AresCore.GuildRepository;
+        if (repository == null) return;
 
         await AresLogger.LogAsync("DB: Redis", $"Guild \"{guild.Id}\" is not available, cache will be deleted.");
-        await data.DeleteCache(guild.Id);
+        await repository.DeleteCache(guild.Id);
     }
 }

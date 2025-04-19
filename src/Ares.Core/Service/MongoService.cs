@@ -4,15 +4,15 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models.Database;
 using Ares.Core.Interfaces;
 using Ares.Core.Util;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
+using Ares.Core.Models;
 
-namespace Ares.Core.Backend.Database;
+namespace Ares.Core.Service;
 
-internal class MongoDatabase : IDatabase
+public class MongoService : IDatabase
 {
     private static readonly string _pattern = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
     private static readonly Regex _ipPattern = new Regex(_pattern + "\\." + _pattern + "\\." + _pattern + "\\." + _pattern);
@@ -24,11 +24,11 @@ internal class MongoDatabase : IDatabase
     private MongoClient? client;
     public IMongoDatabase? mongoDatabase;
 
-    public MongoDatabase(DatabaseCredentials credential)
+    public MongoService(DatabaseCredentials credential)
     {
         if (credential.Host == null)
         {
-            throw new ArgumentException($"Host cannot be null ({nameof(MongoDatabase)})");
+            throw new ArgumentException($"Host cannot be null ({nameof(MongoService)})");
         }
 
         url = _ipPattern.Match(credential.Host).Success

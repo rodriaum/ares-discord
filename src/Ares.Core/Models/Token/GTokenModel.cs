@@ -6,7 +6,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Models.Database.Token;
+namespace Ares.Core.Models.Token;
 
 public class GTokenModel
 {

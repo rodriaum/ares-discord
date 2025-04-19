@@ -14,7 +14,7 @@ using Discord.WebSocket;
 
 namespace Ares.Discord.Commands;
 
-internal class SetupCommand
+public class SetupCommand
 {
     private static DiscordSocketClient? _client;
 

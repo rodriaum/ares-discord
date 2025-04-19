@@ -12,6 +12,7 @@ using Ares.Core.Util;
 using Ares.Discord.Commands;
 using Ares.Discord.Listener;
 using Ares.Discord.Listener.Chat;
+using Ares.Discord.Service;
 using Discord;
 using Discord.Commands;
 using Discord.Net;
@@ -25,7 +26,7 @@ namespace Ares.Discord;
 /// <summary>
 /// Main application class that initializes and manages the Discord bot.
 /// </summary>
-internal class Program
+public class Program
 {
     /// <summary>
     /// Discord client instance for bot operations.
@@ -61,8 +62,10 @@ internal class Program
             return;
         }
 
-        // Load environment variables
+        // Load environment variables in build/run path
         Env.Load();
+        // Load environment variables in project path
+        Env.Load("../../../../../.env");
 
         // Initialize Core
         if (!await AresCore.Init())
