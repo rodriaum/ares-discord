@@ -107,7 +107,11 @@ public class ReceivedContentListener
                 // Future: Compatibility with files, etc.
                 if (string.IsNullOrWhiteSpace(prompt))
                 {
-                    await ModifyMessageWithError(botMessage, embed, "Atualmente o sistema de chat só está disponível por mensagem.");
+                    await ModifyMessageWithError(
+                            botMessage,
+                            embed.WithColor(Color.DarkOrange).WithFooter(AresConstant.AppName),
+                            "Atualmente o sistema de chat só está disponível por mensagem."
+                        );
                     return;
                 }
 
