@@ -14,6 +14,8 @@ public class AresConstant
 
     public static readonly string AppName = "Ares";
 
+    public static readonly bool AppDevMode = false;
+
     /*
      * Messages
      */

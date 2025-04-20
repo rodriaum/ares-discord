@@ -118,7 +118,7 @@ public class ConfigCommand
                 }
 
                 string optionName = option.Name;
-                string? optionValue = option.Value.ToString();
+                object optionValue = option.Value;
 
                 if (optionValue == null)
                 {
@@ -131,6 +131,8 @@ public class ConfigCommand
                     return;
                 }
 
+                string? optionValueString = optionValue.ToString() ?? "";
+
                 switch (optionName)
                 {
 
@@ -140,33 +142,33 @@ public class ConfigCommand
                      */
 
                     case "openai":
-                        tokenData.OpenAi = optionValue;
-                        tokenChange = tokenData.OpenAi != optionValue;
+                        tokenData.OpenAi = optionValueString;
+                        tokenChange = tokenData.OpenAi != optionValueString;
                         break;
 
                     case "anthropic":
-                        tokenData.Anthropic = optionValue;
-                        tokenChange = tokenData.Anthropic != optionValue;
+                        tokenData.Anthropic = optionValueString;
+                        tokenChange = tokenData.Anthropic != optionValueString;
                         break;
 
                     case "deepseek":
-                        tokenData.Deepseek = optionValue;
-                        tokenChange = tokenData.Deepseek != optionValue;
+                        tokenData.Deepseek = optionValueString;
+                        tokenChange = tokenData.Deepseek != optionValueString;
                         break;
 
                     case "xai":
-                        tokenData.xAI = optionValue;
-                        tokenChange = tokenData.xAI != optionValue;
+                        tokenData.xAI = optionValueString;
+                        tokenChange = tokenData.xAI != optionValueString;
                         break;
 
                     case "google":
-                        tokenData.Google = optionValue;
-                        tokenChange = tokenData.Google != optionValue;
+                        tokenData.Google = optionValueString;
+                        tokenChange = tokenData.Google != optionValueString;
                         break;
 
                     case "imgur":
-                        tokenData.Imgur = optionValue;
-                        tokenChange = tokenData.Imgur != optionValue;
+                        tokenData.Imgur = optionValueString;
+                        tokenChange = tokenData.Imgur != optionValueString;
                         break;
 
                     /*
@@ -174,33 +176,75 @@ public class ConfigCommand
                      */
 
                     case "role-member":
-                        configData.MemberRoleId = ulong.Parse(optionValue);
-                        configChange = true;
+                        if (optionValue is IRole memberRole)
+                        {
+                            configData.MemberRoleId = memberRole.Id;
+                            configChange = true;
+                        }
+                        else
+                        {
+                            configChange = false;
+                        }
                         break;
 
                     case "role-usage":
-                        configData.UsageRoleId = ulong.Parse(optionValue);
-                        configChange = true;
+                        if (optionValue is IRole usageRole)
+                        {
+                            configData.UsageRoleId = usageRole.Id;
+                            configChange = true;
+                        }
+                        else
+                        {
+                            configChange = false;
+                        }
                         break;
 
                     case "role-exclusive":
-                        configData.ExclusiveRoleId = ulong.Parse(optionValue);
-                        configChange = true;
+                        if (optionValue is IRole exclusiveRole)
+                        {
+                            configData.ExclusiveRoleId = exclusiveRole.Id;
+                            configChange = true;
+                        }
+                        else
+                        {
+                            configChange = false;
+                        }
                         break;
 
                     case "channel-setup":
-                        configData.SetupChannelId = ulong.Parse(optionValue);
-                        configChange = true;
+                        if (optionValue is ITextChannel setupChannel)
+                        {
+                            configData.SetupChannelId = setupChannel.Id;
+                            configChange = true;
+                        }
+                        else
+                        {
+                            configChange = false;
+                        }
                         break;
 
                     case "channel-log":
-                        configData.LogChannelId = ulong.Parse(optionValue);
-                        configChange = true;
+                        if (optionValue is ITextChannel textChannel)
+                        {
+                            configData.LogChannelId = textChannel.Id;
+                            configChange = true;
+                        }
+                        else
+                        {
+                            configChange = false;
+                        }
                         break;
 
                     case "category-chats":
-                        configData.ChatsCategoryId = ulong.Parse(optionValue);
-                        configChange = true;
+                        if (optionValue is ICategoryChannel chatsCategory)
+                        {
+                            configData.ChatsCategoryId = chatsCategory.Id;
+                            configChange = true;
+                        }
+                        else
+                        {
+                            configChange = false;
+                        }
                         break;
 
                     /*
@@ -208,7 +252,7 @@ public class ConfigCommand
                      */
 
                     case "lang":
-                        configData.Lang = optionValue;
+                        configData.Lang = optionValueString;
                         configChange = true;
                         break;
 
@@ -229,7 +273,7 @@ public class ConfigCommand
                 sb.AppendLine(GuildService
                     .GetTranslation(guild, LangKeys.ConfigUpdateSuccess)
                     .Replace("{0}", optionName ?? "N/A")
-                    .Replace("{1}", optionValue ?? "N/A"));
+                    .Replace("{1}", (!string.IsNullOrWhiteSpace(optionValueString) ? optionValueString : "N/A")));
             }
 
             // Only one option can be changed per command, hence the use of only one boolean variable.

@@ -98,10 +98,10 @@ public class Program
         _client = new DiscordSocketClient(config);
         _commands = new CommandService();
 
-        string discordToken = Env.GetString("DISCORD_TOKEN");
+        string discordToken = (AresConstant.AppDevMode ? Env.GetString("DISCORD_TOKEN_DEV") : Env.GetString("DISCORD_TOKEN"));
         if (string.IsNullOrWhiteSpace(discordToken))
         {
-            await AresLogger.ErrorAsync("Token", "Could not find application token.");
+            await AresLogger.ErrorAsync("Token", $"Could not find application token. (Is Dev Mode: {AresConstant.AppDevMode})");
             return;
         }
 
@@ -244,42 +244,42 @@ public class Program
                 .AddOptions(
                     new SlashCommandOptionBuilder
                     {
-                        Type = ApplicationCommandOptionType.String,
+                        Type = ApplicationCommandOptionType.Role,
                         Name = "role-member",
                         Description = "Enter the member role ID.",
                         IsRequired = false
                     },
                     new SlashCommandOptionBuilder
                     {
-                        Type = ApplicationCommandOptionType.String,
+                        Type = ApplicationCommandOptionType.Role,
                         Name = "role-usage",
                         Description = "Enter the ID of the role that can use chats.",
                         IsRequired = false
                     },
                     new SlashCommandOptionBuilder
                     {
-                        Type = ApplicationCommandOptionType.String,
+                        Type = ApplicationCommandOptionType.Role,
                         Name = "role-exclusive",
                         Description = "Enter the ID of the role that can use exclusive chats.",
                         IsRequired = false
                     },
                     new SlashCommandOptionBuilder
                     {
-                        Type = ApplicationCommandOptionType.String,
+                        Type = ApplicationCommandOptionType.Channel,
                         Name = "channel-setup",
                         Description = "Enter the ID of the channel where the chat embed will be.",
                         IsRequired = false
                     },
                     new SlashCommandOptionBuilder
                     {
-                        Type = ApplicationCommandOptionType.String,
+                        Type = ApplicationCommandOptionType.Channel,
                         Name = "channel-log",
                         Description = "Enter the ID of the channel where bot logs will be kept.",
                         IsRequired = false
                     },
                     new SlashCommandOptionBuilder
                     {
-                        Type = ApplicationCommandOptionType.String,
+                        Type = ApplicationCommandOptionType.Channel,
                         Name = "category-chats",
                         Description = "Enter the ID of the category where generated chat channels will be kept.",
                         IsRequired = false

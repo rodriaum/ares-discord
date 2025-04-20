@@ -57,12 +57,9 @@ public class SetupCommand
                     embed.Title = "Inteligência Artificial";
                     embed.Description = "Inicie uma conversa com um modelo AI";
                     embed.ThumbnailUrl = "https://imgur.com/tnh71Er.gif";
-
                     embed.AddField("🤔 Como Funciona", "Escolha um modelo e um canal privado será criado.");
                     embed.AddField("⚙️ Capacidade", "Atualmente o sistema é capaz de gerar conversas e imagens.");
                     embed.AddField("♾️ Versão", "Projeto em fase beta! apresentou alguns erros e bugs? Por favor, reporte-os!");
-
-                    ComponentBuilder builder = new ComponentBuilder();
 
                     if (ModelsProvider.Models == null || !ModelsProvider.Models.Any())
                     {
@@ -70,10 +67,12 @@ public class SetupCommand
                         return;
                     }
 
+                    // Cria uma lista para armazenar os menus
+                    List<SelectMenuBuilder> menus = new List<SelectMenuBuilder>();
+
                     foreach (ModelCategory category in Enum.GetValues(typeof(ModelCategory)))
                     {
                         string name = category.ToString();
-
                         SelectMenuBuilder menu = new SelectMenuBuilder()
                             .WithPlaceholder(name)
                             .WithCustomId($"chat-menu-{name.ToLower()}");
@@ -81,7 +80,6 @@ public class SetupCommand
                         foreach (ChatModel model in ModelsProvider.Models)
                         {
                             if (model.Category != category) continue;
-
                             var modelText = model.Type switch
                             {
                                 ModelType.Chat => "Chat",
@@ -105,15 +103,43 @@ public class SetupCommand
 
                         if (menu.Options.Count >= 1)
                         {
-                            builder.WithSelectMenu(menu);
+                            menus.Add(menu);
                         }
+                    }
+
+                    const int maxMenusPerMessage = 5;
+                    int totalMessages = (int)Math.Ceiling((double)menus.Count / maxMenusPerMessage);
+
+                    ComponentBuilder firstBuilder = new ComponentBuilder();
+                    int menusToAdd = Math.Min(maxMenusPerMessage, menus.Count);
+
+                    for (int i = 0; i < menusToAdd; i++)
+                    {
+                        firstBuilder.WithSelectMenu(menus[i]);
                     }
 
                     await message.ModifyAsync(it =>
                     {
                         it.Embed = embed.Build();
-                        it.Components = builder.Build();
+                        it.Components = firstBuilder.Build();
                     });
+
+                    for (int msgIndex = 1; msgIndex < totalMessages; msgIndex++)
+                    {
+                        ComponentBuilder additionalBuilder = new ComponentBuilder();
+
+                        int startIndex = msgIndex * maxMenusPerMessage;
+                        int count = Math.Min(maxMenusPerMessage, menus.Count - startIndex);
+
+                        for (int i = 0; i < count; i++)
+                        {
+                            additionalBuilder.WithSelectMenu(menus[startIndex + i]);
+                        }
+
+                        await message.Channel.SendMessageAsync(
+                            text: msgIndex == 1 ? " " : "",
+                            components: additionalBuilder.Build());
+                    }
                     break;
             }
         });
