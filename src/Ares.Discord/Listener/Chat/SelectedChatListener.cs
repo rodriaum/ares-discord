@@ -222,9 +222,7 @@ public class SelectedChatListener
                         infoEmbed.AddField(GuildService.GetTranslation(guild, LangKeys.FieldHistory), GuildService.GetTranslation(guild, LangKeys.HistoryImageDesc));
                         infoEmbed.WithDescription(GuildService.GetTranslation(guild, LangKeys.ChatDescriptionImage));
 
-                        /* 
-                         * Quality Menu
-                         */
+                        #region Quality Menu
 
                         SelectMenuBuilder qualityMenu = new SelectMenuBuilder()
                             .WithPlaceholder("Qualidade")
@@ -242,9 +240,9 @@ public class SelectedChatListener
 
                         component.WithSelectMenu(qualityMenu);
 
-                        /* 
-                         * Size Menu
-                         */
+                        #endregion
+
+                        #region Size Menu
 
                         SelectMenuBuilder sizeMenu = new SelectMenuBuilder()
                             .WithPlaceholder("Tamanho")
@@ -262,9 +260,9 @@ public class SelectedChatListener
 
                         component.WithSelectMenu(sizeMenu);
 
-                        /* 
-                         * Style Menu
-                         */
+                        #endregion
+
+                        #region Style Menu
 
                         SelectMenuBuilder styleMenu = new SelectMenuBuilder()
                             .WithPlaceholder("Estilo")
@@ -281,6 +279,8 @@ public class SelectedChatListener
                             }));
 
                         component.WithSelectMenu(styleMenu);
+
+                        #endregion
                         break;
 
                     case ModelType.TTS:
@@ -300,10 +300,7 @@ public class SelectedChatListener
 
                 await channel.SendMessageAsync(embed: infoEmbed.Build(), components: component.Build());
 
-                /*
-                 * Start:
-                 * Hello Message
-                 */
+                #region Hello Message
 
                 EmbedBuilder helloEmbed = new EmbedBuilder()
                     .WithTitle("Ares")
@@ -313,10 +310,7 @@ public class SelectedChatListener
 
                 await channel.SendMessageAsync(embed: helloEmbed.Build());
 
-                /*
-                 * End:
-                 * Hello Message
-                 */
+                #endregion
 
                 OverwritePermissions permissions = new OverwritePermissions(
                     viewChannel: PermValue.Allow,
@@ -327,6 +321,8 @@ public class SelectedChatListener
                 await channel.AddPermissionOverwriteAsync(user, permissions);
 
                 await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                await message.DeleteAsync();
             }
             catch (Exception e)
             {

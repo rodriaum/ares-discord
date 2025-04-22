@@ -57,9 +57,11 @@ public class SetupCommand
                     embed.Title = "Inteligência Artificial";
                     embed.Description = "Inicie uma conversa com um modelo AI";
                     embed.ThumbnailUrl = "https://imgur.com/tnh71Er.gif";
+
                     embed.AddField("🤔 Como Funciona", "Escolha um modelo e um canal privado será criado.");
-                    embed.AddField("⚙️ Capacidade", "Atualmente o sistema é capaz de gerar conversas e imagens.");
+                    embed.AddField("⚙️ Capacidade", "Atualmente o sistema é capaz de gerar conversas, imagens e áudios.");
                     embed.AddField("♾️ Versão", "Projeto em fase beta! apresentou alguns erros e bugs? Por favor, reporte-os!");
+                    embed.AddField("🛠️ Desenvolvimento", "O sistema está em desenvolvimento e pode apresentar erros ou bugs. Se você encontrar algum, por favor, reporte-o.");
 
                     if (ModelsProvider.Models == null || !ModelsProvider.Models.Any())
                     {
