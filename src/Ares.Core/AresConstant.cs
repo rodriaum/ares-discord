@@ -13,8 +13,16 @@ public class AresConstant
      */
 
     public static readonly string AppName = "Ares";
-
     public static readonly bool AppDevMode = false;
+    public static readonly string AppVersion = "1.0.0";
+
+
+    /*
+     * Project
+     */
+
+    public static readonly string BasePath = AppContext.BaseDirectory;
+    public static readonly string ProjectPath = Path.GetFullPath(Path.Combine(BasePath, $@"..\..\..\..\..\"));
 
     /*
      * Messages

@@ -64,7 +64,7 @@ public class Program
         // Load environment variables in build/run path
         Env.Load();
         // Load environment variables in project path
-        Env.Load("../../../../../.env");
+        Env.Load($@"{AresConstant.ProjectPath}.env");
 
         // Initialize Core
         if (!await AresCore.Init())

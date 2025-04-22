@@ -27,8 +27,15 @@ namespace Ares.Core.Manager
             {
                 try
                 {
+                    // Run File Path
                     string filePath = Path.Combine("lang", category.Code.ToLower() + ".json");
-                    if (!File.Exists(filePath)) continue;
+
+                    if (!File.Exists(filePath))
+                    {
+                        // Project File Path
+                        filePath = Path.Combine(AresConstant.ProjectPath, filePath);
+                        if (!File.Exists(filePath)) continue;
+                    }
 
                     using FileStream fileStream = File.OpenRead(filePath);
                     using MemoryStream memoryStream = new MemoryStream();
