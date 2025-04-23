@@ -54,6 +54,10 @@ public class SetupCommand
 
             switch (command.Data.Options.First().Value)
             {
+                case "setup-ai-menu":
+                    await handleModelsMessage(message, embed);
+                    break;
+
                 case "setup-ai-web-menu":
                     await handleModelsMessage(message, embed, ChatRequestType.Web);
                     break;
@@ -67,7 +71,7 @@ public class SetupCommand
         return Task.CompletedTask;
     }
 
-    private async static Task handleModelsMessage(RestInteractionMessage message, EmbedBuilder embed, ChatRequestType requestType)
+    private async static Task handleModelsMessage(RestInteractionMessage message, EmbedBuilder embed, ChatRequestType? requestType = null)
     {
         embed.Title = "Inteligência Artificial";
         embed.Description = "Inicie uma conversa com um modelo AI";
@@ -75,8 +79,10 @@ public class SetupCommand
 
         embed.AddField("🤔 Como Funciona", "Escolha um modelo e um canal privado será criado.");
         embed.AddField("⚙️ Capacidade", "Atualmente o sistema é capaz de gerar conversas, imagens e áudios.");
-        embed.AddField("♾️ Versão", "Projeto em fase beta! apresentou alguns erros e bugs? Por favor, reporte-os!");
         embed.AddField("🛠️ Desenvolvimento", "O sistema está em desenvolvimento e pode apresentar erros ou bugs. Se você encontrar algum, por favor, reporte-o.");
+
+        if (requestType != null)
+            embed.WithFooter($"Modelos {requestType}");
 
         if (ModelsProvider.Models == null || !ModelsProvider.Models.Any())
         {
@@ -97,7 +103,7 @@ public class SetupCommand
 
             foreach (ChatModel model in ModelsProvider.Models)
             {
-                if (model.RequestType != requestType && model.Category != category) continue;
+                if ((requestType != null && model.RequestType != requestType) || model.Category != category) continue;
 
                 var modelText = model.Type switch
                 {
