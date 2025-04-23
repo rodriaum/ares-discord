@@ -32,10 +32,10 @@ public class LoggingService
         if (message.Exception is CommandException ex)
         {
             AresLogger.Error(
-                $"Command: {message.Source}",
-                $"{ex.Command.Aliases.First()} failed to execute in {ex.Context.Channel}.",
-                ex.Message,
-                severity: severity
+					$"Command: {message.Source}",
+					$"{ex.Command.Aliases.First()} failed to execute in {ex.Context.Channel}.",
+					ex.Message,
+					severity: severity
                 );
         }
         else

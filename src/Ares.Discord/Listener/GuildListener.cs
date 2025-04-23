@@ -36,12 +36,12 @@ class GuildListener
             GuildRepository? repository = AresCore.GRepository;
             if (repository == null) return;
 
-            await AresLogger.LogAsync("DB", $"Searching and caching guild \"{sguild.Id}\" in Redis.");
+            await AresLogger.LogAsync("DB", $"Searching in database and caching guild \"{sguild.Id}\" in Redis.");
 
             Guild? guild = await repository.FetchAsync(sguild.Id, saveInRedis: true);
             if (guild != null) return;
 
-            await AresLogger.LogAsync("DB: Mongo", $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
+            await AresLogger.LogAsync("DB", $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
 
             await repository.SaveAsync(sguild.Id);
         });
