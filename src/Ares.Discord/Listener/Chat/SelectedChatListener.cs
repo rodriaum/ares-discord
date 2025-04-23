@@ -7,7 +7,7 @@
 using Ares.Core;
 using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
-using Ares.Core.Models.Config;
+using Ares.Core.Models.Preference;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
@@ -84,7 +84,7 @@ public class SelectedChatListener
                     return;
                 }
 
-                GConfig? gid = guild.Config;
+                GPreference? gid = guild.Preferences;
 
                 if (gid == null)
                 {

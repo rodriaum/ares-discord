@@ -6,7 +6,7 @@
 
 using Ares.Core;
 using Ares.Core.Models;
-using Ares.Core.Models.Config;
+using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using Ares.Core.Objects.Language;
 using Ares.Core.Repository;
@@ -98,7 +98,7 @@ public class ConfigCommand
             IReadOnlyCollection<SocketSlashCommandDataOption> options = command.Data.Options;
 
             GToken tokenData = guild.Token;
-            GConfig configData = guild.Config;
+            GPreference configData = guild.Preferences;
 
             StringBuilder sb = new StringBuilder();
 
@@ -131,7 +131,7 @@ public class ConfigCommand
                     return;
                 }
 
-                string? optionValueString = optionValue.ToString() ?? "";
+                string optionValueString = optionValue.ToString() ?? "";
 
                 switch (optionName)
                 {
@@ -142,33 +142,13 @@ public class ConfigCommand
                      */
 
                     case "openai":
-                        tokenData.OpenAi = optionValueString;
-                        tokenChange = tokenData.OpenAi != optionValueString;
-                        break;
-
                     case "anthropic":
-                        tokenData.Anthropic = optionValueString;
-                        tokenChange = tokenData.Anthropic != optionValueString;
-                        break;
-
                     case "deepseek":
-                        tokenData.Deepseek = optionValueString;
-                        tokenChange = tokenData.Deepseek != optionValueString;
-                        break;
-
                     case "xai":
-                        tokenData.xAI = optionValueString;
-                        tokenChange = tokenData.xAI != optionValueString;
-                        break;
-
                     case "google":
-                        tokenData.Google = optionValueString;
-                        tokenChange = tokenData.Google != optionValueString;
-                        break;
-
                     case "imgur":
-                        tokenData.Imgur = optionValueString;
-                        tokenChange = tokenData.Imgur != optionValueString;
+                        tokenData.SetToken(optionName, optionValueString);
+                        tokenChange = tokenData.GetToken(optionName) != optionValueString;
                         break;
 
                     /*
@@ -286,7 +266,7 @@ public class ConfigCommand
 
             if (configChange)
             {
-                success = await GuildService.SaveConfigDataAsync(guild, configData);
+                success = await GuildService.SavePreferenceDataAsync(guild, configData);
             }
 
             if (success)

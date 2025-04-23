@@ -11,36 +11,51 @@ namespace Ares.Core.Models.Token;
 public class GToken
 {
     [JsonInclude]
-    [JsonPropertyName("openai")]
-    public string? OpenAi { get; set; }
+    [JsonPropertyName("list")]
+    public Dictionary<string, string> List { get; private set; }
 
-    [JsonInclude]
-    [JsonPropertyName("anthropic")]
-    public string? Anthropic { get; set; }
-
-    [JsonInclude]
-    [JsonPropertyName("deepseek")]
-    public string? Deepseek { get; set; }
-
-    [JsonInclude]
-    [JsonPropertyName("xai")]
-    public string? xAI { get; set; }
-
-    [JsonInclude]
-    [JsonPropertyName("google")]
-    public string? Google { get; set; }
-
-    [JsonInclude]
-    [JsonPropertyName("imgur")]
-    public string? Imgur { get; set; }
-
-    public GToken(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? google = "", string? imgur = "")
+    public GToken(Dictionary<string, string>? list = null)
     {
-        OpenAi = openai;
-        Anthropic = anthropic;
-        Deepseek = deepseek;
-        xAI = xai;
-        Google = google;
-        Imgur = imgur;
+        this.List = list ?? new Dictionary<string, string>();
+    }
+
+    public string? GetToken(string key)
+    {
+        return this.List.GetValueOrDefault(key);
+    }
+
+    public void SetToken(string key, string value)
+    {
+        this.List[key] = value;
+    }
+
+    public void RemoveToken(string key)
+    {
+        this.List.Remove(key);
+    }
+
+    public void ClearTokens()
+    {
+        this.List.Clear();
+    }
+
+    public bool ContainsToken(string key)
+    {
+        return this.List.ContainsKey(key);
+    }
+
+    public bool ContainsValue(string value)
+    {
+        return this.List.ContainsValue(value);
+    }
+
+    public bool IsEmpty()
+    {
+        return this.List.Count == 0;
+    }
+
+    public int Count()
+    {
+        return this.List.Count;
     }
 }

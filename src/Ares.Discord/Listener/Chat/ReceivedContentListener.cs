@@ -75,7 +75,7 @@ public class ReceivedContentListener
 
                 // Check if the channel is in the correct category and the user has an active conversation
                 // Alert: This code must be right here, if you move it to another place there may be problems.
-                if (!(channel.CategoryId.Equals(guild.Config?.ChatsCategoryId) &&
+                if (!(channel.CategoryId.Equals(guild.Preferences?.ChatsCategoryId) &&
                       GuildService.HasActiveUserConversation(guild, user.Id, channelId: channel.Id)))
                     return;
 

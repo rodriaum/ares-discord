@@ -26,9 +26,8 @@ namespace Ares.Core.Service;
 
 public class NeuralService
 {
-    /*
-     * Image Generation
-     */
+
+    #region Image Generation
 
     /// <summary>
     /// Asynchronously generates an image URL based on the provided parameters.
@@ -67,8 +66,8 @@ public class NeuralService
             return (GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfoToken), false);
         }
 
-        string? modelToken = CoreUtil.GetTokenByModelCategory(model.Category, tokenData);
-        string? imgurToken = tokenData.Imgur;
+        string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
+        string? imgurToken = tokenData.GetToken("imgur");
 
         if (string.IsNullOrEmpty(modelToken))
         {
@@ -117,9 +116,9 @@ public class NeuralService
         }
     }
 
-    /*
-     * TTS Generation
-     */
+    #endregion
+
+    #region TTS Generation
 
     /// <summary>
     /// Asynchronously generates a TTS based on the provided parameters.
@@ -156,7 +155,7 @@ public class NeuralService
             return (GuildService.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
         }
 
-        string? modelToken = CoreUtil.GetTokenByModelCategory(model.Category, tokenData);
+        string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
 
         if (string.IsNullOrWhiteSpace(modelToken))
         {
@@ -188,9 +187,9 @@ public class NeuralService
         }
     }
 
-    /*
-     * Conversation Generation
-     */
+    #endregion
+
+    #region Conversation Generation
 
     /// <summary>
     /// Asynchronously generates a conversation based on the provided parameters.
@@ -301,7 +300,7 @@ public class NeuralService
             return (GuildService.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
         }
 
-        string? modelToken = CoreUtil.GetTokenByModelCategory(model.Category, tokenData);
+        string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
 
         if (string.IsNullOrWhiteSpace(modelToken))
         {
@@ -444,9 +443,9 @@ public class NeuralService
         return (result, true);
     }
 
-    /*
-     * Helper Methods
-     */
+    #endregion
+
+    #region Helper Methods
 
     /// <summary>
     /// Gets a localized error message based on the error key
@@ -567,4 +566,6 @@ public class NeuralService
 
         return true;
     }
+
+    #endregion
 }

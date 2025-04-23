@@ -7,7 +7,7 @@
 using Ares.Core.Models;
 using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Sub;
-using Ares.Core.Models.Config;
+using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
@@ -80,20 +80,20 @@ public class GuildService
     }
 
     /// <summary>
-    /// Saves token data about the guild to the database.
+    /// Saves preference data about the guild to the database.
     /// </summary>
     /// <param name="guild">The guild to save the config data.</param>
-    /// <param name="config">Object containing guild token data.</param>
+    /// <param name="config">Object containing guild preference data.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveConfigDataAsync(Guild guild, GConfig? config = null)
+    public static async Task<bool> SavePreferenceDataAsync(Guild guild, GPreference? config = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (config != null)
         {
-            guild.Config = config;
+            guild.Preferences = config;
         }
 
-        return await SaveAsync(guild, "config");
+        return await SaveAsync(guild, "preference");
     }
 
     /// <summary>
@@ -535,7 +535,7 @@ public class GuildService
     /// <returns>The language code string.</returns>
     public static string Language(Guild guild)
     {
-        return guild.Config.Lang;
+        return guild.Preferences.Lang;
     }
 
     /// <summary>

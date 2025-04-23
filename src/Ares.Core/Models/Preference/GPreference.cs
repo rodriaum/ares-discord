@@ -6,9 +6,9 @@
 
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Models.Config;
+namespace Ares.Core.Models.Preference;
 
-public partial class GConfig
+public partial class GPreference
 {
     /*
      * Application Predefinitions
@@ -46,7 +46,7 @@ public partial class GConfig
     [JsonPropertyName("chatsCategoryId")]
     public ulong ChatsCategoryId { get; set; }
 
-    public GConfig()
+    public GPreference()
     {
         // By default, the language is Portuguese.
         Lang = "pt";
