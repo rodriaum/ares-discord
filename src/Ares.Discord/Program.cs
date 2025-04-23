@@ -204,7 +204,7 @@ public class Program
             {
                 Type = ApplicationCommandOptionType.String,
                 Name = model.ToString().ToLower(), // Fix: Name cannot contain any uppercase characters.
-                Description = $"Access: {model.GetEndpoint()}",
+                Description = (model.GetEndpoint() != null ? $"Access: {model.GetEndpoint()}" : "Access the Panel"),
                 IsRequired = false
             })
             // Add imgur token to permanent media.

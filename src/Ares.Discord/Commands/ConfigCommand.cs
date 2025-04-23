@@ -148,7 +148,7 @@ public class ConfigCommand
                     case "google":
                     case "imgur":
                         tokenData.SetToken(optionName, optionValueString);
-                        tokenChange = tokenData.GetToken(optionName) != optionValueString;
+                        tokenChange = tokenData.GetToken(optionValueString) != optionValueString;
                         break;
 
                     /*
