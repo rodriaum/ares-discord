@@ -316,7 +316,8 @@ public class Program
                         IsRequired = true,
                         Choices = new List<ApplicationCommandOptionChoiceProperties>
                         {
-                            new ApplicationCommandOptionChoiceProperties { Name = "AI Generation", Value = "setup-ai-menu" }
+                            new ApplicationCommandOptionChoiceProperties { Name = "AI Generation (Web)", Value = "setup-ai-web-menu" },
+                            new ApplicationCommandOptionChoiceProperties { Name = "AI Generation (Local)", Value = "setup-ai-local-menu" }
                         }
                     }
                 )
