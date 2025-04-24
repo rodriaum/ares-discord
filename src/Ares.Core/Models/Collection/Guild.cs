@@ -5,7 +5,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Models;
+namespace Ares.Core.Models.Collection;
 
 /// <summary>
 /// Represents a Discord guild.

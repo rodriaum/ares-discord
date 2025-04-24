@@ -7,6 +7,7 @@
 using Ares.Core.Manager;
 using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Collection;
 using Ares.Core.Models.Model;
 using Ares.Core.Models.Token;
 using Ares.Core.Objects.Chat;

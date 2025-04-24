@@ -6,6 +6,7 @@
 
 using Ares.Core;
 using Ares.Core.Models;
+using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Objects.Chat;
 using Ares.Core.Objects.Chat.Image;
@@ -19,6 +20,7 @@ using Ares.Discord.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
+using System.Text.RegularExpressions;
 
 namespace Ares.Discord.Listener.Chat;
 
@@ -179,19 +181,46 @@ public class ReceivedContentListener
         List<GChatHistoricModel>? historics)
     {
         DateTime date = DateTime.Now;
+
         EmbedBuilder? priceEmbed = null;
+        SelectMenuBuilder menu = new();
 
         var (responseText, success) = await NeuralService.GenerateConversationAsync(guild, user.Id, model, channelId, prompt);
 
         if (success)
         {
+            MatchCollection matches = Regex.Matches(responseText, "```(?:[a-zA-Z0-9]*\\n)?(.*?)```", RegexOptions.Multiline);
+
+            foreach (Match match in matches)
+            {
+                string code = match.Groups[1].Value.Trim();
+
+                ChatCodeSnippet snippet = new ChatCodeSnippet
+                {
+                    UserId = user.Id,
+                    MessageId = botMessage.Id.ToString(),
+                    Language = model.Category.ToString(),
+                    Code = code
+                };
+
+                Program.CodeSnippets.Add(snippet);
+
+                menu.AddOption(new SelectMenuOptionBuilder
+                {
+                    Label = snippet.Language,
+                    Value = $"snippet-{StringUtil.GenerateExclusiveCode()}",
+                });
+            }
+
             // Set color based on model category
             Color color = AresUtil.GetColorByModelCategory(model.Category);
 
+            const int Limit = 4096;
+
             // Handle Discord's description character limit
-            if (responseText.Length > 4096)
+            if (responseText.Length > Limit)
             {
-                embed.WithDescription(responseText.Substring(0, 4096))
+                embed.WithDescription(responseText.Substring(0, Limit))
                     .WithColor(color)
                     .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName} (♾️)");
             }
@@ -215,7 +244,7 @@ public class ReceivedContentListener
                 .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
         }
 
-        await UpdateBotMessage(botMessage, embed, priceEmbed);
+        await UpdateBotMessage(botMessage, embed, priceEmbed: priceEmbed, selectMenu: menu);
     }
 
     private async Task ProcessImageModel(
@@ -396,7 +425,7 @@ public class ReceivedContentListener
         return priceEmbed;
     }
 
-    private async Task UpdateBotMessage(RestUserMessage botMessage, EmbedBuilder mainEmbed, EmbedBuilder? priceEmbed = null, Optional<IEnumerable<FileAttachment>>? attachments = null)
+    private async Task UpdateBotMessage(RestUserMessage botMessage, EmbedBuilder mainEmbed, EmbedBuilder? priceEmbed = null, SelectMenuBuilder? selectMenu = null, Optional<IEnumerable<FileAttachment>>? attachments = null)
     {
         List<Embed> embeds = new List<Embed>();
 
@@ -411,6 +440,8 @@ public class ReceivedContentListener
         // Fix in case someone deletes the channel before sending the message.
         if (botMessage == null) return;
 
+        MessageComponent component = new ComponentBuilder().WithSelectMenu(selectMenu).Build();
+
         if (attachments != null)
         {
             var attachment = attachments.Value;
@@ -419,11 +450,16 @@ public class ReceivedContentListener
             {
                 message.Embeds = embeds.ToArray();
                 message.Attachments = attachment;
+                message.Components = component;
             });
         }
         else
         {
-            await botMessage.ModifyAsync(message => message.Embeds = embeds.ToArray());
+            await botMessage.ModifyAsync(message =>
+            {
+                message.Embeds = embeds.ToArray();
+                message.Components = component;
+            });
         }
     }
 }

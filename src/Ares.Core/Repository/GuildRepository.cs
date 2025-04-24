@@ -6,6 +6,7 @@
 
 using Ares.Core.Interfaces;
 using Ares.Core.Models;
+using Ares.Core.Models.Collection;
 using Ares.Core.Service;
 using Ares.Core.Util;
 using MongoDB.Bson;

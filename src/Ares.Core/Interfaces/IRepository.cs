@@ -1,4 +1,4 @@
-﻿using Ares.Core.Models;
+﻿using Ares.Core.Models.Collection;
 
 namespace Ares.Core.Interfaces;
 
