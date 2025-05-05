@@ -5,12 +5,10 @@
  */
 
 using Ares.Core.Manager;
-using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Model;
 using Ares.Core.Models.Token;
-using Ares.Core.Objects.Chat;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
@@ -44,13 +42,13 @@ public class NeuralService
     /// </returns>
     public async static Task<(string, bool)> GenerateImageUrlAsync(
         Guild guild,
-        ulong userId,
+        User user,
         ChatModel model,
         ImageGenOptions options,
         ulong channel,
         string prompt)
     {
-        if (!ValidateParameters(guild, userId, model, prompt, out string errorMessage))
+        if (!ValidateParameters(guild, user, model, prompt, out string errorMessage))
         {
             return (errorMessage, false);
         }
@@ -101,7 +99,7 @@ public class NeuralService
                 : await WebUtil.UploadMediaFromUrl(imgurToken, image.ImageUri.OriginalString) ?? image.ImageUri.OriginalString;
 
             // Save the image generation to chat history
-            if (!await SaveToHistoryAsync(guild, userId, channel, prompt, imageUrl: imageUrl, imageOpenAi: image))
+            if (!await SaveToHistoryAsync(guild, user, channel, prompt, imageUrl: imageUrl, imageOpenAi: image))
             {
                 return (GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})", false);
             }
@@ -134,7 +132,7 @@ public class NeuralService
     /// </returns>
     public async static Task<(string, bool)> GenerateTTSAsync(
         Guild guild,
-        ulong user,
+        User user,
         ChatModel model,
         ulong channel,
         string prompt)
@@ -205,7 +203,7 @@ public class NeuralService
     /// </returns>
     public async static Task<(string, bool)> GenerateConversationAsync(
         Guild guild,
-        ulong user,
+        User user,
         ChatModel model,
         ulong channel,
         string prompt)
@@ -246,15 +244,15 @@ public class NeuralService
     /// </summary>
     private static async Task<(string, bool)> HandleLocalModelRequestAsync(
         Guild guild,
-        ulong user,
+        User user,
         ChatModel model,
         ulong channel,
         string prompt)
     {
         // Get chat history and info
-        List<GChatHistoricModel>? historics = GuildService.ChatHistorics(guild, user, channel: channel);
+        List<GChatHistoricModel>? historics = UserService.ChatHistorics(user, guild.Id, channelId: channel);
 
-        GChatInfo? info = GuildService.ChatInfoByChannel(guild, user, channel);
+        GChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
@@ -264,7 +262,7 @@ public class NeuralService
 
         // Prepare messages for the API request
         List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? GChatHistoricModel.ToLocal(historics) : new();
-        messages.Add(new(Microsoft.Extensions.AI.ChatRole.User, prompt));
+        messages.Add(new(ChatRole.User, prompt));
 
         // Configure the API client
         IChatClient? ollama = AresCore.OllamaClient;
@@ -289,7 +287,7 @@ public class NeuralService
     /// </summary>
     private static async Task<(string, bool)> HandleRemoteModelRequestAsync(
         Guild guild,
-        ulong user,
+        User user,
         ChatModel model,
         ulong channel,
         string prompt)
@@ -309,8 +307,8 @@ public class NeuralService
         }
 
         // Get chat history and info
-        List<GChatHistoricModel>? historics = GuildService.ChatHistorics(guild, user, channel: channel);
-        GChatInfo? info = GuildService.ChatInfoByChannel(guild, user, channel);
+        List<GChatHistoricModel>? historics = UserService.ChatHistorics(user, guild.Id, channelId: channel);
+        GChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
@@ -344,7 +342,7 @@ public class NeuralService
     /// </summary>
     private static async Task<(string, bool)> HandleRemoteNonStreamingResponseAsync(
         Guild guild,
-        ulong user,
+        User user,
         ChatModel model,
         string prompt,
         ChatClient client,
@@ -365,7 +363,7 @@ public class NeuralService
 
         info.Historics.Add(historic);
 
-        await GuildService.UpdateChatInfoAsync(guild, user, info);
+        await UserService.UpdateChatInfoAsync(user, guild.Id, info);
 
         ChatMessageContentPart? content = completion.Content.FirstOrDefault();
 
@@ -391,7 +389,7 @@ public class NeuralService
     /// </summary>
     private static async Task<(string, bool)> HandleLocalNonStreamingResponseAsync(
         Guild guild,
-        ulong user,
+        User user,
         ChatModel model,
         string prompt,
         IChatClient client,
@@ -412,7 +410,7 @@ public class NeuralService
 
         info.Historics.Add(historic);
 
-        await GuildService.UpdateChatInfoAsync(guild, user, info);
+        await UserService.UpdateChatInfoAsync(user, guild.Id, info);
 
         Microsoft.Extensions.AI.ChatMessage? message = response.Messages.FirstOrDefault();
 
@@ -490,7 +488,7 @@ public class NeuralService
     /// <returns>True if parameters are valid, false otherwise with error message</returns>
     private static bool ValidateParameters(
         Guild guild,
-        ulong? userId,
+        User user,
         ChatModel model,
         string prompt,
         out string errorMessage)
@@ -504,7 +502,7 @@ public class NeuralService
             return false;
         }
 
-        if (userId == null)
+        if (user == null)
         {
             errorMessage = "There was an internal issue identifying the user. Please check if the user was provided correctly.";
             return false;
@@ -530,16 +528,16 @@ public class NeuralService
     /// </summary>
     private static async Task<bool> SaveToHistoryAsync(
         Guild guild,
-        ulong user,
+        User user,
         ulong channel,
         string prompt,
         string? response = null,
         string? imageUrl = null,
         GeneratedImage? imageOpenAi = null,
         ChatCompletion? responseOpenAi = null,
-        ChatValueUsage? usage = null)
+        Objects.Chat.ChatTokenUsage? usage = null)
     {
-        GChatInfo? info = GuildService.ChatInfoByChannel(guild, user, channel);
+        GChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
@@ -563,7 +561,7 @@ public class NeuralService
         }
 
         info.Historics.Add(historic);
-        await GuildService.UpdateChatInfoAsync(guild, user, info);
+        await UserService.UpdateChatInfoAsync(user, guild.Id, info);
 
         return true;
     }

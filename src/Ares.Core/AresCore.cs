@@ -38,7 +38,9 @@ public class AresCore
     /// <summary>
     /// Gets or sets the guild collection for database operations.
     /// </summary>
-    public static GuildRepository? GRepository { get; private set; }
+    public static GuildRepository? GuildRepository { get; private set; }
+
+    public static UserRepository? UserRepository { get; private set; }
 
     /// <summary>
     /// Language manager instance for handling localization.
@@ -51,8 +53,11 @@ public class AresCore
     /// <returns>True if the initialization was successful, otherwise false.</returns>
     public static async Task<bool> Init()
     {
-        SystemMonitor monitor = new SystemMonitor();
-        _ = monitor.Init();
+        if (AresConstant.AppMonitorDebugMode)
+        {
+            SystemMonitor monitor = new SystemMonitor();
+            _ = monitor.Init();
+        }
 
         Uri? ollamaUri = new Uri($"http://{Env.GetString("OLLAMA_HOST")}:{Env.GetInt("OLLAMA_PORT")}");
         OllamaClient = new OllamaChatClient(ollamaUri);
@@ -115,7 +120,8 @@ public class AresCore
          * Database collections
          */
 
-        GRepository = new GuildRepository(mongoDatabase, redisDatabase);
+        GuildRepository = new GuildRepository(mongoDatabase, redisDatabase);
+        UserRepository = new UserRepository(mongoDatabase, redisDatabase);
 
         return mongoDatabase != null && redisDatabase != null;
     }

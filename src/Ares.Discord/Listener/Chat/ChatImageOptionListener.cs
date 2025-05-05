@@ -5,15 +5,14 @@
  */
 
 using Ares.Core;
-using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using Ares.Core.Service;
 using Ares.Core.Util;
-using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 
@@ -49,22 +48,25 @@ public class ChatImageOptionListener
                     return;
                 }
 
-                GuildRepository? repository = AresCore.GRepository;
+                #region Check if guild is in database
 
-                if (repository == null)
+                GuildRepository? guildRepository = AresCore.GuildRepository;
+
+                if (guildRepository == null)
                 {
-                    await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#g_repo_null)");
                     return;
                 }
 
-                Guild? guild = await repository.FetchAsync(guildId.Value);
+                Guild? guild = await guildRepository.FetchAsync(guildId.Value);
+
                 const int maxAttempts = 3;
 
                 for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    guild = await repository.SaveAsync(guildId.Value);
+                    guild = await guildRepository.SaveAsync(guildId.Value);
                 }
 
                 if (guild == null)
@@ -72,6 +74,35 @@ public class ChatImageOptionListener
                     await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar a guilda no banco de dados.");
                     return;
                 }
+
+                #endregion
+
+                #region Check if user is in database
+
+                UserRepository? userRepository = AresCore.UserRepository;
+
+                if (userRepository == null)
+                {
+                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#u_repo_null)");
+                    return;
+                }
+
+                User? user = await userRepository.FetchAsync(args.User.Id, saveInRedis: true);
+
+                for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
+                {
+                    await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
+                    await Task.Delay(1500);
+                    user = await userRepository.SaveAsync(args.User.Id);
+                }
+
+                if (user == null)
+                {
+                    await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar a sua conta no banco de dados.");
+                    return;
+                }
+
+                #endregion
 
                 ulong? channelId = args.ChannelId;
 
@@ -81,9 +112,9 @@ public class ChatImageOptionListener
                     return;
                 }
 
-                IUser user = args.User;
+                SocketUser socketUser = args.User;
 
-                GChatInfo? chat = GuildService.ChatInfoByChannel(guild, user.Id, channelId.Value);
+                GChatInfo? chat = UserService.ChatInfoByChannel(user, guildId.Value, channelId.Value);
 
                 if (chat == null)
                 {
@@ -138,7 +169,7 @@ public class ChatImageOptionListener
                 }
 
                 chat.ImageGenOptions = options;
-                await GuildService.UpdateChatInfoAsync(guild, user.Id, chat);
+                await UserService.UpdateChatInfoAsync(user, guildId.Value, chat);
 
                 await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.Success));
             }

@@ -4,6 +4,8 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Objects.Chat.Image;
+
 namespace Ares.Core.Objects.Chat.Price;
 
 /// <summary>
@@ -16,14 +18,14 @@ namespace Ares.Core.Objects.Chat.Price;
 public class ChatPriceUsage
 {
     /// <summary> 
-    /// Price per token at completion generated.
+    /// Price per 1M token at completion generated.
     /// </summary>
-    public decimal OutputPricePerToken { get; }
+    public decimal OutputPriceToken { get; }
 
     /// <summary> 
-    /// Token price in prompt.
+    /// Price per 1M token at request process.
     /// </summary>
-    public decimal InputPricePerToken { get; }
+    public decimal InputPriceToken { get; }
 
     /// <summary> 
     /// Price per image.
@@ -31,25 +33,45 @@ public class ChatPriceUsage
     public decimal InputPricePerImage { get; set; }
 
     /// <summary> 
-    /// Price in detail. (Optional) 
+    /// Price in detail. (Optional)
     /// </summary>
     public List<ChatPriceUsageDetail>? ChatPriceUsageDetail { get; set; }
 
-    public ChatPriceUsage(decimal outputPricePerToken = 0, decimal inputPricePerToken = 0, decimal inputPricePerImage = 0, List<ChatPriceUsageDetail>? details = null)
+    public ChatPriceUsage(decimal outPriceToken = 0, decimal inPriceToken = 0, decimal inputPricePerImage = 0, List<ChatPriceUsageDetail>? details = null)
     {
-        this.OutputPricePerToken = outputPricePerToken;
-        this.InputPricePerToken = inputPricePerToken;
+        this.OutputPriceToken = outPriceToken;
+        this.InputPriceToken = inPriceToken;
         this.InputPricePerImage = inputPricePerImage;
         this.ChatPriceUsageDetail = details ?? new List<ChatPriceUsageDetail>();
     }
 
-    public decimal TotalTokenPrice()
+    public decimal OutputPriceTokenPerToken()
     {
-        return this.OutputPricePerToken + this.InputPricePerToken;
+        return this.OutputPriceToken / 1_000_000m;
     }
 
-    public decimal TotalPrice()
+    public decimal InputPriceTokenPerToken()
     {
-        return this.TotalTokenPrice() + this.InputPricePerImage;
+        return this.OutputPriceToken / 1_000_000m;
+    }
+
+    public decimal TotalTextChatPricePerToken()
+    {
+        return this.OutputPriceTokenPerToken() + this.InputPriceTokenPerToken();
+    }
+
+    public decimal TotalTextChatPrice()
+    {
+        return this.OutputPriceToken + this.InputPriceToken;
+    }
+
+    public decimal TotalChatPrice()
+    {
+        return this.TotalTextChatPrice() + this.InputPricePerImage;
+    }
+
+    public decimal TotalImageChatPrice(ImageQuality quality, ImageSize size)
+    {
+        return this.ChatPriceUsageDetail?.Find(x => x.Quality == quality && x.Size == size)?.Price ?? 0;
     }
 }

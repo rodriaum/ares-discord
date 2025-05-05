@@ -15,8 +15,13 @@ public class GChat
     [JsonPropertyName("infos")]
     public Dictionary<ulong, List<GChatInfo>> Infos { get; set; }
 
+    [JsonInclude]
+    [JsonPropertyName("snippets")]
+    public Dictionary<ulong, List<GChatSnippet>> Snippets { get; set; }
+
     public GChat()
     {
-        Infos = new Dictionary<ulong, List<GChatInfo>>();
+        Infos = new();
+        Snippets = new();
     }
 }

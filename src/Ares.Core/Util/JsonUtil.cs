@@ -138,18 +138,21 @@ public class JsonUtil
         return await reader.ReadToEndAsync();
     }
 
-    public static async Task<T?> BsonDocToObjectAsync<T>(BsonDocument document)
+    public static async Task<T?> BsonDocToObjectAsync<T>(
+        BsonDocument document, 
+        JsonSerializerOptions? serializerOptions = null, 
+        JsonSerializerOptions? deserializeOptions = null)
     {
         try
         {
             object mapped = BsonTypeMapper.MapToDotNetValue(document);
 
             using MemoryStream stream = new MemoryStream();
-            await JsonSerializer.SerializeAsync(stream, mapped);
+            await JsonSerializer.SerializeAsync(stream, mapped, options: serializerOptions);
             stream.Position = 0;
 
 
-            return await JsonSerializer.DeserializeAsync<T>(stream);
+            return await JsonSerializer.DeserializeAsync<T>(stream, options: deserializeOptions);
         }
         catch (JsonException ex)
         {

@@ -122,7 +122,8 @@ public class RedisService : Interfaces.IDatabase
             try
             {
                 await FlushAsync();
-                await _connection.CloseAsync();
+                await AresLogger.LogAsync("DB: Redis", "Redis database cache has been cleared.");
+                await _connection?.CloseAsync()!;
                 await _connection.DisposeAsync();
             }
             catch (Exception ex)

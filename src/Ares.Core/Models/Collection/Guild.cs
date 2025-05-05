@@ -1,5 +1,4 @@
-﻿using Ares.Core.Models.Chat;
-using Ares.Core.Models.Preference;
+﻿using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -26,7 +25,7 @@ public class Guild
     [BsonRepresentation(BsonType.ObjectId)]
     [JsonInclude]
     [JsonPropertyName("id")]
-    public readonly string Id;
+    public readonly ulong Id;
 
     /// <summary>
     /// Token data for the guild.
@@ -43,22 +42,14 @@ public class Guild
     public GPreference Preferences;
 
     /// <summary>
-    /// Chat data for the guild.
-    /// </summary>
-    [JsonInclude]
-    [JsonPropertyName("chat")]
-    public GChat Chat;
-
-    /// <summary>
     /// Initializes a new instance of the Guild class.
     /// </summary>
     /// <param name="id">The identifier of the guild.</param>
-    public Guild(string id)
+    public Guild(ulong id)
     {
         this.Id = id;
 
         this.Token = new GToken();
         this.Preferences = new GPreference();
-        this.Chat = new GChat();
     }
 }

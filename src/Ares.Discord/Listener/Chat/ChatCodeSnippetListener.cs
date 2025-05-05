@@ -6,6 +6,10 @@
 
 using Ares.Core;
 using Ares.Core.Models.Chat;
+using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Collection;
+using Ares.Core.Repository;
+using Ares.Core.Service;
 using Ares.Core.Util;
 using Discord;
 using Discord.Rest;
@@ -34,16 +38,48 @@ public class ChatCodeSnippetListener
 
             try
             {
-                SocketUser user = args.User;
+                SocketUser socketUser = args.User;
                 ulong guildId = args.GuildId.GetValueOrDefault();
 
-                if (_client == null || user == null)
+                if (_client == null || socketUser == null)
                 {
                     await message.ModifyAsync(it => it.Content = AresConstant.UnableGetMember);
                     return;
                 }
 
-                ChatCodeSnippet? snippet = Program.CodeSnippets.Find(it => it.UserId == user.Id && it.MessageId == args.Data.CustomId);
+                #region Check if user is in database
+
+                UserRepository? userRepository = AresCore.UserRepository;
+
+                int maxAttempts = 3;
+
+                if (userRepository == null)
+                {
+                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#u_repo_null)");
+                    return;
+                }
+
+                User? user = await userRepository.FetchAsync(args.User.Id, saveInRedis: true);
+
+                for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
+                {
+                    await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
+                    await Task.Delay(1500);
+                    user = await userRepository.SaveAsync(args.User.Id);
+                }
+
+                if (user == null)
+                {
+                    await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar a sua conta no banco de dados.");
+                    return;
+                }
+
+                #endregion
+
+                /*
+                ChatCodeSnippet? snippet = Program.CodeSnippets.Find(it => it.UserId == socketUser.Id && it.MessageId == args.Data.CustomId);
+
+                GChatSnippet? snippet = UserService.GetSNi
 
                 if (snippet == null)
                 {
@@ -62,6 +98,7 @@ public class ChatCodeSnippetListener
                     );
 
                 await args.RespondWithModalAsync(modal.Build());
+                */
 
             }
             catch (Exception e)

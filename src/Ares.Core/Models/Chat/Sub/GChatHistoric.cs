@@ -56,7 +56,7 @@ public class GChatHistoricModel
     [JsonInclude]
     [JsonPropertyName("usage")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ChatValueUsage? Usage { get; set; }
+    public Objects.Chat.ChatTokenUsage? Usage { get; set; }
 
     /// <summary>
     /// Timestamp da conversa.
@@ -78,7 +78,7 @@ public class GChatHistoricModel
             string? prompt = null,
             string? response = null,
             string? imageUrl = null,
-            ChatValueUsage? usage = null,
+            Objects.Chat.ChatTokenUsage? usage = null,
             long timestamp = -1)
     {
         System = system;
@@ -120,7 +120,7 @@ public class GChatHistoricModel
                 prompt: prompt,
                 response: contentOpenAi.Text,
                 imageUrl: !string.IsNullOrWhiteSpace(imageUrl) ? contentOpenAi.ImageUri?.OriginalString : imageUrl,
-                usage: new ChatValueUsage(responseOpenAi.Usage.OutputTokenCount, responseOpenAi.Usage.InputTokenCount),
+                usage: new Objects.Chat.ChatTokenUsage(responseOpenAi.Usage.OutputTokenCount, responseOpenAi.Usage.InputTokenCount),
                 timestamp: responseOpenAi.CreatedAt.Ticks
             ));
         }
@@ -150,7 +150,7 @@ public class GChatHistoricModel
                     (
                         prompt: prompt,
                         response: ollamaResponse.Text,
-                        usage: new ChatValueUsage(outputTokens.Value, inputTokens.Value),
+                        usage: new Objects.Chat.ChatTokenUsage(outputTokens.Value, inputTokens.Value),
                         timestamp: TimeUtil.CurrentTimeMillis()
                     ));
                 }

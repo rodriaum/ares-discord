@@ -5,7 +5,7 @@
  */
 
 using Ares.Core;
-using Ares.Core.Models;
+using Ares.Core.Models.Collection;
 using Ares.Core.Repository;
 using Ares.Core.Util;
 using Discord.WebSocket;
@@ -33,7 +33,7 @@ class GuildListener
         {
             if (sguild == null) return;
 
-            GuildRepository? repository = AresCore.GRepository;
+            GuildRepository? repository = AresCore.GuildRepository;
             if (repository == null) return;
 
             await AresLogger.LogAsync("DB", $"Searching in database and caching guild \"{sguild.Id}\" in redis.");
@@ -55,7 +55,7 @@ class GuildListener
         {
             if (guild == null) return;
 
-            GuildRepository? repository = AresCore.GRepository;
+            GuildRepository? repository = AresCore.GuildRepository;
             if (repository == null) return;
 
             await AresLogger.LogAsync("DB: Redis", $"Guild \"{guild.Id}\" is not available, cache will be deleted.");

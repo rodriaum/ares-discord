@@ -21,21 +21,7 @@ public class ModelsProvider
         Models = new List<ChatModel>
         {
 
-            /*
-             * OpenAI Models
-             */
-
-            new(
-                request: ChatRequestType.Web,
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "GPT-4.5 Preview",
-                model: "gpt-4.5-preview",
-                descriptionKey: LangKeys.ModelDescGpt45,
-                task: ModelTaskCategory.Flagship,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00015m, inputPricePerToken: 0.000068m),
-                exclusive: true
-            ),
+            #region OpenAI Models
 
             new(
                 request: ChatRequestType.Web,
@@ -44,6 +30,7 @@ public class ModelsProvider
                 display: "GPT-4.1",
                 model: "gpt-4.1",
                 task: ModelTaskCategory.Flagship,
+                price: new ChatPriceUsage(outPriceToken: 0.0m, inPriceToken: 0.0m),
                 exclusive: true
             ),
 
@@ -55,7 +42,7 @@ public class ModelsProvider
                 model: "o1-pro",
                 descriptionKey: LangKeys.ModelDescO1Pro,
                 task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0006m, inputPricePerToken: 0.00015m),
+                price: new ChatPriceUsage(outPriceToken: 0.0006m, inPriceToken: 0.00015m),
                 exclusive: true
             ),
 
@@ -67,19 +54,8 @@ public class ModelsProvider
                 model: "o1",
                 descriptionKey: LangKeys.ModelDescO1,
                 task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000044m, inputPricePerToken: 0.000015m),
+                price: new ChatPriceUsage(outPriceToken: 0.0000044m, inPriceToken: 0.000015m),
                 exclusive: true
-            ),
-
-            new(
-                request: ChatRequestType.Web,
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "o1 Mini",
-                model: "o1-mini",
-                task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.0000011m),
-                available: true
             ),
 
             new(
@@ -100,7 +76,7 @@ public class ModelsProvider
                 model: "o3-mini",
                 descriptionKey: LangKeys.ModelDescO3Mini,
                 task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.0000011m),
+                price: new ChatPriceUsage(outPriceToken: 0.0000006m, inPriceToken: 0.0000011m),
                 available: true
             ),
 
@@ -132,7 +108,7 @@ public class ModelsProvider
                 model: "gpt-4o",
                 descriptionKey: LangKeys.ModelDescGpt4o,
                 task: ModelTaskCategory.Flagship,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.0000025m),
+                price: new ChatPriceUsage(outPriceToken: 0.00001m, inPriceToken: 0.0000025m),
                 available: true
             ),
 
@@ -144,7 +120,7 @@ public class ModelsProvider
                 model: "gpt-4o-mini",
                 descriptionKey: LangKeys.ModelDescGpt4oMini,
                 task: ModelTaskCategory.CostOptimized,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.00000015m),
+                price: new ChatPriceUsage(outPriceToken: 0.0000006m, inPriceToken: 0.00000015m),
                 available: true
             ),
 
@@ -156,7 +132,7 @@ public class ModelsProvider
                 model: "gpt-4o-search-preview",
                 descriptionKey: LangKeys.ModelDescGpt4oS,
                 task: ModelTaskCategory.ToolSpecific,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.0000025m),
+                price: new ChatPriceUsage(outPriceToken: 0.00001m, inPriceToken: 0.0000025m),
                 available: true
             ),
 
@@ -167,7 +143,7 @@ public class ModelsProvider
                 display: "GPT-4o Mini Search Preview",
                 model: "gpt-4o-mini-search-preview",
                 task: ModelTaskCategory.ToolSpecific,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.00000015m),
+                price: new ChatPriceUsage(outPriceToken: 0.0000006m, inPriceToken: 0.00000015m),
                 available: true
             ),
 
@@ -178,7 +154,7 @@ public class ModelsProvider
                 display: "GPT-4 Turbo",
                 model: "gpt-4-turbo",
                 task: ModelTaskCategory.Older,
-                price: new ChatPriceUsage(outputPricePerToken:0.00003m, inputPricePerToken: 0.00001m),
+                price: new ChatPriceUsage(outPriceToken:0.00003m, inPriceToken: 0.00001m),
                 available: true
             ),
 
@@ -189,7 +165,7 @@ public class ModelsProvider
                 display: "GPT-3 Turbo",
                 model: "gpt-3.5-turbo",
                 task: ModelTaskCategory.Older,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000015m, inputPricePerToken: 0.0000005m),
+                price: new ChatPriceUsage(outPriceToken: 0.0000015m, inPriceToken: 0.0000005m),
                 available: true
             ),
 
@@ -237,7 +213,7 @@ public class ModelsProvider
                 display: "TTS 1",
                 model: "tts-1",
                 task: ModelTaskCategory.TTS,
-                price: new ChatPriceUsage(outputPricePerToken: 0.000015m),
+                price: new ChatPriceUsage(outPriceToken: 0.000015m),
                 available: true
             ),
 
@@ -248,13 +224,13 @@ public class ModelsProvider
                 display: "TTS 1 HD",
                 model: "tts-1-hd",
                 task: ModelTaskCategory.TTS,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00003m),
+                price: new ChatPriceUsage(outPriceToken: 0.00003m),
                 exclusive: true
             ),
 
-            /*
-             * Anthropic Models
-             */
+            #endregion
+
+            #region Anthropic Models
 
             new(
                 request: ChatRequestType.Web,
@@ -262,7 +238,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude v2.1",
                 model: "claude-2.1",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
+                price: new ChatPriceUsage(outPriceToken: 0.0m, inPriceToken: 0.0m),
                 available: false
             ),
 
@@ -272,7 +248,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude v2.0",
                 model: "claude-2.0",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
+                price: new ChatPriceUsage(outPriceToken: 0.0m, inPriceToken: 0.0m),
                 available: false
             ),
 
@@ -282,7 +258,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude Instant v1.2",
                 model: "claude-instant-1.2",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
+                price: new ChatPriceUsage(outPriceToken: 0.0m, inPriceToken: 0.0m),
                 available: false
             ),
 
@@ -292,7 +268,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude 3 Opus",
                 model: "claude-3-opus-20240229",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000075m, inputPricePerToken: 0.000015m),
+                price: new ChatPriceUsage(outPriceToken: 0.000075m, inPriceToken: 0.000015m),
                 available: false
             ),
 
@@ -302,7 +278,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude 3 Sonnet",
                 model: "claude-3-sonnet-20240229",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
+                price: new ChatPriceUsage(outPriceToken: 0.0m, inPriceToken: 0.0m),
                 available: false
             ),
 
@@ -312,7 +288,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude 3.7 Sonnet",
                 model: "claude-3-7-sonnet-20250219",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000015m, inputPricePerToken: 0.000003m),
+                price: new ChatPriceUsage(outPriceToken: 0.000015m, inPriceToken: 0.000003m),
                 exclusive: true
             ),
 
@@ -322,7 +298,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude 3.5 Sonnet",
                 model: "claude-3-5-sonnet-20241022",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000015m, inputPricePerToken: 0.000003m),
+                price: new ChatPriceUsage(outPriceToken: 0.000015m, inPriceToken: 0.000003m),
                 available: true
             ),
 
@@ -332,7 +308,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude 3.5 Haiku",
                 model: "claude-3-5-haiku-20241022",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000004m, inputPricePerToken: 0.0000008m),
+                price: new ChatPriceUsage(outPriceToken: 0.000004m, inPriceToken: 0.0000008m),
                 available: true
             ),
 
@@ -342,13 +318,13 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Claude 3 Haiku",
                 model: "claude-3-haiku-20240307",
-                price: new ChatPriceUsage(outputPricePerToken: 0.00000125m, inputPricePerToken: 0.00000025m),
+                price: new ChatPriceUsage(outPriceToken: 0.00000125m, inPriceToken: 0.00000025m),
                 available: true
             ),
 
-            /*
-             * DeepSeek Models
-             */
+            #endregion
+
+            #region DeepSeek Models
 
             new(
                 request: ChatRequestType.Web,
@@ -357,7 +333,7 @@ public class ModelsProvider
                 display: "Deepseek V3",
                 model: "deepseek-chat",
                 task: ModelTaskCategory.Flagship,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00000110m, inputPricePerToken: 0.00000027m),
+                price: new ChatPriceUsage(outPriceToken: 0.00000110m, inPriceToken: 0.00000027m),
                 available: true
             ),
 
@@ -368,13 +344,13 @@ public class ModelsProvider
                 display: "Deepseek R1",
                 model: "deepseek-reasoner",
                 task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00000219m, inputPricePerToken: 0.00000055m),
+                price: new ChatPriceUsage(outPriceToken: 0.00000219m, inPriceToken: 0.00000055m),
                 available: true
             ),
 
-            /*
-             * xAI Models
-             */
+            #endregion
+
+            #region xAI Models
 
             new(
                 request: ChatRequestType.Web,
@@ -382,7 +358,7 @@ public class ModelsProvider
                 type: ModelType.Chat,
                 display: "Grok 2",
                 model: "grok-2-latest",
-                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.000002m),
+                price: new ChatPriceUsage(outPriceToken: 0.00001m, inPriceToken: 0.000002m),
                 available: true
             ),
 
@@ -393,7 +369,7 @@ public class ModelsProvider
                 display: "Grok 2 Vision",
                 model: "grok-2-vision-latest",
                 task: ModelTaskCategory.Vision,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.000002m, inputPricePerImage: 0.000002m),
+                price: new ChatPriceUsage(outPriceToken: 0.00001m, inPriceToken: 0.000002m, inputPricePerImage: 0.000002m),
                 available: false
             ),
 
@@ -408,9 +384,9 @@ public class ModelsProvider
                 available: false
             ),
 
-            /*
-             * Google Models
-             */
+            #endregion
+
+            #region Google Models
 
             new(
                 request: ChatRequestType.Web,
@@ -496,9 +472,9 @@ public class ModelsProvider
                 available: true
             ),
 
-            /*
-             * Local Ollama Models
-             */
+            #endregion
+
+            #region Local Ollama Models
 
             new(
                 request: ChatRequestType.Local,
@@ -559,6 +535,8 @@ public class ModelsProvider
                 task: ModelTaskCategory.Reasoning,
                 dev: true
             ),
+
+            #endregion
         };
     }
 }

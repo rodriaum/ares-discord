@@ -4,8 +4,6 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Interfaces;
-using Ares.Core.Models;
 using Ares.Core.Models.Collection;
 using Ares.Core.Service;
 using Ares.Core.Util;
@@ -19,7 +17,7 @@ namespace Ares.Core.Repository;
 /// <summary>
 /// Class responsible for managing guild data in MongoDB database.
 /// </summary>
-public class GuildRepository
+public class UserRepository
 {
     /// <summary>
     /// Represents the "guilds" collection in MongoDB database.
@@ -34,20 +32,20 @@ public class GuildRepository
     /// <summary>
     /// Key prefix used for guild data in Redis.
     /// </summary>
-    private readonly string GRedisKey = "guild:";
+    private readonly string GRedisKey = "user:";
 
     /*
      * Constructors and initialization methods.
      */
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GuildRepository"/> class with the guilds collection and guild manager.
+    /// Initializes a new instance of the <see cref="UserRepository"/> class with the users collection.
     /// </summary>
-    /// <param name="mongoDatabase">MongoDB database instance that contains the "guilds" collection.</param>
+    /// <param name="mongoDatabase">MongoDB database instance that contains the "users" collection.</param>
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
-    public GuildRepository(MongoService mongoDatabase, RedisService redisDatabase)
+    public UserRepository(MongoService mongoDatabase, RedisService redisDatabase)
     {
-        _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("guilds");
+        _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("users");
         _redisDatabase = redisDatabase;
 
         // Create indexes in the collection to optimize queries.
@@ -59,7 +57,7 @@ public class GuildRepository
     /// </summary>
     public async void CreateIndexesAsync()
     {
-        await AresLogger.LogAsync("Repo: Guild", "Creating indexes in the database...");
+        await AresLogger.LogAsync("Repo: User", "Creating indexes in the database...");
 
         // Check if the collection was initialized before trying to create indexes.
         if (_collection == null)
@@ -75,7 +73,7 @@ public class GuildRepository
 
             await _collection.Indexes.CreateOneAsync(indexModel);
 
-            await AresLogger.LogAsync("Repo: Guild", "Indexes created.");
+            await AresLogger.LogAsync("Repo: User", "Indexes created.");
         }
         catch (Exception ex)
         {
@@ -88,11 +86,11 @@ public class GuildRepository
      */
 
     /// <summary>
-    /// Saves or updates a guild in the database, returning the updated object.
+    /// Saves or updates a user in the database, returning the updated object.
     /// </summary>
-    /// <param name="id">Unique ID of the guild.</param>
-    /// <returns>A <see cref="User"/> object representing the saved or updated guild.</returns>
-    public async Task<Guild?> SaveAsync(ulong id)
+    /// <param name="id">Unique ID of the user.</param>
+    /// <returns>A <see cref="User"/> object representing the saved or updated user.</returns>
+    public async Task<User?> SaveAsync(ulong id)
     {
         if (_collection == null)
         {
@@ -105,15 +103,15 @@ public class GuildRepository
         IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
         BsonDocument element = await cursor.FirstOrDefaultAsync();
 
-        Guild? guild = new Guild(id);
+        User? user = new User(id);
 
         if (element != null)
         {
-            guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element) ?? guild;
+            user = await JsonUtil.BsonDocToObjectAsync<User>(element) ?? user;
         }
         else
         {
-            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(guild);
+            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(user);
 
             if (document != null)
             {
@@ -121,24 +119,24 @@ public class GuildRepository
                 await _collection.InsertOneAsync(document);
             }
 
-            await _redisDatabase.SaveAsync(GRedisKey + id, guild);
+            await _redisDatabase.SaveAsync(GRedisKey + id, user);
         }
 
-        return guild;
+        return user;
     }
 
     /// <summary>
-    /// Retrieves a guild from the cache or database using its ID.
+    /// Retrieves a user from the cache or database using its ID.
     /// </summary>
-    /// <param name="id">Unique ID of the guild.</param>
-    /// <returns>A <see cref="User"/> object representing the retrieved guild, or null if not found.</returns>
+    /// <param name="id">Unique ID of the user.</param>
+    /// <returns>A <see cref="User"/> object representing the retrieved user, or null if not found.</returns>
     /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
     /// <seealso cref="FetchAsync(ulong, bool)"/>
-    public async Task<Guild?> FetchAsync(ulong id, bool saveInRedis = false)
+    public async Task<User?> FetchAsync(ulong id, bool saveInRedis = false)
     {
-        Guild? guild = await _redisDatabase.LoadAsync<Guild>(GRedisKey + id);
+        User? user = await _redisDatabase.LoadAsync<User>(GRedisKey + id);
 
-        if (guild == null)
+        if (user == null)
         {
             FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
@@ -147,35 +145,35 @@ public class GuildRepository
 
             if (element != null)
             {
-                guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element);
+                user = await JsonUtil.BsonDocToObjectAsync<User>(element);
 
-                if (saveInRedis && guild != null)
-                    await _redisDatabase.SaveAsync(GRedisKey + id, guild);
+                if (saveInRedis && user != null)
+                    await _redisDatabase.SaveAsync(GRedisKey + id, user);
             }
         }
 
-        return guild;
+        return user;
     }
 
     /// <summary>
-    /// Updates a specific field of a guild in the database.
+    /// Updates a specific field of a user in the database.
     /// </summary>
-    /// <param name="guild">A <see cref="User"/> object representing the guild to be updated.</param>
+    /// <param name="user">A <see cref="User"/> object representing the user to be updated.</param>
     /// <param name="field">Name of the field to be updated.</param>
     /// <returns>True if the update was successful, false otherwise.</returns>
-    public async Task<bool> UpdateAsync(Guild guild, string field)
+    public async Task<bool> UpdateAsync(User user, string field)
     {
         if (_collection == null) return false;
 
         try
         {
-            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(guild);
+            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(user);
             if (tree == null) return false;
 
             if (!tree.TryGetValue(field, out BsonValue? value))
                 value = null;
 
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", guild.Id);
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", user.Id);
 
             UpdateDefinition<BsonDocument> update = value != null
                 ? Builders<BsonDocument>.Update.Set(field, value)
@@ -185,30 +183,30 @@ public class GuildRepository
             await _collection.UpdateOneAsync(filter, update);
 
             // Update Redis
-            await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
+            await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
 
             return true;
         }
         catch (Exception e)
         {
-            await AresLogger.ErrorAsync(e.Source ?? "Exception", "Unable to update guild data.", e.Message);
+            await AresLogger.ErrorAsync(e.Source ?? "Exception", "Unable to update user data.", e.Message);
             return false;
         }
     }
 
     /// <summary>
-    /// Removes a guild from the local cache.
+    /// Removes a user from the local cache.
     /// </summary>
-    /// <param name="id">Unique ID of the guild to be removed from the cache.</param>
+    /// <param name="id">Unique ID of the user to be removed from the cache.</param>
     public async Task DeleteCache(string id)
     {
         await _redisDatabase.CacheAsync(GRedisKey + id, 300);
     }
 
     /// <summary>
-    /// Removes a guild from the local cache.
+    /// Removes a user from the local cache.
     /// </summary>
-    /// <param name="id">Ulong of the guild to be removed from the cache.</param>
+    /// <param name="id">Ulong of the user to be removed from the cache.</param>
     public async Task DeleteCache(ulong id)
     {
         await DeleteCache(id.ToString());
@@ -224,17 +222,17 @@ public class GuildRepository
     }
 
     /// <summary>
-    /// Retrieves all guilds from the database, with the option to limit the number of results.
+    /// Retrieves all users from the database, with the option to limit the number of results.
     /// </summary>
-    /// <param name="limit">Maximum number of guilds to retrieve (0 for no limit).</param>
-    /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved guilds.</returns>
-    public async Task<ConcurrentBag<Guild>> GetAllAsync(int limit = 0)
+    /// <param name="limit">Maximum number of users to retrieve (0 for no limit).</param>
+    /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved users.</returns>
+    public async Task<ConcurrentBag<User>> GetAllAsync(int limit = 0)
     {
-        ConcurrentBag<Guild> users = new ConcurrentBag<Guild>();
+        ConcurrentBag<User> users = new ConcurrentBag<User>();
 
         if (_collection == null)
         {
-            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when get all guilds.");
+            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when get all users.");
             return users;
         }
 
@@ -245,7 +243,7 @@ public class GuildRepository
         {
             try
             {
-                Guild? guild = await JsonUtil.BsonDocToObjectAsync<Guild>(document);
+                User? guild = await JsonUtil.BsonDocToObjectAsync<User>(document);
 
                 if (guild != null)
                     users.Add(guild);

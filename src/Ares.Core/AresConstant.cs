@@ -4,6 +4,8 @@
  * Proprietary and confidential
  */
 
+using MongoDB.Bson.Serialization.Conventions;
+
 namespace Ares.Core;
 
 public class AresConstant
@@ -15,6 +17,9 @@ public class AresConstant
     public static readonly string AppName = "Ares";
     public static readonly bool AppDevMode = false;
     public static readonly string AppVersion = "1.0.0";
+
+    public static readonly bool AppDebugMode = false;
+    public static readonly bool AppMonitorDebugMode = true;
 
 
     /*

@@ -5,8 +5,8 @@
  */
 
 using Ares.Core;
-using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Collection;
 using Ares.Core.Models.Preference;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
@@ -43,31 +43,34 @@ public class SelectedChatListener
 
             try
             {
-                SocketUser user = args.User;
+                SocketUser socketUser = args.User;
                 ulong guildId = args.GuildId.GetValueOrDefault();
 
-                if (_client == null || user == null)
+                if (_client == null || socketUser == null)
                 {
                     await message.ModifyAsync(it => it.Content = AresConstant.UnableGetMember);
                     return;
                 }
 
-                GuildRepository? repository = AresCore.GRepository;
+                #region Check if guild is in database
 
-                if (repository == null)
+                GuildRepository? guildRepository = AresCore.GuildRepository;
+
+                if (guildRepository == null)
                 {
-                    await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#g_repo_null)");
                     return;
                 }
 
-                Guild? guild = await repository.FetchAsync(guildId);
+                Guild? guild = await guildRepository.FetchAsync(guildId);
+
                 const int maxAttempts = 3;
 
                 for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
                 {
-                    await message.ModifyAsync(it => it.Content = $"Tentando criar guilda no banco de dados... {attempts}/{maxAttempts}");
+                    await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    guild = await repository.SaveAsync(guildId);
+                    guild = await guildRepository.SaveAsync(guildId);
                 }
 
                 if (guild == null)
@@ -75,6 +78,35 @@ public class SelectedChatListener
                     await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar a guilda no banco de dados.");
                     return;
                 }
+
+                #endregion
+
+                #region Check if user is in database
+
+                UserRepository? userRepository = AresCore.UserRepository;
+
+                if (userRepository == null)
+                {
+                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#u_repo_null)");
+                    return;
+                }
+
+                User? user = await userRepository.FetchAsync(args.User.Id, saveInRedis: true);
+
+                for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
+                {
+                    await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
+                    await Task.Delay(1500);
+                    user = await userRepository.SaveAsync(args.User.Id);
+                }
+
+                if (user == null)
+                {
+                    await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar a sua conta no banco de dados.");
+                    return;
+                }
+
+                #endregion
 
                 SocketGuild socketGuild = _client.GetGuild(guildId);
 
@@ -100,7 +132,7 @@ public class SelectedChatListener
                     return;
                 }
 
-                SocketGuildUser member = socketGuild.GetUser(user.Id);
+                SocketGuildUser member = socketGuild.GetUser(socketUser.Id);
 
                 if (!member.Roles.Contains(usageRole))
                 {
@@ -116,10 +148,10 @@ public class SelectedChatListener
                     return;
                 }
 
-                if (GuildService.HasActiveUserConversation(guild, user.Id))
+                if (UserService.HasActiveUserConversation(user, guildId))
                 {
                     bool isPremium = member.Roles.Contains(exclusiveRole);
-                    int conversations = GuildService.GetConversationsCount(guild, user.Id, active: true);
+                    int conversations = UserService.GetConversationsCount(user, guildId, active: true);
 
                     if (!isPremium)
                     {
@@ -147,7 +179,7 @@ public class SelectedChatListener
                     return;
                 }
 
-                if (model.Dev && !AresCore.IsDeveloper(user.Id))
+                if (model.Dev && !AresCore.IsDeveloper(socketUser.Id))
                 {
                     await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ModelDevMode));
                     return;
@@ -168,7 +200,7 @@ public class SelectedChatListener
                 string emojiUnicode = AresUtil.GetEmojiByModelType(model.Type).ToString();
 
                 SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
-                RestTextChannel channel = await socketGuild.CreateTextChannelAsync($"{emojiUnicode}┃{user.GlobalName}", properties => properties.CategoryId = category.Id);
+                RestTextChannel channel = await socketGuild.CreateTextChannelAsync($"{emojiUnicode}┃{socketUser.GlobalName}", properties => properties.CategoryId = category.Id);
 
                 GChatInfo info = new GChatInfo
                     (
@@ -183,12 +215,12 @@ public class SelectedChatListener
                       (time.Hour >= 12 && time.Hour < 18) ? LangKeys.GoodAfternoon :
                       LangKeys.GoodNight;
 
-                string helloMessage = string.Format(GuildService.GetTranslation(guild, LangKeys.HelloMessage), GuildService.GetTranslation(guild, greetingKey), user.GlobalName);
+                string helloMessage = string.Format(GuildService.GetTranslation(guild, LangKeys.HelloMessage), GuildService.GetTranslation(guild, greetingKey), socketUser.GlobalName);
 
                 GChatHistoricModel historic = new GChatHistoricModel(system: helloMessage);
                 info.Historics.Add(historic);
 
-                if (!await GuildService.CreateChatData(guild, user.Id, info))
+                if (!await UserService.CreateChatData(user, guildId, info))
                 {
                     await channel.DeleteAsync();
                     await Task.Delay(500);
@@ -318,7 +350,7 @@ public class SelectedChatListener
                     sendMessages: PermValue.Allow
                 );
 
-                await channel.AddPermissionOverwriteAsync(user, permissions);
+                await channel.AddPermissionOverwriteAsync(socketUser, permissions);
 
                 await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
                 await Task.Delay(TimeSpan.FromSeconds(5));

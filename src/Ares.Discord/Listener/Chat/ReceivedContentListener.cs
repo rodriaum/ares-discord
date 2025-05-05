@@ -5,9 +5,9 @@
  */
 
 using Ares.Core;
-using Ares.Core.Models;
 using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Chat;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Chat.Price;
@@ -20,6 +20,7 @@ using Ares.Discord.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
+using MongoDB.Bson;
 using System.Text.RegularExpressions;
 
 namespace Ares.Discord.Listener.Chat;
@@ -53,8 +54,8 @@ public class ReceivedContentListener
                 if (!(args.Channel is SocketTextChannel channel))
                     return;
 
-                IUser user = args.Author;
-                if (user.Id.Equals(_client.CurrentUser.Id))
+                IUser iuser = args.Author;
+                if (iuser.Id.Equals(_client.CurrentUser.Id))
                     return;
 
                 SocketGuild socketGuild = channel.Guild;
@@ -64,25 +65,31 @@ public class ReceivedContentListener
                     return;
                 }
 
-                GuildRepository? repository = AresCore.GRepository;
-                if (repository == null)
+                GuildRepository? guildRepository = AresCore.GuildRepository;
+                UserRepository? userRepository = AresCore.UserRepository;
+
+                if (guildRepository == null || userRepository == null)
                 {
                     await channel.SendMessageAsync(AresConstant.UnablePerformTask);
                     return;
                 }
 
-                Guild? guild = await repository.FetchAsync(socketGuild.Id);
+                Guild? guild = await guildRepository.FetchAsync(socketGuild.Id);
                 if (guild == null)
+                    return;
+
+                User? user = await userRepository.FetchAsync(iuser.Id, saveInRedis: true);
+                if (user == null)
                     return;
 
                 // Check if the channel is in the correct category and the user has an active conversation
                 // Alert: This code must be right here, if you move it to another place there may be problems.
                 if (!(channel.CategoryId.Equals(guild.Preferences?.ChatsCategoryId) &&
-                      GuildService.HasActiveUserConversation(guild, user.Id, channelId: channel.Id)))
+                      UserService.HasActiveUserConversation(user, guild.Id, channelId: channel.Id)))
                     return;
 
                 // Check if the channel belongs to the user
-                if (!channel.Name.Contains(user.GlobalName.ToLower()))
+                if (!channel.Name.Contains(iuser.GlobalName.ToLower()))
                     return;
 
                 // Create initial embed
@@ -90,14 +97,14 @@ public class ReceivedContentListener
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
 
                 // Search for necessary information
-                GChatInfo? info = GuildService.ChatInfoByChannel(guild, user.Id, channel.Id);
+                GChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel.Id);
                 if (info == null)
                 {
                     await ModifyMessageWithError(botMessage, embed, GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfo));
                     return;
                 }
 
-                ChatModel? model = GuildService.GetLastModelByUser(guild, user.Id, channel: channel.Id);
+                ChatModel? model = UserService.GetLastModelByUser(user, guild.Id, channel: channel.Id);
                 if (model == null)
                 {
                     await ModifyMessageWithError(botMessage, embed, GuildService.GetTranslation(guild, LangKeys.CouldNotFindLastModel));
@@ -117,22 +124,22 @@ public class ReceivedContentListener
                     return;
                 }
 
-                SocketGuildUser guildUser = socketGuild.GetUser(user.Id);
-                List<GChatHistoricModel>? historics = GuildService.ChatHistoricsByChannel(guild, user.Id, channel.Id);
+                SocketGuildUser guildUser = socketGuild.GetUser(iuser.Id);
+                List<GChatHistoricModel>? historics = UserService.ChatHistoricsByChannel(user, guild.Id, channel.Id);
 
                 // Process message based on template type
                 switch (model.Type)
                 {
                     case ModelType.Chat:
-                        await ProcessChatModel(guild, guildUser, model, channel.Id, prompt, botMessage, embed, historics);
+                        await ProcessChatModel(guild, user, model, channel.Id, prompt, botMessage, embed, userRepository, historics);
                         break;
 
                     case ModelType.Image:
-                        await ProcessImageModel(guild, guildUser, model, info, channel.Id, prompt, botMessage, embed, historics);
+                        await ProcessImageModel(guild, user, model, info, channel.Id, prompt, botMessage, embed, historics);
                         break;
 
                     case ModelType.TTS:
-                        await ProcessTTSModel(guild, guildUser, model, channel.Id, prompt, botMessage, embed, historics);
+                        await ProcessTTSModel(guild, user, model, channel.Id, prompt, botMessage, embed, historics);
                         break;
 
                     default:
@@ -172,12 +179,13 @@ public class ReceivedContentListener
 
     private async Task ProcessChatModel(
         Guild guild,
-        SocketGuildUser user,
+        User user,
         ChatModel model,
         ulong channelId,
         string prompt,
-        RestUserMessage botMessage,
+        RestUserMessage botMessage,   
         EmbedBuilder embed,
+        UserRepository userRepository,
         List<GChatHistoricModel>? historics)
     {
         DateTime date = DateTime.Now;
@@ -185,31 +193,29 @@ public class ReceivedContentListener
         EmbedBuilder? priceEmbed = null;
         SelectMenuBuilder menu = new();
 
-        var (responseText, success) = await NeuralService.GenerateConversationAsync(guild, user.Id, model, channelId, prompt);
+        var (result, success) = await NeuralService.GenerateConversationAsync(guild, user, model, channelId, prompt);
 
         if (success)
         {
-            MatchCollection matches = Regex.Matches(responseText, "```(?:[a-zA-Z0-9]*\\n)?(.*?)```", RegexOptions.Multiline);
+            MatchCollection matches = Regex.Matches(result, "```(?:[a-zA-Z0-9]*\\n)?(.*?)```", RegexOptions.Multiline);
+
+            uint index = 0;
 
             foreach (Match match in matches)
             {
                 string code = match.Groups[1].Value.Trim();
 
-                ChatCodeSnippet snippet = new ChatCodeSnippet
-                {
-                    UserId = user.Id,
-                    MessageId = botMessage.Id.ToString(),
-                    Language = model.Category.ToString(),
-                    Code = code
-                };
+                GChatSnippet snippet = new GChatSnippet(channelId, botMessage.Id, index, code);
 
-                Program.CodeSnippets.Add(snippet);
+                await UserService.SaveSnippetAsync(user, guild.Id, snippet);
 
                 menu.AddOption(new SelectMenuOptionBuilder
                 {
-                    Label = snippet.Language,
+                    Label = index.ToString(),
                     Value = $"snippet-{StringUtil.GenerateExclusiveCode()}",
                 });
+
+                index++;
             }
 
             // Set color based on model category
@@ -218,28 +224,28 @@ public class ReceivedContentListener
             const int Limit = 4096;
 
             // Handle Discord's description character limit
-            if (responseText.Length > Limit)
+            if (result.Length > Limit)
             {
-                embed.WithDescription(responseText.Substring(0, Limit))
+                embed.WithDescription(result.Substring(0, Limit))
                     .WithColor(color)
                     .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName} (♾️)");
             }
             else
             {
-                embed.WithDescription(responseText)
+                embed.WithDescription(result)
                     .WithColor(color)
                     .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
             }
 
             // Atualiza o historico de chat após a geracão.
-            historics = GuildService.ChatHistorics(guild, user.Id, channel: channelId);
+            historics = UserService.ChatHistorics(user, guild.Id, channelId: channelId);
 
             // Process pricing information
             priceEmbed = CreatePriceEmbedForChat(guild, model, historics);
         }
         else
         {
-            embed.WithDescription(responseText)
+            embed.WithDescription(result)
                 .WithColor(Color.Red)
                 .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
         }
@@ -249,7 +255,7 @@ public class ReceivedContentListener
 
     private async Task ProcessImageModel(
         Guild guild,
-        SocketGuildUser user,
+        User user,
         ChatModel model,
         GChatInfo info,
         ulong channelId,
@@ -260,7 +266,7 @@ public class ReceivedContentListener
     {
         ImageGenOptions options = info.ImageGenOptions ?? new ImageGenOptions();
 
-        var (responseImageUrl, success) = await NeuralService.GenerateImageUrlAsync(guild, user.Id, model, options, channelId, prompt);
+        var (responseImageUrl, success) = await NeuralService.GenerateImageUrlAsync(guild, user, model, options, channelId, prompt);
 
         if (success)
         {
@@ -290,7 +296,7 @@ public class ReceivedContentListener
 
     private async Task ProcessTTSModel(
         Guild guild,
-        SocketGuildUser guildUser,
+        User user,
         ChatModel model,
         ulong channelId,
         string prompt,
@@ -298,7 +304,7 @@ public class ReceivedContentListener
         EmbedBuilder embed,
         List<GChatHistoricModel>? historics)
     {
-        (string responseBinary, bool isAudio) = await NeuralService.GenerateTTSAsync(guild, guildUser.Id, model, channelId, prompt);
+        (string responseBinary, bool isAudio) = await NeuralService.GenerateTTSAsync(guild, user, model, channelId, prompt);
 
         // Set color based on model category
         Color color = AresUtil.GetColorByModelCategory(model.Category);
@@ -369,14 +375,14 @@ public class ReceivedContentListener
         if (historic == null)
             return null;
 
-        ChatValueUsage? usage = historic.Usage;
+        ChatTokenUsage? usage = historic.Usage;
         ChatPriceUsage? price = model.Price;
 
         if (usage == null || price == null)
             return null;
 
-        decimal inputPrice = usage.InputTokens * price.InputPricePerToken;
-        decimal outputPrice = usage.OutputTokens * price.OutputPricePerToken;
+        decimal inputPrice = usage.InputTokens * price.InputPriceTokenPerToken();
+        decimal outputPrice = usage.OutputTokens * price.OutputPriceTokenPerToken();
 
         EmbedBuilder priceEmbed = new EmbedBuilder()
             // Input Field
@@ -390,7 +396,7 @@ public class ReceivedContentListener
             // Broke Line
             .AddField("\u200B", "\u200B", false)
             // Total Field
-            .AddField("Tokens", usage.TotalTokens(), true)
+            .AddField("Tokens", usage.TotalTokens, true)
             .AddField(GuildService.GetTranslation(guild, LangKeys.Total), $"$ {FormatterUtil.FormatPrice(inputPrice + outputPrice)}", true)
             .WithFooter(GuildService.GetTranslation(guild, LangKeys.PriceLowerCache));
 

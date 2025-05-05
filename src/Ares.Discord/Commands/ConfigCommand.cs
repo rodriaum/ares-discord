@@ -5,7 +5,7 @@
  */
 
 using Ares.Core;
-using Ares.Core.Models;
+using Ares.Core.Models.Collection;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using Ares.Core.Objects.Language;
@@ -44,7 +44,7 @@ public class ConfigCommand
             await command.RespondAsync(ephemeral: true, embed: embed.Build());
             RestInteractionMessage message = await command.GetOriginalResponseAsync();
 
-            GuildRepository? repository = AresCore.GRepository;
+            GuildRepository? repository = AresCore.GuildRepository;
 
             if (repository == null)
             {

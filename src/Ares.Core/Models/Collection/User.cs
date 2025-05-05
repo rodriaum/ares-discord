@@ -1,4 +1,4 @@
-﻿using Ares.Core.Models.Chat.Sub;
+﻿using Ares.Core.Models.Chat;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json.Serialization;
@@ -16,20 +16,20 @@ public class User
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [JsonInclude]
-    [JsonPropertyName("userId")]
-    public readonly string UserId;
+    [JsonPropertyName("id")]
+    public readonly ulong Id;
 
     [JsonInclude]
-    [JsonPropertyName("chats")]
-    public Dictionary<ulong, List<GChatInfo>> Chats { get; set; }
+    [JsonPropertyName("chat")]
+    public GChat Chat { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the User class.
     /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
-    public User(string userId)
+    /// <param name="id">The identifier of the user.</param>
+    public User(ulong id)
     {
-        this.UserId = userId;
-        this.Chats = new();
+        this.Id = id;
+        this.Chat = new();
     }
 }
