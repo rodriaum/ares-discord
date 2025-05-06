@@ -193,7 +193,7 @@ public class ReceivedContentListener
         string menuCustomId = $"chat-snippet-{StringUtil.GenerateExclusiveCode(length: 11)}";
 
         SelectMenuBuilder menu = new SelectMenuBuilder()
-            .WithPlaceholder("Trechos")
+            .WithPlaceholder("Lista de Trechos")
             .WithCustomId(menuCustomId);
 
         var (result, success) = await NeuralService.GenerateConversationAsync(guild, user, model, channelId, prompt);
@@ -215,14 +215,14 @@ public class ReceivedContentListener
 
                 menu.AddOption(new SelectMenuOptionBuilder
                 {
-                    Label = $"Trecho n.º {index.ToString()}",
+                    Label = $"Trecho n.º {index + 1}",
                     Value = $"option-snippet-{StringUtil.GenerateExclusiveCode()}",
                 });
 
                 index++;
             }
 
-            await UserService.SaveSnippetsAsync(user, guild.Id, snippets);
+            await UserService.UpdateSnippetsAsync(user, guild.Id, snippets);
 
             // Set color based on model category
             Color color = AresUtil.GetColorByModelCategory(model.Category);

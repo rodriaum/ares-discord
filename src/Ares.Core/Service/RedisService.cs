@@ -145,8 +145,9 @@ public class RedisService : Interfaces.IDatabase
     /// <summary>
     /// Completely clears all data from the current Redis database.
     /// </summary>
-    public async Task<RedisResult> FlushAsync()
+    public async Task<RedisResult?> FlushAsync()
     {
+        if (_database == null) return null;
         return await _database.ExecuteAsync("FLUSHDB");
     }
 
@@ -157,6 +158,7 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>True if the key exists, false otherwise.</returns>
     public async Task<bool> ExistsAsync(string key)
     {
+        if (_database == null) return false;
         return await _database.KeyExistsAsync(key);
     }
 
@@ -167,10 +169,11 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="obj">The object to be saved.</param>
     public async Task SaveAsync(string key, object obj)
     {
+        if (_database == null) return;
         if (await ExistsAsync(key)) return;
 
         HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
-        await _database?.HashSetAsync(key, fields);
+        await _database.HashSetAsync(key, fields);
     }
 
     /// <summary>
@@ -180,6 +183,8 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="obj">The updated object.</param>
     public async Task UpdateAsync(string key, object obj)
     {
+        if (_database == null) return;
+
         if (await ExistsAsync(key))
         {
             HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
@@ -194,6 +199,7 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="message">The message to publish.</param>
     public async Task<long> PublishAsync(string channel, string message)
     {
+        if (_connection == null) return 0;
         return await _connection.GetSubscriber().PublishAsync(RedisChannel.Pattern(channel), message);
     }
 
@@ -215,6 +221,7 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="key">The key to delete.</param
     public async Task<bool> DeleteAsync(string key)
     {
+        if (_database == null) return false;
         return await _database.KeyDeleteAsync(key);
     }
 
@@ -225,6 +232,7 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="seconds">The number of seconds until expiration.</param>
     public async Task CacheAsync(string key, int seconds)
     {
+        if (_database == null) return;
         await _database.KeyExpireAsync(key, TimeSpan.FromSeconds(seconds));
     }
 
@@ -249,6 +257,7 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="fields">The fields to delete.</param>
     public async Task<long> DeleteAsync(string key, params string[] fields)
     {
+        if (_database == null) return 0;
         return await _database.HashDeleteAsync(key, fields.Select(f => (RedisValue)f).ToArray());
     }
 
@@ -260,6 +269,8 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>The loaded object, or null if not found.</returns>
     public async Task<T?> LoadAsync<T>(string key) where T : class
     {
+        if (_database == null) return null;
+
         HashEntry[] fields = await _database.HashGetAllAsync(key);
 
         if (fields.Length == 0)
@@ -276,6 +287,8 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>A list of matching objects.</returns>
     public async Task<List<T>> LoadAllAsync<T>(string key) where T : class
     {
+        if (_database == null) return new();
+
         RedisResult keys = await _database.ExecuteAsync("KEYS", $"{key}*");
         List<T> results = new List<T>();
 
@@ -300,6 +313,8 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="key">The key pattern to match and remove.</param>
     public async Task RemoveAllAsync(string key)
     {
+        if (_database == null) return;
+
         RedisResult keys = await _database.ExecuteAsync("KEYS", $"{key}*");
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
@@ -313,10 +328,11 @@ public class RedisService : Interfaces.IDatabase
     /// </summary>
     /// <param name="key">The key of the set.</param>
     /// <returns>The number of elements in the set.</returns>
-    public async Task<int> GetTotalCountAsync(string key)
+    public async Task<long> GetTotalCountAsync(string key)
     {
-        long lenght = await _database.SetLengthAsync(key);
-        return (int)lenght;
+        if (_database == null) return 0;
+
+        return await _database.SetLengthAsync(key);
     }
 
     /// <summary>

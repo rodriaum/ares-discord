@@ -11,7 +11,6 @@ using Ares.Core.Repository;
 using Ares.Core.Service;
 using Ares.Core.Util;
 using Discord;
-using Discord.Rest;
 using Discord.WebSocket;
 
 namespace Ares.Discord.Listener.Chat;

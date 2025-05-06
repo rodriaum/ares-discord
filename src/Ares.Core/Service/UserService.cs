@@ -495,7 +495,7 @@ public class UserService
 
     #region Conversation Snippet
 
-    public static async Task<bool> SaveSnippetsAsync(User user, ulong guildId, List<GChatSnippet> snippets, bool onlyCached = false)
+    public static async Task<bool> UpdateSnippetsAsync(User user, ulong guildId, List<GChatSnippet> snippets, bool onlyCached = false)
     {
         user.Chat.Snippets[guildId] = snippets;
         return !onlyCached ? await SaveChatDataAsync(user) : true;
@@ -512,7 +512,16 @@ public class UserService
 
         user.Chat.Snippets[guildId] = snippets;
 
-        return await SaveSnippetsAsync(user, guildId, snippets, onlyCached);
+        return await UpdateSnippetsAsync(user, guildId, snippets, onlyCached);
+    }
+
+    public static async Task<bool> RemoveSnippetByChannelAsync(User user, ulong guildId, ulong channelId)
+    {
+        List<GChatSnippet>? snippets = GetSnippetsByGuild(user, guildId);
+        if (snippets == null) return false;
+
+        snippets.RemoveAll(it => it.ChannelId == channelId);
+        return await UpdateSnippetsAsync(user, guildId, snippets);
     }
 
     public static List<GChatSnippet>? GetSnippetsByGuild(User user, ulong guildId)
