@@ -12,15 +12,22 @@ using System.Text.Json.Nodes;
 
 namespace Ares.Core.Util;
 
-public class JsonUtil
+public static class JsonUtil
 {
     public static async Task<JsonNode?> JsonTreeAsync(object src)
     {
-        using var stream = new MemoryStream();
-        await JsonSerializer.SerializeAsync(stream, src);
-        stream.Position = 0;
-
-        return await JsonNode.ParseAsync(stream);
+        try
+        {
+            using var stream = new MemoryStream();
+            await JsonSerializer.SerializeAsync(stream, src);
+            stream.Position = 0;
+            return await JsonNode.ParseAsync(stream);
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Error("JsonUtil", "Failed to generate JSON tree.", ex.Message);
+            return null;
+        }
     }
 
     public static object? ElementToBson(JsonNode? element)
@@ -37,58 +44,67 @@ public class JsonUtil
         {
             return BsonSerializer.Deserialize<BsonDocument>(element?.ToJsonString() ?? "{}");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return BsonDocument.Parse(element?.ToJsonString() ?? "{}");
-        }
-    }
-
-    public static string ElementToString(JsonNode? element)
-    {
-        return element?.ToJsonString() ?? "";
-    }
-
-    public static async Task<T?> DictionaryToObjectAsync<T>
-        (
-            Dictionary<string, string> map,
-            JsonSerializerOptions? serializerOptions = null,
-            JsonSerializerOptions? deserializeOptions = null
-        )
-    {
-        JsonObject obj = new JsonObject();
-
-        foreach (var kvp in map)
-        {
+            AresLogger.Error("JsonUtil", "Fallback to BsonDocument.Parse due to deserialization error.", ex.Message, severity: Models.Severity.Warning);
             try
             {
-                obj[kvp.Key] = JsonNode.Parse(kvp.Value);
+                return BsonDocument.Parse(element?.ToJsonString() ?? "{}");
             }
-            catch (Exception)
+            catch (Exception parseEx)
             {
-                obj[kvp.Key] = kvp.Value;
+                AresLogger.Error("JsonUtil", "Failed to parse JsonNode to BsonDocument.", parseEx.Message);
+                return null;
             }
         }
+    }
 
-        using MemoryStream stream = new MemoryStream();
-        await JsonSerializer.SerializeAsync(stream, obj, options: serializerOptions);
-        stream.Position = 0;
+    public static string ElementToString(JsonNode? element) =>
+        element?.ToJsonString() ?? string.Empty;
 
-        return await JsonSerializer.DeserializeAsync<T>(stream, options: deserializeOptions);
+    public static async Task<T?> DictionaryToObjectAsync<T>(
+        Dictionary<string, string> map,
+        JsonSerializerOptions? serializerOptions = null,
+        JsonSerializerOptions? deserializeOptions = null)
+    {
+        try
+        {
+            var obj = new JsonObject();
+            foreach (var kvp in map)
+            {
+                try
+                {
+                    obj[kvp.Key] = JsonNode.Parse(kvp.Value);
+                }
+                catch
+                {
+                    obj[kvp.Key] = kvp.Value;
+                }
+            }
+
+            using var stream = new MemoryStream();
+            await JsonSerializer.SerializeAsync(stream, obj, options: serializerOptions);
+            stream.Position = 0;
+
+            return await JsonSerializer.DeserializeAsync<T>(stream, options: deserializeOptions);
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Error("JsonUtil", "Failed to convert dictionary to object.", ex.Message);
+            return default;
+        }
     }
 
     public static async Task<Dictionary<string, string>> ObjectToDictionaryAsync(object src)
     {
-        Dictionary<string, string> map = new Dictionary<string, string>();
-
+        var map = new Dictionary<string, string>();
         try
         {
-            using MemoryStream stream = new MemoryStream();
+            using var stream = new MemoryStream();
             await JsonSerializer.SerializeAsync(stream, src);
             stream.Position = 0;
 
-            JsonObject? obj = await JsonNode.ParseAsync(stream) as JsonObject;
-
-            if (obj != null)
+            if (await JsonNode.ParseAsync(stream) is JsonObject obj)
             {
                 foreach (var kvp in obj)
                 {
@@ -96,24 +112,24 @@ public class JsonUtil
                 }
             }
         }
-        catch (Exception) { }
+        catch (Exception ex)
+        {
+            AresLogger.Error("JsonUtil", "Failed to convert object to dictionary.", ex.Message);
+        }
 
         return map;
     }
 
     public static async Task<Dictionary<string, List<string>>> ObjectToDictionaryListAsync(object src)
     {
-        Dictionary<string, List<string>> map = new Dictionary<string, List<string>>();
-
+        var map = new Dictionary<string, List<string>>();
         try
         {
-            using MemoryStream stream = new MemoryStream();
+            using var stream = new MemoryStream();
             await JsonSerializer.SerializeAsync(stream, src);
             stream.Position = 0;
 
-            JsonObject? obj = await JsonNode.ParseAsync(stream) as JsonObject;
-
-            if (obj != null)
+            if (await JsonNode.ParseAsync(stream) is JsonObject obj)
             {
                 foreach (var kvp in obj)
                 {
@@ -121,43 +137,53 @@ public class JsonUtil
                 }
             }
         }
-        catch (Exception) { }
+        catch (Exception ex)
+        {
+            AresLogger.Error("JsonUtil", "Failed to convert object to dictionary list.", ex.Message);
+        }
 
         return map;
     }
 
     public static async Task<string> ObjectToStringAsync<T>(object value, JsonSerializerOptions? serializerOptions = null)
     {
-        using MemoryStream stream = new MemoryStream();
+        try
+        {
+            using var stream = new MemoryStream();
+            await JsonSerializer.SerializeAsync(stream, value, serializerOptions);
+            stream.Position = 0;
 
-        await JsonSerializer.SerializeAsync(stream, value, serializerOptions);
-        stream.Position = 0;
-
-        using StreamReader reader = new StreamReader(stream);
-
-        return await reader.ReadToEndAsync();
+            using var reader = new StreamReader(stream);
+            return await reader.ReadToEndAsync();
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Error("JsonUtil", "Failed to serialize object to string.", ex.Message);
+            return string.Empty;
+        }
     }
 
     public static async Task<T?> BsonDocToObjectAsync<T>(
-        BsonDocument document, 
-        JsonSerializerOptions? serializerOptions = null, 
+        BsonDocument document,
+        JsonSerializerOptions? serializerOptions = null,
         JsonSerializerOptions? deserializeOptions = null)
     {
+        if (document == null)
+            return default;
+
         try
         {
             object mapped = BsonTypeMapper.MapToDotNetValue(document);
-
-            using MemoryStream stream = new MemoryStream();
+            using var stream = new MemoryStream();
             await JsonSerializer.SerializeAsync(stream, mapped, options: serializerOptions);
             stream.Position = 0;
 
-
             return await JsonSerializer.DeserializeAsync<T>(stream, options: deserializeOptions);
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
-            AresLogger.Error("JsonException", "Error deserializing guild document.", ex.Message);
-            return default(T);
+            AresLogger.Error("JsonUtil", "Failed to deserialize BsonDocument.", ex.Message);
+            return default;
         }
     }
 
@@ -165,16 +191,16 @@ public class JsonUtil
     {
         try
         {
-            using MemoryStream stream = new MemoryStream();
+            using var stream = new MemoryStream();
             await JsonSerializer.SerializeAsync(stream, obj);
             stream.Position = 0;
 
-            var json = Encoding.UTF8.GetString(stream.ToArray());
+            string json = Encoding.UTF8.GetString(stream.ToArray());
             return BsonDocument.Parse(json);
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
-            AresLogger.Error("JsonException", "Error serializing object to BsonDocument.", ex.Message);
+            AresLogger.Error("JsonUtil", "Failed to serialize object to BsonDocument.", ex.Message);
             return null;
         }
     }
@@ -183,13 +209,13 @@ public class JsonUtil
     {
         try
         {
-            using var steam = new MemoryStream(Encoding.UTF8.GetBytes(jsonString));
-            return await JsonSerializer.DeserializeAsync<T>(steam);
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonString));
+            return await JsonSerializer.DeserializeAsync<T>(stream);
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
-            AresLogger.Error("JsonException", "Error deserializing string.", ex.Message);
-            return default(T);
+            AresLogger.Error("JsonUtil", "Failed to deserialize string to object.", ex.Message);
+            return default;
         }
     }
 
@@ -197,13 +223,13 @@ public class JsonUtil
     {
         try
         {
-            using var steam = new MemoryStream(bytes);
-            return await JsonSerializer.DeserializeAsync<T>(steam);
+            using var stream = new MemoryStream(bytes);
+            return await JsonSerializer.DeserializeAsync<T>(stream);
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
-            AresLogger.Error("JsonException", "Error deserializing string.", ex.Message);
-            return default(T);
+            AresLogger.Error("JsonUtil", "Failed to deserialize bytes to object.", ex.Message);
+            return default;
         }
     }
 }
