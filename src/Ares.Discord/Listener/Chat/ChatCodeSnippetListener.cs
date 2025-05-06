@@ -5,7 +5,6 @@
  */
 
 using Ares.Core;
-using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Repository;
@@ -31,10 +30,7 @@ public class ChatCodeSnippetListener
     {
         _ = Task.Run(async () =>
         {
-            if (!args.Data.CustomId.StartsWith("snippet-")) return;
-
-            await args.RespondAsync(ephemeral: true, text: AresConstant.LoadingEmote);
-            RestInteractionMessage message = await args.GetOriginalResponseAsync();
+            if (!args.Data.CustomId.StartsWith("chat-snippet-")) return;
 
             try
             {
@@ -43,7 +39,7 @@ public class ChatCodeSnippetListener
 
                 if (_client == null || socketUser == null)
                 {
-                    await message.ModifyAsync(it => it.Content = AresConstant.UnableGetMember);
+                    await args.RespondAsync(ephemeral: true, text: AresConstant.UnableGetMember);
                     return;
                 }
 
@@ -55,7 +51,7 @@ public class ChatCodeSnippetListener
 
                 if (userRepository == null)
                 {
-                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#u_repo_null)");
+                    await args.RespondAsync(ephemeral: true, text: $"{AresConstant.UnablePerformTask} (#u_repo_null)");
                     return;
                 }
 
@@ -63,47 +59,48 @@ public class ChatCodeSnippetListener
 
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
-                    await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
-                    await Task.Delay(1500);
                     user = await userRepository.SaveAsync(args.User.Id);
                 }
 
                 if (user == null)
                 {
-                    await message.ModifyAsync(it => it.Content = "Ops! Não foi possível criar a sua conta no banco de dados.");
+                    await args.RespondAsync(ephemeral: true, text: "Ops! Não foi possível criar a sua conta no banco de dados.");
                     return;
                 }
 
                 #endregion
 
-                /*
-                ChatCodeSnippet? snippet = Program.CodeSnippets.Find(it => it.UserId == socketUser.Id && it.MessageId == args.Data.CustomId);
-
-                GChatSnippet? snippet = UserService.GetSNi
+                GChatSnippet? snippet = UserService.GetSnippet(user, guildId, args.Data.CustomId);
 
                 if (snippet == null)
                 {
-                    await message.ModifyAsync(it => it.Content = "Snippet não encontrado.");
+                    await args.RespondAsync(ephemeral: true, text: "Snippet não encontrado.");
                     return;
                 }
 
+                string code = StringUtil.GenerateExclusiveCode(length: 4);
+
                 ModalBuilder modal = new ModalBuilder()
-                    .WithTitle("Código")
+                    .WithTitle("Visualizador")
+                    .WithCustomId($"modal-chat-snippet-{code}")
                     .AddTextInput(
-                        label: "Código",
-                        customId: $"modal-code-snippet-{args.Id}",
+                        label: "Trecho",
+                        customId: $"input-chat-snippet-{code}",
                         style: TextInputStyle.Paragraph,
-                        placeholder: "Código",
-                        value: snippet.Code ?? "Nada a apresentar..."
+                        value: snippet.Text ?? "Nada a apresentar..."
                     );
 
                 await args.RespondWithModalAsync(modal.Build());
-                */
 
             }
             catch (Exception e)
             {
-                await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                try
+                {
+                    await args.RespondAsync(ephemeral: true, text: AresConstant.UnablePerformTask);
+                }
+                catch { }
+
                 await AresLogger.ErrorAsync("SelectException", "Unable to process chat code snippet.", e.Message);
             }
         });

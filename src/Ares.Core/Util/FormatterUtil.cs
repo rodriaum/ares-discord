@@ -56,4 +56,9 @@ public class FormatterUtil
     {
         return ram >= 1024 ? $"{ram / 1024:F2} GB" : $"{ram:F2} MB";
     }
+
+    public static string FormatNumberWithLeadingZeros(long value, int zeroCount = 1)
+    {
+        return new string('0', zeroCount) + value.ToString();
+    }
 }

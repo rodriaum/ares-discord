@@ -4,7 +4,6 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Objects.Chat;
 using Ares.Core.Util;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;

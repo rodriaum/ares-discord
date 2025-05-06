@@ -5,7 +5,6 @@
  */
 
 using Ares.Core;
-using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Chat;
@@ -20,7 +19,6 @@ using Ares.Discord.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using MongoDB.Bson;
 using System.Text.RegularExpressions;
 
 namespace Ares.Discord.Listener.Chat;
@@ -183,7 +181,7 @@ public class ReceivedContentListener
         ChatModel model,
         ulong channelId,
         string prompt,
-        RestUserMessage botMessage,   
+        RestUserMessage botMessage,
         EmbedBuilder embed,
         UserRepository userRepository,
         List<GChatHistoricModel>? historics)
@@ -191,32 +189,40 @@ public class ReceivedContentListener
         DateTime date = DateTime.Now;
 
         EmbedBuilder? priceEmbed = null;
-        SelectMenuBuilder menu = new();
+
+        string menuCustomId = $"chat-snippet-{StringUtil.GenerateExclusiveCode(length: 11)}";
+
+        SelectMenuBuilder menu = new SelectMenuBuilder()
+            .WithPlaceholder("Trechos")
+            .WithCustomId(menuCustomId);
 
         var (result, success) = await NeuralService.GenerateConversationAsync(guild, user, model, channelId, prompt);
 
         if (success)
         {
-            MatchCollection matches = Regex.Matches(result, "```(?:[a-zA-Z0-9]*\\n)?(.*?)```", RegexOptions.Multiline);
+            MatchCollection matches = Regex.Matches(result, "```(?:[a-zA-Z0-9]*\\n)?(.*?)```", RegexOptions.Singleline);
 
             uint index = 0;
+
+            List<GChatSnippet> snippets = new();
 
             foreach (Match match in matches)
             {
                 string code = match.Groups[1].Value.Trim();
+                if (string.IsNullOrWhiteSpace(code)) continue;
 
-                GChatSnippet snippet = new GChatSnippet(channelId, botMessage.Id, index, code);
-
-                await UserService.SaveSnippetAsync(user, guild.Id, snippet);
+                snippets.Add(new GChatSnippet(channelId, botMessage.Id, index, code, id: menuCustomId));
 
                 menu.AddOption(new SelectMenuOptionBuilder
                 {
-                    Label = index.ToString(),
-                    Value = $"snippet-{StringUtil.GenerateExclusiveCode()}",
+                    Label = $"Trecho n.º {index.ToString()}",
+                    Value = $"option-snippet-{StringUtil.GenerateExclusiveCode()}",
                 });
 
                 index++;
             }
+
+            await UserService.SaveSnippetsAsync(user, guild.Id, snippets);
 
             // Set color based on model category
             Color color = AresUtil.GetColorByModelCategory(model.Category);
@@ -431,8 +437,16 @@ public class ReceivedContentListener
         return priceEmbed;
     }
 
-    private async Task UpdateBotMessage(RestUserMessage botMessage, EmbedBuilder mainEmbed, EmbedBuilder? priceEmbed = null, SelectMenuBuilder? selectMenu = null, Optional<IEnumerable<FileAttachment>>? attachments = null)
+    private async Task UpdateBotMessage(
+        RestUserMessage botMessage,
+        EmbedBuilder mainEmbed,
+        EmbedBuilder? priceEmbed = null,
+        SelectMenuBuilder? selectMenu = null,
+        Optional<IEnumerable<FileAttachment>>? attachments = null)
     {
+        // Fix in case someone deletes the channel before sending the message.
+        if (botMessage == null) return;
+
         List<Embed> embeds = new List<Embed>();
 
         if (priceEmbed != null)
@@ -443,15 +457,18 @@ public class ReceivedContentListener
         // Alert: Add the main embed at the end so it is the last one displayed
         embeds.Add(mainEmbed.Build());
 
-        // Fix in case someone deletes the channel before sending the message.
-        if (botMessage == null) return;
+        ComponentBuilder componentBuilder = new ComponentBuilder();
 
-        MessageComponent component = new ComponentBuilder().WithSelectMenu(selectMenu).Build();
+        if (selectMenu != null && selectMenu.Options.Count > 0)
+        {
+            componentBuilder.WithSelectMenu(selectMenu);
+        }
+
+        MessageComponent component = componentBuilder.Build();
 
         if (attachments != null)
         {
             var attachment = attachments.Value;
-
             await botMessage.ModifyAsync(message =>
             {
                 message.Embeds = embeds.ToArray();

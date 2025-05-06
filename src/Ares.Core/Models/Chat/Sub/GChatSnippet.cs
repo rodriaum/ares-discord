@@ -24,9 +24,9 @@ public class GChatSnippet
     [JsonPropertyName("text")]
     public string Text { get; set; }
 
-    public GChatSnippet(ulong channelId, ulong messageId, uint index, string text)
+    public GChatSnippet(ulong channelId, ulong messageId, uint index, string text, string? id = null)
     {
-        Id = Guid.NewGuid().ToString();
+        Id = id ?? Guid.NewGuid().ToString();
         ChannelId = channelId;
         MessageId = messageId;
         Index = index;

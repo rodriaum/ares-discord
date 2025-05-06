@@ -529,15 +529,12 @@ public class UserService
     }
 
 
-    public static List<GChatSnippet>? GetSnippetsByIndex(User user, ulong guildId, ulong channelId, uint index)
+    public static GChatSnippet? GetSnippet(User user, ulong guildId, string id)
     {
-        List<GChatSnippet>? snippetsByGuild = GetSnippetsByGuild(user, guildId);
-        if (snippetsByGuild == null) return null;
+        List<GChatSnippet>? snippets = GetSnippetsByGuild(user, guildId);
+        if (snippets == null) return null;
 
-        List<GChatSnippet>? snippetsByChannel = GetSnippetsByChannel(user, guildId, channelId);
-        if (snippetsByChannel == null) return null;
-
-        return snippetsByChannel.FindAll(it => it.Index == index);
+        return snippets.Find(it => it.Id == id);
     }
 
     #endregion

@@ -37,16 +37,15 @@ public class ChatTokenUsage
     /// <remarks>
     /// This value is the sum of <see cref="OutputTokens"/> and <see cref="InputTokens"/>, if this is 0.
     /// </remarks>
+    [JsonInclude]
+    [JsonPropertyName("totalTokens")]
     public long TotalTokens { get; }
 
-    public ChatTokenUsage(long outTokens = 0, long inTokens = 0, long totalTokens = 0)
+    public ChatTokenUsage(long outputTokens = 0, long inputTokens = 0, long totalTokens = 0)
     {
-        this.OutputTokens = outTokens;
-        this.InputTokens = inTokens;
+        this.OutputTokens = outputTokens;
+        this.InputTokens = inputTokens;
 
-        if (totalTokens == 0)
-        {
-            this.TotalTokens = outTokens + inTokens;
-        }
+        this.TotalTokens = (totalTokens == 0 ? (outputTokens + inputTokens) : totalTokens);
     }
 }
