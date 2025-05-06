@@ -5,6 +5,7 @@
  */
 
 using Ares.Core;
+using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Repository;
@@ -100,7 +101,7 @@ public class ChatCodeSnippetListener
                 }
                 catch { }
 
-                await AresLogger.ErrorAsync("SelectException", "Unable to process chat code snippet.", e.Message);
+                await AresLogger.LogAsync("SelectException", "Unable to process chat code snippet.", e.Message, severity: Severity.Error);
             }
         });
 

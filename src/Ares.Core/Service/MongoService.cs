@@ -69,19 +69,19 @@ public class MongoService : IDatabase
             }
             catch (Exception e)
             {
-                await AresLogger.ErrorAsync("DB: Mongo", "Unable to connect.", e.Message);
+                await AresLogger.LogAsync("DB: Mongo", "Unable to connect.", e.Message, severity: Severity.Error);
                 
                 connected = false;
                 currentTries++;
 
                 if (currentTries > maxTries)
                 {
-                    await AresLogger.ErrorAsync("DB: Mongo", "Max tries reached, stopping connection attempts.");
+                    await AresLogger.LogAsync("DB: Mongo", "Max tries reached, stopping connection attempts.", severity: Severity.Error);
                     Environment.Exit(1);
                     break;
                 }
 
-                await AresLogger.ErrorAsync("DB: Mongo", $"Trying to connect in {time}s...");
+                await AresLogger.LogAsync("DB: Mongo", $"Trying to connect in {time}s...", severity: Severity.Error);
                 await Task.Delay(time);
             }
         }
@@ -98,7 +98,7 @@ public class MongoService : IDatabase
             }
             catch (Exception e)
             {
-                AresLogger.Error("DB: Mongo", "Unable to close connection.", e.Message);
+                AresLogger.Log("DB: Mongo", "Unable to close connection.", e.Message, severity: Severity.Error);
                 return Task.FromResult(false);
             }
         }

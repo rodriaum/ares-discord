@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Models;
 using Ares.Core.Util;
 using OpenAI.Images;
 using System.Text.Json.Serialization;
@@ -90,7 +91,7 @@ public class ImageGenOptions
             }
             catch (ArgumentException e)
             {
-                AresLogger.Error(nameof(From), "Could not convert a class to ImageGenOptions.", e.Message);
+                AresLogger.Log(nameof(From), "Could not convert a class to ImageGenOptions.", e.Message, severity: Severity.Error);
             }
         }
 

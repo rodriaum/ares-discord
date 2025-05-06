@@ -5,6 +5,7 @@
  */
 
 using Ares.Core;
+using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Chat;
@@ -153,7 +154,7 @@ public class ReceivedContentListener
             }
             catch (Exception e)
             {
-                await AresLogger.ErrorAsync(nameof(MessageReceivedHandler), "Can't process the content receiver.", e.Message);
+                await AresLogger.LogAsync(nameof(MessageReceivedHandler), "Can't process the content receiver.", e.Message, severity: Severity.Error);
             }
         });
 
@@ -363,7 +364,7 @@ public class ReceivedContentListener
                 embed.WithDescription(GuildService.GetTranslation(guild, LangKeys.UnableGenerateOrder))
                     .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
 
-                AresLogger.Error("TTS", "Unable to generate TTS audio.", ex.Message);
+                AresLogger.Log("TTS", "Unable to generate TTS audio.", ex.Message, severity: Severity.Error);
             }
         }
 

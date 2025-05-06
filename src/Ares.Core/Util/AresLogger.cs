@@ -16,24 +16,14 @@ public class AresLogger
 
     /* Methods */
 
-    public static void Log(string prefix, string message)
+    public static void Log(string prefix, string message, string extra = "", Severity severity = Severity.Info)
     {
-        Console.WriteLine(Output(prefix, message));
+        Console.Error.WriteLine(Output(prefix, message, extra: extra, severity: severity));
     }
 
-    public static async Task LogAsync(string prefix, string message)
+    public static async Task LogAsync(string prefix, string message, string extra = "", Severity severity = Severity.Info)
     {
-        await Console.Out.WriteLineAsync(Output(prefix, message));
-    }
-
-    public static void Error(string prefix, string message, string extra = "", Severity severity = Severity.Error)
-    {
-        Console.Error.WriteLine("\n" + Output(prefix, message, extra: extra, severity: severity) + "\n");
-    }
-
-    public static async Task ErrorAsync(string prefix, string message, string extra = "", Severity severity = Severity.Error)
-    {
-        await Console.Error.WriteLineAsync("\n" + Output(prefix, message, extra: extra, severity: severity) + "\n");
+        await Console.Error.WriteLineAsync(Output(prefix, message, extra: extra, severity: severity));
     }
 
     /* Helpers */

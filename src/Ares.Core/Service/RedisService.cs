@@ -91,19 +91,19 @@ public class RedisService : Interfaces.IDatabase
             }
             catch (Exception ex)
             {
-                await AresLogger.ErrorAsync("DB: Redis", "Could not connect to Redis.", extra: ex.Message);
+                await AresLogger.LogAsync("DB: Redis", "Could not connect to Redis.", extra: ex.Message, severity: Severity.Error);
 
                 connected = false;
                 currentTries++;
 
                 if (currentTries > maxTries)
                 {
-                    await AresLogger.ErrorAsync("DB: Redis", "Max tries reached, stopping connection attempts.");
+                    await AresLogger.LogAsync("DB: Redis", "Max tries reached, stopping connection attempts.", severity: Severity.Error);
                     Environment.Exit(1);
                     break;
                 }
 
-                await AresLogger.ErrorAsync("DB: Redis", $"Trying to connect in {time}s...");
+                await AresLogger.LogAsync("DB: Redis", $"Trying to connect in {time}s...", severity: Severity.Error);
                 await Task.Delay(time);
             }
         }
@@ -128,7 +128,7 @@ public class RedisService : Interfaces.IDatabase
             }
             catch (Exception ex)
             {
-                await AresLogger.ErrorAsync("DB: Redis", "Could not close connection.", ex.Message);
+                await AresLogger.LogAsync("DB: Redis", "Could not close connection.", ex.Message);
             }
         }
     }
@@ -346,7 +346,7 @@ public class RedisService : Interfaces.IDatabase
 
         if (dictionary == null)
         {
-            AresLogger.Error("DB: Redis", "Could not convert object to hash entries.");
+            AresLogger.Log("DB: Redis", "Could not convert object to hash entries.", severity: Severity.Error);
             return Array.Empty<HashEntry>();
         }
 

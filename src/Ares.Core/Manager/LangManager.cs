@@ -1,4 +1,5 @@
-﻿using Ares.Core.Objects.Language;
+﻿using Ares.Core.Models;
+using Ares.Core.Objects.Language;
 using Ares.Core.Util;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -64,7 +65,7 @@ namespace Ares.Core.Manager
                 }
                 catch (Exception e)
                 {
-                    AresLogger.Error(nameof(LangManager), $"Can't load language \"{category.Code}\"", e.Message);
+                    AresLogger.Log(nameof(LangManager), $"Can't load language \"{category.Code}\"", e.Message, severity: Severity.Error);
                 }
             }
         }

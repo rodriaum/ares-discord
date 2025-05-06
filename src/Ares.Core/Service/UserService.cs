@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Models;
 using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
@@ -27,13 +28,13 @@ public class UserService
     {
         if (fields == null || fields.Length == 0)
         {
-            AresLogger.Error(nameof(SaveAsync), "The field list is null or empty.");
+            AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
             return false;
         }
 
         if (AresCore.UserRepository is not { } repository)
         {
-            AresLogger.Error(nameof(SaveAsync), "User data is null. Unable to save fields.");
+            AresLogger.Log(nameof(SaveAsync), "User data is null. Unable to save fields.", severity: Severity.Error);
             return false;
         }
 
@@ -43,7 +44,7 @@ public class UserService
             {
                 if (string.IsNullOrWhiteSpace(field))
                 {
-                    AresLogger.Error(nameof(SaveAsync), "The field list contains a null or empty value.");
+                    AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
                     continue;
                 }
 
@@ -54,7 +55,7 @@ public class UserService
         }
         catch (Exception ex)
         {
-            AresLogger.Error(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message);
+            AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
             return false;
         }
     }
@@ -226,7 +227,7 @@ public class UserService
         List<GChatInfo>? infos = ChatInfos(guild, guildId);
         if (infos == null)
         {
-            AresLogger.Error(nameof(ToggleChatInfo), "Unable to change the status of a chat information.");
+            AresLogger.Log(nameof(ToggleChatInfo), "Unable to change the status of a chat information.", severity: Severity.Error);
             return Task.FromResult(false);
         }
 
@@ -288,7 +289,7 @@ public class UserService
 
         if (chat == null)
         {
-            AresLogger.Error(nameof(CreateChatData), "Guild chat data is null. Unable to create chat data for the user.");
+            AresLogger.Log(nameof(CreateChatData), "Guild chat data is null. Unable to create chat data for the user.", severity: Severity.Error);
             return await Task.FromResult(false);
         }
 
@@ -318,7 +319,7 @@ public class UserService
         }
         catch (Exception ex)
         {
-            AresLogger.Error(nameof(CreateChatData), "Error trying to create a chat history for the user.", ex.Message);
+            AresLogger.Log(nameof(CreateChatData), "Error trying to create a chat history for the user.", ex.Message, severity: Severity.Error);
             return await Task.FromResult(false);
         }
     }
@@ -336,7 +337,7 @@ public class UserService
     {
         if (historics == null)
         {
-            AresLogger.Error(nameof(UpdateChatHistoricsAsync), "Historics is null. Unable to update chat history.");
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), "Historics is null. Unable to update chat history.", severity: Severity.Error);
             return false;
         }
 
@@ -347,7 +348,7 @@ public class UserService
 
         if (info == null)
         {
-            AresLogger.Error(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.");
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
             return false;
         }
 
@@ -371,7 +372,7 @@ public class UserService
 
         if (info == null)
         {
-            AresLogger.Error(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.");
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
             return false;
         }
 
@@ -379,7 +380,7 @@ public class UserService
 
         if (historics == null)
         {
-            AresLogger.Error(nameof(UpdateChatHistoricsAsync), "Conversation historics are null.");
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), "Conversation historics are null.", severity: Severity.Error);
             return false;
         }
 
@@ -402,7 +403,7 @@ public class UserService
 
         if (info == null)
         {
-            AresLogger.Error(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.");
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
             return false;
         }
 
@@ -410,7 +411,7 @@ public class UserService
 
         if (historics == null)
         {
-            AresLogger.Error(nameof(RemoveConversationAsync), "Conversation historics are null.");
+            AresLogger.Log(nameof(RemoveConversationAsync), "Conversation historics are null.", severity: Severity.Error);
             return false;
         }
 
@@ -433,7 +434,7 @@ public class UserService
 
         if (infos == null)
         {
-            AresLogger.Error(nameof(HasActiveUserConversation), "Unable to get historical information.");
+            AresLogger.Log(nameof(HasActiveUserConversation), "Unable to get historical information.", severity: Severity.Error);
             return false;
         }
 
@@ -462,7 +463,7 @@ public class UserService
 
         if (infos == null)
         {
-            AresLogger.Error(nameof(GetConversationsCount), "Unable to get historical information.");
+            AresLogger.Log(nameof(GetConversationsCount), "Unable to get historical information.", severity: Severity.Error);
             return -1;
         }
 

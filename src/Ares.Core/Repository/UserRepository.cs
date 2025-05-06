@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Models;
 using Ares.Core.Models.Collection;
 using Ares.Core.Service;
 using Ares.Core.Util;
@@ -62,7 +63,7 @@ public class UserRepository
         // Check if the collection was initialized before trying to create indexes.
         if (_collection == null)
         {
-            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when creating guild data indexes.");
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when creating guild data indexes.", severity: Severity.Error);
             return;
         }
 
@@ -77,7 +78,7 @@ public class UserRepository
         }
         catch (Exception ex)
         {
-            await AresLogger.ErrorAsync("IndexCreationError", $"Error creating indexes: {ex.Message}");
+            await AresLogger.LogAsync("IndexCreationError", $"Error creating indexes: {ex.Message}", severity: Severity.Error);
         }
     }
 
@@ -94,7 +95,7 @@ public class UserRepository
     {
         if (_collection == null)
         {
-            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when save guild data.");
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save guild data.", severity: Severity.Error);
             return null;
         }
 
@@ -189,7 +190,7 @@ public class UserRepository
         }
         catch (Exception e)
         {
-            await AresLogger.ErrorAsync(e.Source ?? "Exception", "Unable to update user data.", e.Message);
+            await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update user data.", e.Message, severity: Severity.Error);
             return false;
         }
     }
@@ -232,7 +233,7 @@ public class UserRepository
 
         if (_collection == null)
         {
-            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when get all users.");
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when get all users.", severity: Severity.Error);
             return users;
         }
 
@@ -250,7 +251,7 @@ public class UserRepository
             }
             catch (JsonException ex)
             {
-                await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
+                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", ex.Message, severity: Severity.Error);
             }
         });
 

@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Models;
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
@@ -27,13 +28,13 @@ public class GuildService
     {
         if (fields == null || fields.Length == 0)
         {
-            AresLogger.Error(nameof(SaveAsync), "The field list is null or empty.");
+            AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
             return false;
         }
 
         if (AresCore.GuildRepository is not { } repository)
         {
-            AresLogger.Error(nameof(SaveAsync), "Guild data is null. Unable to save fields.");
+            AresLogger.Log(nameof(SaveAsync), "Guild data is null. Unable to save fields.", severity: Severity.Error);
             return false;
         }
 
@@ -43,7 +44,7 @@ public class GuildService
             {
                 if (string.IsNullOrWhiteSpace(field))
                 {
-                    AresLogger.Error(nameof(SaveAsync), "The field list contains a null or empty value.");
+                    AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
                     continue;
                 }
 
@@ -54,7 +55,7 @@ public class GuildService
         }
         catch (Exception ex)
         {
-            AresLogger.Error(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message);
+            AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
             return false;
         }
     }

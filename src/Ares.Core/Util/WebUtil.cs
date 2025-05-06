@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Models;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -27,7 +28,7 @@ public class WebUtil
 
             if (!response.IsSuccessStatusCode)
             {
-                AresLogger.Error(nameof(UploadMediaFromUrl), $"Error sending a response.", jsonResponse);
+                AresLogger.Log(nameof(UploadMediaFromUrl), $"Error sending a response.", jsonResponse, severity: Severity.Error);
             }
 
             using (JsonDocument doc = JsonDocument.Parse(jsonResponse))

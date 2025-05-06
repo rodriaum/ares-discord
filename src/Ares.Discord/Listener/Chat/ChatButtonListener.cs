@@ -137,7 +137,7 @@ public class ChatButtonListener
             catch (Exception e)
             {
                 await args.FollowupAsync(AresConstant.UnablePerformTask);
-                await AresLogger.ErrorAsync("ButtonException", "Unable to close chat.", e.Message);
+                await AresLogger.LogAsync("ButtonException", "Unable to close chat.", e.Message, severity: Severity.Error);
             }
         });
 

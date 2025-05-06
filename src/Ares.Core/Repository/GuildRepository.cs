@@ -64,7 +64,7 @@ public class GuildRepository
         // Check if the collection was initialized before trying to create indexes.
         if (_collection == null)
         {
-            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when creating guild data indexes.");
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when creating guild data indexes.", severity: Severity.Error);
             return;
         }
 
@@ -79,7 +79,7 @@ public class GuildRepository
         }
         catch (Exception ex)
         {
-            await AresLogger.ErrorAsync("IndexCreationError", $"Error creating indexes: {ex.Message}");
+            await AresLogger.LogAsync("IndexCreationError", $"Error creating indexes: {ex.Message}", severity: Severity.Error);
         }
     }
 
@@ -96,7 +96,7 @@ public class GuildRepository
     {
         if (_collection == null)
         {
-            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when save guild data.");
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save guild data.", severity: Severity.Error);
             return null;
         }
 
@@ -191,7 +191,7 @@ public class GuildRepository
         }
         catch (Exception e)
         {
-            await AresLogger.ErrorAsync(e.Source ?? "Exception", "Unable to update guild data.", e.Message);
+            await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update guild data.", e.Message, severity: Severity.Error);
             return false;
         }
     }
@@ -234,7 +234,7 @@ public class GuildRepository
 
         if (_collection == null)
         {
-            await AresLogger.ErrorAsync("CollectionNull", "Collection returned null when get all guilds.");
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when get all guilds.", severity: Severity.Error);
             return users;
         }
 
@@ -252,7 +252,7 @@ public class GuildRepository
             }
             catch (JsonException ex)
             {
-                await AresLogger.ErrorAsync("JsonReaderException", "Error deserializing document.", ex.Message);
+                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", ex.Message, severity: Severity.Error);
             }
         });
 

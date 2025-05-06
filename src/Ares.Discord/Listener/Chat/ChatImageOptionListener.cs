@@ -5,6 +5,7 @@
  */
 
 using Ares.Core;
+using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Chat.Image;
@@ -176,7 +177,7 @@ public class ChatImageOptionListener
             catch (Exception e)
             {
                 await args.FollowupAsync(AresConstant.UnablePerformTask);
-                await AresLogger.ErrorAsync("ButtonException", "Unable to close chat.", e.Message);
+                await AresLogger.LogAsync("ButtonException", "Unable to close chat.", e.Message, severity: Severity.Error);
             }
         });
 

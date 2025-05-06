@@ -5,6 +5,7 @@
  */
 
 using Ares.Core.Manager;
+using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Model;
@@ -108,7 +109,7 @@ public class NeuralService
         }
         catch (Exception e)
         {
-            AresLogger.Error("Generation", "Unable to generate an image.", e.Message);
+            AresLogger.Log("Generation", "Unable to generate an image.", e.Message, severity: Severity.Error);
 
             LangCategory lang = GuildService.LangCategory(guild) ?? AresCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
@@ -179,7 +180,7 @@ public class NeuralService
         }
         catch (Exception e)
         {
-            AresLogger.Error("Generation", "Unable to generate TTS.", e.Message);
+            AresLogger.Log("Generation", "Unable to generate TTS.", e.Message, severity: Severity.Error);
 
             LangCategory lang = GuildService.LangCategory(guild) ?? AresCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
@@ -233,7 +234,7 @@ public class NeuralService
         }
         catch (Exception e)
         {
-            AresLogger.Error("Generation", "Unable to generate a conversation.", e.Message);
+            AresLogger.Log("Generation", "Unable to generate a conversation.", e.Message, severity: Severity.Error);
             LangCategory lang = GuildService.LangCategory(guild) ?? AresCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
         }
@@ -256,7 +257,7 @@ public class NeuralService
 
         if (info == null)
         {
-            AresLogger.Error(nameof(HandleLocalModelRequestAsync), "Chat information could not be accessed.");
+            AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Chat information could not be accessed.", severity: Severity.Error);
             return (GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfo), false);
         }
 
@@ -269,7 +270,7 @@ public class NeuralService
 
         if (ollama == null)
         {
-            AresLogger.Error(nameof(HandleLocalModelRequestAsync), "Ollama client is null.");
+            AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Ollama client is null.", severity: Severity.Error);
             return (GuildService.GetTranslation(guild, LangKeys.UnablePerformTask), false);
         }
 
@@ -312,7 +313,7 @@ public class NeuralService
 
         if (info == null)
         {
-            AresLogger.Error("GenerateConversationAsync", "Chat information could not be accessed.");
+            AresLogger.Log("GenerateConversationAsync", "Chat information could not be accessed.", severity: Severity.Error);
             return (GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfo), false);
         }
 
@@ -354,7 +355,7 @@ public class NeuralService
 
         if (completion == null)
         {
-            AresLogger.Error("OpenAI", "Unable to get response.");
+            AresLogger.Log("OpenAI", "Unable to get response.", severity: Severity.Error);
             return (GuildService.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
         }
 
@@ -401,7 +402,7 @@ public class NeuralService
 
         if (response == null)
         {
-            AresLogger.Error("OpenAI", "Unable to get response.");
+            AresLogger.Log("OpenAI", "Unable to get response.", severity: Severity.Error);
             return (GuildService.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
@@ -541,7 +542,7 @@ public class NeuralService
 
         if (info == null)
         {
-            AresLogger.Error(nameof(SaveToHistoryAsync), "It looks like the information could not be accessed.");
+            AresLogger.Log(nameof(SaveToHistoryAsync), "It looks like the information could not be accessed.", severity: Severity.Error);
             return false;
         }
 

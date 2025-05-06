@@ -5,6 +5,7 @@
  */
 
 using Ares.Core;
+using Ares.Core.Models;
 using Ares.Core.Models.Chat;
 using Ares.Core.Objects.Model;
 using Ares.Core.Provider;
@@ -58,7 +59,7 @@ public class Program
 
         if (isRunning)
         {
-            await AresLogger.ErrorAsync("Status", "Application is already running.");
+            await AresLogger.LogAsync("Status", "Application is already running.", severity: Severity.Error);
             return;
         }
 
@@ -70,7 +71,7 @@ public class Program
         // Initialize Core
         if (!await AresCore.Init())
         {
-            AresLogger.Error("Database", "Core initialization failed.");
+            AresLogger.Log("Database", "Core initialization failed.", severity: Severity.Critical);
             return;
         }
 
@@ -102,7 +103,7 @@ public class Program
         string discordToken = (AresConstant.AppDevMode ? Env.GetString("DISCORD_TOKEN_DEV") : Env.GetString("DISCORD_TOKEN"));
         if (string.IsNullOrWhiteSpace(discordToken))
         {
-            await AresLogger.ErrorAsync("Token", $"Could not find application token. (Is Dev Mode: {AresConstant.AppDevMode})");
+            await AresLogger.LogAsync("Token", $"Could not find application token. (Is Dev Mode: {AresConstant.AppDevMode})", severity: Severity.Error);
             return;
         }
 
@@ -349,11 +350,12 @@ public class Program
                     serializerOptions: new JsonSerializerOptions { WriteIndented = true }
                 );
 
-            await AresLogger.ErrorAsync
+            await AresLogger.LogAsync
                 (
                     "Commands",
                     "Unable to register commands.",
-                    extra: (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message)
+                    extra: (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message),
+                    severity: Severity.Error
                 );
         }
     }

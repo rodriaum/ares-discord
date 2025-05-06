@@ -5,6 +5,7 @@
  */
 
 using Ares.Core;
+using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Preference;
@@ -359,7 +360,7 @@ public class SelectedChatListener
             catch (Exception e)
             {
                 await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
-                await AresLogger.ErrorAsync("SelectException", "Unable to process chat model choice.", e.Message);
+                await AresLogger.LogAsync("SelectException", "Unable to process chat model choice.", e.Message, severity: Severity.Error);
             }
         });
 
