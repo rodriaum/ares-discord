@@ -496,26 +496,50 @@ public class UserService
 
     #region Conversation Snippet
 
+    /// <summary>
+    /// Updates the conversation historics for a specific user and guild.
+    /// </summary>
+    /// <param name="user">The user to update the snippets for.</param>
+    /// <param name="guildId">The guild ID to update the snippets in.</param>
+    /// <param name="snippets">The updated list of snippets.</param>
+    /// <param name="onlyCached">Optional: If true, data is stored locally instead of in the database.</param>
+    /// <returns>Returns true if the snippets were successfully updated, false otherwise.</returns>
     public static async Task<bool> UpdateSnippetsAsync(User user, ulong guildId, List<GChatSnippet> snippets, bool onlyCached = false)
     {
         user.Chat.Snippets[guildId] = snippets;
         return !onlyCached ? await SaveChatDataAsync(user) : true;
     }
 
+    /// <summary>
+    /// Saves a new snippet for a specific user and guild.
+    /// </summary>
+    /// <param name="user">The user to save the snippet for.</param>
+    /// <param name="guildId">The guild ID to save the snippet in.</param>
+    /// <param name="snippet">The snippet to be saved.</param>
+    /// <param name="onlyCached">Optional: If true, data is stored locally instead of in the database.</param>
+    /// <returns>Returns true if the snippet was successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveSnippetAsync(User user, ulong guildId, GChatSnippet snippet, bool onlyCached = false)
     {
-        List<GChatSnippet>? snippets = GetSnippetsByGuild(user, guildId);
+        user.Chat.Snippets ??= new();
 
-        if (snippets == null)
+        if (!user.Chat.Snippets.TryGetValue(guildId, out var snippets))
         {
             snippets = new List<GChatSnippet>();
+            user.Chat.Snippets[guildId] = snippets;
         }
 
-        user.Chat.Snippets[guildId] = snippets;
+        snippets.Add(snippet);
 
         return await UpdateSnippetsAsync(user, guildId, snippets, onlyCached);
     }
 
+    /// <summary>
+    /// Removes a snippet by its ID for a specific user and guild.
+    /// </summary>
+    /// <param name="user">The user to remove the snippet for.</param>
+    /// <param name="guildId">The guild ID to remove the snippet from.</param>
+    /// <param name="channelId">The channel ID to remove the snippet from.</param>
+    /// <returns>Returns true if the snippet was successfully removed, false otherwise.</returns>
     public static async Task<bool> RemoveSnippetByChannelAsync(User user, ulong guildId, ulong channelId)
     {
         List<GChatSnippet>? snippets = GetSnippetsByGuild(user, guildId);
@@ -525,11 +549,24 @@ public class UserService
         return await UpdateSnippetsAsync(user, guildId, snippets);
     }
 
+    /// <summary>
+    /// Get all snippets for a specific user and guild.
+    /// </summary>
+    /// <param name="user">The user to get the snippets for.</param>
+    /// <param name="guildId">The guild ID to get the snippets from.</param>
+    /// <returns>List of snippets or null if not found.</returns>
     public static List<GChatSnippet>? GetSnippetsByGuild(User user, ulong guildId)
     {
         return user.Chat.Snippets.GetValueOrDefault(guildId);
     }
 
+    /// <summary>
+    /// Get all snippets for a specific user and guild, filtered by channel ID.
+    /// </summary>
+    /// <param name="user">The user to get the snippets for.</param>
+    /// <param name="guildId">The guild ID to get the snippets from.</param>
+    /// <param name="channelId">The channel ID to filter the snippets by.</param>
+    /// <returns>List of snippets or null if not found.</returns>
     public static List<GChatSnippet>? GetSnippetsByChannel(User user, ulong guildId, ulong channelId)
     {
         List<GChatSnippet>? snippets = GetSnippetsByGuild(user, guildId);
@@ -538,7 +575,13 @@ public class UserService
         return snippets.FindAll(it => it.ChannelId == channelId);
     }
 
-
+    /// <summary>
+    /// Get a specific snippet by its ID for a specific user and guild.
+    /// </summary>
+    /// <param name="user">The user to get the snippet for.</param>
+    /// <param name="guildId">The guild ID to get the snippet from.</param>
+    /// <param name="id">The ID of the snippet to retrieve.</param>
+    /// <returns>The snippet or null if not found.</returns>
     public static GChatSnippet? GetSnippet(User user, ulong guildId, string id)
     {
         List<GChatSnippet>? snippets = GetSnippetsByGuild(user, guildId);
