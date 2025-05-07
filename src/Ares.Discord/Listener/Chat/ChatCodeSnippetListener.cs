@@ -74,7 +74,7 @@ public class ChatCodeSnippetListener
 
                 if (snippet == null)
                 {
-                    await args.RespondAsync(ephemeral: true, text: "Snippet não encontrado.");
+                    await args.RespondAsync(ephemeral: true, text: "Snippet não encontrado ou não pode ser acessado por você.");
                     return;
                 }
 

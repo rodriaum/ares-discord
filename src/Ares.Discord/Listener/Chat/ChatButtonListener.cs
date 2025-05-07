@@ -110,9 +110,15 @@ public class ChatButtonListener
 
                 SocketUser socketUser = args.User;
 
+                if (!UserService.IsChatOwner(user, guild.Id, channel.Id))
+                {
+                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.NotChatOwner));
+                    return;
+                }
+
                 if (!await UserService.ToggleChatInfo(user, guild.Id, channel.Id, false))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnableFindChat));
+                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnableFindChat) + " (toggle_chat_info)");
                     return;
                 }
 
@@ -120,7 +126,7 @@ public class ChatButtonListener
 
                 if (info == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.NotChatOwner));
+                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnableFindChat) + " (info_null)");
                     return;
                 }
 

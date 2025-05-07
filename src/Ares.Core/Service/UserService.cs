@@ -276,6 +276,14 @@ public class UserService
     }
 
     /// <summary>
+    /// Verify if a user is the owner of a chat in a specific channel.
+    /// </summary>
+    public static bool IsChatOwner(User user, ulong guildId, ulong channelId)
+    {
+        return ChatInfoByChannel(user, guildId, channelId) != null;
+    }
+
+    /// <summary>
     /// Creates new chat data for a user.
     /// </summary>
     /// <param name="user">The guild to create the chat data for.</param>

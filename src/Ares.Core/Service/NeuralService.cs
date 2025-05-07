@@ -271,7 +271,7 @@ public class NeuralService
         if (ollama == null)
         {
             AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Ollama client is null.", severity: Severity.Error);
-            return (GuildService.GetTranslation(guild, LangKeys.UnablePerformTask), false);
+            return (GuildService.GetTranslation(guild, LangKeys.UnablePerformTask) + " (ollama_null)", false);
         }
 
         ChatOptions chatOptions = new ChatOptions
