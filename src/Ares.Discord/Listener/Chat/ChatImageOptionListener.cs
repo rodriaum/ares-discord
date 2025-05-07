@@ -115,7 +115,7 @@ public class ChatImageOptionListener
 
                 SocketUser socketUser = args.User;
 
-                GChatInfo? chat = UserService.ChatInfoByChannel(user, guildId.Value, channelId.Value);
+                UserChatInfo? chat = UserService.ChatInfoByChannel(user, guildId.Value, channelId.Value);
 
                 if (chat == null)
                 {

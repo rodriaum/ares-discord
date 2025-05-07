@@ -2,7 +2,7 @@
 
 namespace Ares.Core.Models.Chat.Sub;
 
-public class GChatSnippet
+public class UserChatSnippet
 {
     [JsonInclude]
     [JsonPropertyName("id")]
@@ -24,7 +24,7 @@ public class GChatSnippet
     [JsonPropertyName("text")]
     public string Text { get; set; }
 
-    public GChatSnippet(ulong channelId, ulong messageId, uint index, string text, string? id = null)
+    public UserChatSnippet(ulong channelId, ulong messageId, uint index, string text, string? id = null)
     {
         Id = id ?? Guid.NewGuid().ToString();
         ChannelId = channelId;

@@ -21,7 +21,7 @@ public class User
 
     [JsonInclude]
     [JsonPropertyName("chat")]
-    public GChat Chat { get; set; }
+    public UserChat Chat { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the User class.

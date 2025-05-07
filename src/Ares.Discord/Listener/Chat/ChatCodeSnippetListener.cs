@@ -70,7 +70,7 @@ public class ChatCodeSnippetListener
 
                 #endregion
 
-                GChatSnippet? snippet = UserService.GetSnippet(user, guildId, args.Data.CustomId);
+                UserChatSnippet? snippet = UserService.GetSnippet(user, guildId, args.Data.CustomId);
 
                 if (snippet == null)
                 {

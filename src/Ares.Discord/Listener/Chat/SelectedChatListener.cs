@@ -203,7 +203,7 @@ public class SelectedChatListener
                 SocketCategoryChannel category = socketGuild.GetCategoryChannel(gid.ChatsCategoryId);
                 RestTextChannel channel = await socketGuild.CreateTextChannelAsync($"{emojiUnicode}┃{socketUser.GlobalName}", properties => properties.CategoryId = category.Id);
 
-                GChatInfo info = new GChatInfo
+                UserChatInfo info = new UserChatInfo
                     (
                         active: true,
                         channel: channel.Id,
@@ -218,7 +218,7 @@ public class SelectedChatListener
 
                 string helloMessage = string.Format(GuildService.GetTranslation(guild, LangKeys.HelloMessage), GuildService.GetTranslation(guild, greetingKey), socketUser.GlobalName);
 
-                GChatHistoricModel historic = new GChatHistoricModel(system: helloMessage);
+                UserChatHistoricModel historic = new UserChatHistoricModel(system: helloMessage);
                 info.Historics.Add(historic);
 
                 if (!await UserService.CreateChatData(user, guildId, info))

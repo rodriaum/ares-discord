@@ -96,7 +96,7 @@ public class ReceivedContentListener
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
 
                 // Search for necessary information
-                GChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel.Id);
+                UserChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel.Id);
                 if (info == null)
                 {
                     await ModifyMessageWithError(botMessage, embed, GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfo));
@@ -124,7 +124,7 @@ public class ReceivedContentListener
                 }
 
                 SocketGuildUser guildUser = socketGuild.GetUser(iuser.Id);
-                List<GChatHistoricModel>? historics = UserService.ChatHistoricsByChannel(user, guild.Id, channel.Id);
+                List<UserChatHistoricModel>? historics = UserService.ChatHistoricsByChannel(user, guild.Id, channel.Id);
 
                 // Process message based on template type
                 switch (model.Type)
@@ -185,7 +185,7 @@ public class ReceivedContentListener
         RestUserMessage botMessage,
         EmbedBuilder embed,
         UserRepository userRepository,
-        List<GChatHistoricModel>? historics)
+        List<UserChatHistoricModel>? historics)
     {
         DateTime date = DateTime.Now;
 
@@ -205,14 +205,14 @@ public class ReceivedContentListener
 
             uint index = 0;
 
-            List<GChatSnippet> snippets = new();
+            List<UserChatSnippet> snippets = new();
 
             foreach (Match match in matches)
             {
                 string code = match.Groups[1].Value.Trim();
                 if (string.IsNullOrWhiteSpace(code)) continue;
 
-                snippets.Add(new GChatSnippet(channelId, botMessage.Id, index, code, id: menuCustomId));
+                snippets.Add(new UserChatSnippet(channelId, botMessage.Id, index, code, id: menuCustomId));
 
                 menu.AddOption(new SelectMenuOptionBuilder
                 {
@@ -264,12 +264,12 @@ public class ReceivedContentListener
         Guild guild,
         User user,
         ChatModel model,
-        GChatInfo info,
+        UserChatInfo info,
         ulong channelId,
         string prompt,
         RestUserMessage botMessage,
         EmbedBuilder embed,
-        List<GChatHistoricModel>? historics)
+        List<UserChatHistoricModel>? historics)
     {
         ImageGenOptions options = info.ImageGenOptions ?? new ImageGenOptions();
 
@@ -309,7 +309,7 @@ public class ReceivedContentListener
         string prompt,
         RestUserMessage botMessage,
         EmbedBuilder embed,
-        List<GChatHistoricModel>? historics)
+        List<UserChatHistoricModel>? historics)
     {
         (string responseBinary, bool isAudio) = await NeuralService.GenerateTTSAsync(guild, user, model, channelId, prompt);
 
@@ -373,12 +373,12 @@ public class ReceivedContentListener
         await UpdateBotMessage(botMessage, embed, /*priceEmbed,*/ attachments: attachments);
     }
 
-    private EmbedBuilder? CreatePriceEmbedForChat(Guild guild, ChatModel model, List<GChatHistoricModel>? historics)
+    private EmbedBuilder? CreatePriceEmbedForChat(Guild guild, ChatModel model, List<UserChatHistoricModel>? historics)
     {
         if (historics == null || !historics.Any())
             return null;
 
-        GChatHistoricModel? historic = historics.LastOrDefault();
+        UserChatHistoricModel? historic = historics.LastOrDefault();
         if (historic == null)
             return null;
 
@@ -410,12 +410,12 @@ public class ReceivedContentListener
         return priceEmbed;
     }
 
-    private EmbedBuilder? CreatePriceEmbedForImage(Guild guild, ChatModel model, List<GChatHistoricModel>? historics, ImageGenOptions options)
+    private EmbedBuilder? CreatePriceEmbedForImage(Guild guild, ChatModel model, List<UserChatHistoricModel>? historics, ImageGenOptions options)
     {
         if (historics == null || !historics.Any())
             return null;
 
-        GChatHistoricModel? historic = historics.LastOrDefault();
+        UserChatHistoricModel? historic = historics.LastOrDefault();
         if (historic == null)
             return null;
 

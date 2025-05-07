@@ -251,9 +251,9 @@ public class NeuralService
         string prompt)
     {
         // Get chat history and info
-        List<GChatHistoricModel>? historics = UserService.ChatHistorics(user, guild.Id, channelId: channel);
+        List<UserChatHistoricModel>? historics = UserService.ChatHistorics(user, guild.Id, channelId: channel);
 
-        GChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
+        UserChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
@@ -262,7 +262,7 @@ public class NeuralService
         }
 
         // Prepare messages for the API request
-        List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? GChatHistoricModel.ToLocal(historics) : new();
+        List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? UserChatHistoricModel.ToLocal(historics) : new();
         messages.Add(new(ChatRole.User, prompt));
 
         // Configure the API client
@@ -308,8 +308,8 @@ public class NeuralService
         }
 
         // Get chat history and info
-        List<GChatHistoricModel>? historics = UserService.ChatHistorics(user, guild.Id, channelId: channel);
-        GChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
+        List<UserChatHistoricModel>? historics = UserService.ChatHistorics(user, guild.Id, channelId: channel);
+        UserChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
@@ -318,7 +318,7 @@ public class NeuralService
         }
 
         // Prepare messages for the API request
-        List<OpenAI.Chat.ChatMessage> messages = historics != null ? GChatHistoricModel.ToRemote(historics) : new();
+        List<OpenAI.Chat.ChatMessage> messages = historics != null ? UserChatHistoricModel.ToRemote(historics) : new();
         messages.Add(new UserChatMessage(prompt));
 
         // Configure the API client
@@ -348,7 +348,7 @@ public class NeuralService
         string prompt,
         ChatClient client,
         ChatCompletionOptions chatOptions,
-        GChatInfo info,
+        UserChatInfo info,
         List<OpenAI.Chat.ChatMessage> messages)
     {
         ChatCompletion completion = await client.CompleteChatAsync(messages, options: chatOptions);
@@ -360,7 +360,7 @@ public class NeuralService
         }
 
         // Save to history
-        GChatHistoricModel historic = GChatHistoricModel.From(prompt, responseOpenAi: completion)[0];
+        UserChatHistoricModel historic = UserChatHistoricModel.From(prompt, responseOpenAi: completion)[0];
 
         info.Historics.Add(historic);
 
@@ -395,7 +395,7 @@ public class NeuralService
         string prompt,
         IChatClient client,
         ChatOptions chatOptions,
-        GChatInfo info,
+        UserChatInfo info,
         List<Microsoft.Extensions.AI.ChatMessage> messages)
     {
         ChatResponse response = await client.GetResponseAsync(messages, options: chatOptions);
@@ -407,7 +407,7 @@ public class NeuralService
         }
 
         // Save to history
-        GChatHistoricModel historic = GChatHistoricModel.From(prompt, ollamaResponse: response)[0];
+        UserChatHistoricModel historic = UserChatHistoricModel.From(prompt, ollamaResponse: response)[0];
 
         info.Historics.Add(historic);
 
@@ -538,7 +538,7 @@ public class NeuralService
         ChatCompletion? responseOpenAi = null,
         Objects.Chat.ChatTokenUsage? usage = null)
     {
-        GChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
+        UserChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
@@ -546,19 +546,19 @@ public class NeuralService
             return false;
         }
 
-        GChatHistoricModel historic;
+        UserChatHistoricModel historic;
 
         if (imageOpenAi != null)
         {
-            historic = GChatHistoricModel.From(prompt, imageUrl: imageUrl, imageOpenAi: imageOpenAi)[0];
+            historic = UserChatHistoricModel.From(prompt, imageUrl: imageUrl, imageOpenAi: imageOpenAi)[0];
         }
         else if (responseOpenAi != null)
         {
-            historic = GChatHistoricModel.From(prompt, responseOpenAi: responseOpenAi)[0];
+            historic = UserChatHistoricModel.From(prompt, responseOpenAi: responseOpenAi)[0];
         }
         else
         {
-            historic = new GChatHistoricModel(prompt: prompt, response: response ?? string.Empty, usage: usage);
+            historic = new UserChatHistoricModel(prompt: prompt, response: response ?? string.Empty, usage: usage);
         }
 
         info.Historics.Add(historic);
