@@ -5,6 +5,7 @@
  */
 
 using Ares.Core.Objects.Chat.Image;
+using System.Text.Json.Serialization;
 
 namespace Ares.Core.Objects.Chat.Price;
 
@@ -13,8 +14,16 @@ namespace Ares.Core.Objects.Chat.Price;
 /// </summary>
 public class ChatPriceUsageDetail
 {
+    [JsonInclude]
+    [JsonPropertyName("quality")]
     public readonly ImageQuality Quality;
+
+    [JsonInclude]
+    [JsonPropertyName("size")]
     public readonly ImageSize Size;
+
+    [JsonInclude]
+    [JsonPropertyName("price")]
     public readonly decimal Price;
 
     public ChatPriceUsageDetail(ImageQuality quality, ImageSize size, decimal price)

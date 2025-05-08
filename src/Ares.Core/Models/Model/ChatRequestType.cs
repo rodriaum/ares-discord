@@ -3,5 +3,6 @@
 public enum ChatRequestType
 {
     Local,
-    Web
+    Web,
+    None
 }

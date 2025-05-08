@@ -6,6 +6,7 @@
 
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Model;
+using Ares.Core.Repository;
 using System.Text.Json.Serialization;
 
 namespace Ares.Core.Models.Chat.Sub;
@@ -21,12 +22,12 @@ public class UserChatInfo
     public bool Active { get; set; }
 
     [JsonInclude]
-    [JsonPropertyName("channel")]
-    public ulong Channel { get; set; }
+    [JsonPropertyName("channelId")]
+    public ulong ChannelId { get; set; }
 
     [JsonInclude]
-    [JsonPropertyName("model")]
-    public string Model { get; set; }
+    [JsonPropertyName("modelId")]
+    public string ModelId { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("imageGenOptions")]
@@ -37,21 +38,30 @@ public class UserChatInfo
     [JsonPropertyName("historics")]
     public List<UserChatHistoricModel> Historics { get; set; }
 
-    public UserChatInfo(ulong channel, string model, bool active = false, ImageGenOptions? imageGenOptions = null, List<UserChatHistoricModel>? historics = null)
+    public UserChatInfo(ulong channelId, string modelId, bool active = false, ImageGenOptions? imageGenOptions = null, List<UserChatHistoricModel>? historics = null)
     {
         Id = Guid.NewGuid().ToString();
-        Channel = channel;
-        Model = model;
+        ChannelId = channelId;
+        ModelId = modelId;
         Active = active;
-
-        if (
-                ImageGenOptions == null &&
-                ChatModel.GetByModel(model) != null && ChatModel.GetByModel(model)?.Type == ModelType.Image
-            )
-        {
-            ImageGenOptions = new ImageGenOptions();
-        }
+        ImageGenOptions = imageGenOptions;
 
         Historics = historics ?? new List<UserChatHistoricModel>();
+
+        InitializeImageGenOptions();
+    }
+
+    [Obsolete]
+    private async void InitializeImageGenOptions()
+    {
+        ChatModelRepository? repository = AresCore.ChatModelRepository;
+        if (repository != null && ImageGenOptions == null)
+        {
+            ChatModel? model = await repository.FetchAsync(ModelId, saveInRedis: true);
+            if (model != null && model.Type == ModelType.Image)
+            {
+                ImageGenOptions = new ImageGenOptions();
+            }
+        }
     }
 }

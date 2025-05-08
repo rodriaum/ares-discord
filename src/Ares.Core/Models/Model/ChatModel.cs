@@ -6,47 +6,78 @@
 
 using Ares.Core.Models.Model;
 using Ares.Core.Objects.Chat.Price;
-using MongoDB.Driver.Linq;
-using Ares.Core.Provider;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using System.Text.Json.Serialization;
 
 namespace Ares.Core.Objects.Model;
 
 public class ChatModel
 {
-    public ChatRequestType RequestType;
-    public ModelCategory Category;
-    public ModelType Type;
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    [JsonInclude]
+    [JsonPropertyName("id")]
+    public string Id;
+
+    [JsonInclude]
+    [JsonPropertyName("displayName")]
     public string DisplayName;
-    public string Model;
+
+    [JsonInclude]
+    [JsonPropertyName("descriptionKey")]
     public string DescriptionKey;
-    public ModelTaskCategory Task;
+
+    [JsonInclude]
+    [JsonPropertyName("requestType")]
+    public ChatRequestType RequestType;
+
+    [JsonInclude]
+    [JsonPropertyName("category")]
+    public ModelCategory Category;
+
+    [JsonInclude]
+    [JsonPropertyName("type")]
+    public ModelType Type;
+
+    [JsonInclude]
+    [JsonPropertyName("price")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ChatPriceUsage? Price;
+
+    [JsonInclude]
+    [JsonPropertyName("exclusive")]
+
     public bool Exclusive;
+
+    [JsonInclude]
+    [JsonPropertyName("available")]
     public bool Available;
+
+    [JsonInclude]
+    [JsonPropertyName("dev")]
     public bool Dev;
 
     public ChatModel
         (
-            ChatRequestType request,
-            ModelCategory category,
-            ModelType type,
-            string display,
-            string model,
+            string id,
+            string displayName = "Unavalable",
             string descriptionKey = "",
-            ModelTaskCategory task = ModelTaskCategory.Other,
+            ChatRequestType requestType = ChatRequestType.None,
+            ModelCategory category = ModelCategory.Other,
+            ModelType type = ModelType.None,
             ChatPriceUsage? price = null,
             bool exclusive = false,
             bool available = true,
             bool dev = false
         )
     {
-        this.RequestType = request;
+        this.RequestType = requestType;
         this.Category = category;
         this.Type = type;
-        this.DisplayName = display;
-        this.Model = model;
+        this.DisplayName = displayName;
+        this.Id = id;
         this.DescriptionKey = descriptionKey;
-        this.Task = task;
         this.Price = price;
         this.Exclusive = exclusive;
         this.Available = available;
@@ -56,49 +87,5 @@ public class ChatModel
     public bool IsAvailable()
     {
         return (this.Dev ? false : this.Available);
-    }
-
-    public static List<ChatModel> GetModelsByCategory(ModelType category)
-    {
-        return ModelsProvider.Models
-            .Where(model => model.Type.Equals(category))
-            .ToList();
-    }
-
-    public static ChatModel? GetByDisplayName(string displayName)
-    {
-        return ModelsProvider.Models
-                .Where(model => model.DisplayName.Equals(displayName))
-                .First();
-    }
-
-    /// <summary>
-    /// Retorna o modelo exato baseado no nome fornecido, sem considerar variações ou versões.
-    /// O nome do modelo deve ser exato, incluindo a versão correta, como 'gpt-4-turbo'.
-    /// Funciona para qualquer modelo, não limitado à categoria OpenAI, e a busca é sensível a maiúsculas/minúsculas.
-    /// </summary>
-    /// <param name="model">O nome exato do modelo a ser buscado.</param>
-    /// <returns>O modelo correspondente ou null caso não encontrado.</returns>
-    public static ChatModel? GetByModel(string model)
-    {
-        return ModelsProvider.Models
-                .Where(it => it.Model.Equals(model, StringComparison.OrdinalIgnoreCase))
-                .FirstOrDefault();
-    }
-
-    /// <summary>
-    /// Retorna o modelo mais próximo baseado no nome fornecido. 
-    /// É recomendado usar para se o <paramref name="model"/> for OpenAI. 
-    /// O sistema pode retornar uma versão mais recente do modelo, como 'gpt-4-turbo-2024-04-09', 
-    /// uma vez que a OpenAI utiliza sempre a versão mais recente do modelo disponível, 
-    /// sem forçar ou especificar uma versão exata.
-    /// </summary>
-    /// <param name="model">O nome do modelo a ser buscado.</param>
-    /// <returns>O modelo correspondente ou null caso não encontrado.</returns>
-    public static ChatModel? GetByNearestModel(string model)
-    {
-        return ModelsProvider.Models
-                .Where(it => model.StartsWith(it.Model))
-                .FirstOrDefault();
     }
 }

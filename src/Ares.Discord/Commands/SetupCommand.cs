@@ -7,11 +7,12 @@
 using Ares.Core;
 using Ares.Core.Models.Model;
 using Ares.Core.Objects.Model;
-using Ares.Core.Provider;
+using Ares.Core.Repository;
 using Ares.Discord.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
+using System.Collections.Concurrent;
 
 namespace Ares.Discord.Commands;
 
@@ -84,7 +85,17 @@ public class SetupCommand
         if (requestType != null)
             embed.WithFooter($"Modelos {requestType}");
 
-        if (ModelsProvider.Models == null || !ModelsProvider.Models.Any())
+        ChatModelRepository? repository = AresCore.ChatModelRepository;
+
+        if (repository == null)
+        {
+            await message.ModifyAsync(it => it.Embed = embed.WithDescription("Não foi possível encontrar os dados dos modelos.").Build());
+            return;
+        }
+
+        ConcurrentBag<ChatModel> models = await repository.GetAllAsync();
+
+        if (models == null || !models.Any())
         {
             await message.ModifyAsync(it => it.Embed = embed.WithDescription("Nenhum modelo de IA disponível.").Build());
             return;
@@ -101,7 +112,7 @@ public class SetupCommand
                 .WithPlaceholder(name)
                 .WithCustomId($"chat-menu-{name.ToLower()}");
 
-            foreach (ChatModel model in ModelsProvider.Models)
+            foreach (ChatModel model in models)
             {
                 if ((requestType != null && model.RequestType != requestType) || model.Category != category) continue;
 
@@ -120,7 +131,7 @@ public class SetupCommand
                 menu.AddOption(new SelectMenuOptionBuilder
                 {
                     Label = model.DisplayName,
-                    Value = model.Model,
+                    Value = model.Id,
                     Description = $"{modelText} ({model.RequestType.ToString()}): {availableText}",
                     Emote = AresUtil.GetEmojiByModelType(model.Type)
                 });

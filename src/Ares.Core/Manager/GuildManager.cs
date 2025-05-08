@@ -11,12 +11,12 @@ using Ares.Core.Models.Token;
 using Ares.Core.Objects.Language;
 using Ares.Core.Util;
 
-namespace Ares.Core.Service;
+namespace Ares.Core.Manager;
 
 /// <summary>
 /// Guild service to manage data and operations of an guild.
 /// </summary>
-public class GuildService
+public class GuildManager
 {
     /// <summary>
     /// Saves the specified fields of the guild to the database.

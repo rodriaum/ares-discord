@@ -34,7 +34,7 @@ public class GuildRepository
     /// <summary>
     /// Key prefix used for guild data in Redis.
     /// </summary>
-    private readonly string GRedisKey = "guild:";
+    private readonly string GRedisKey = $"{AresConstant.AppName.ToLower()}:guild:";
 
     /*
      * Constructors and initialization methods.
@@ -187,6 +187,7 @@ public class GuildRepository
             // Update Redis
             await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
 
+            await AresLogger.LogAsync("Repo: Guild", $"Updated \"{field}\" for guild \"{guild.Id}\".");
             return true;
         }
         catch (Exception e)

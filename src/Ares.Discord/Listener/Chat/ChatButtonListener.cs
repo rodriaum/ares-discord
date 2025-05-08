@@ -5,12 +5,12 @@
  */
 
 using Ares.Core;
+using Ares.Core.Manager;
 using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Language;
 using Ares.Core.Repository;
-using Ares.Core.Service;
 using Ares.Core.Util;
 using Discord;
 using Discord.Rest;
@@ -104,38 +104,38 @@ public class ChatButtonListener
 
                 if (channel == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnablePerformTask));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask));
                     return;
                 }
 
                 SocketUser socketUser = args.User;
 
-                if (!UserService.IsChatOwner(user, guild.Id, channel.Id))
+                if (!UserManager.IsChatOwner(user, guild.Id, channel.Id))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.NotChatOwner));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.NotChatOwner));
                     return;
                 }
 
-                if (!await UserService.ToggleChatInfo(user, guild.Id, channel.Id, false))
+                if (!await UserManager.ToggleChatInfo(user, guild.Id, channel.Id, false))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnableFindChat) + " (toggle_chat_info)");
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnableFindChat) + " (toggle_chat_info)");
                     return;
                 }
 
-                UserChatInfo? info = UserService.ChatInfoByChannel(user, guild.Id, channel.Id);
+                UserChatInfo? info = UserManager.ChatInfoByChannel(user, guild.Id, channel.Id);
 
                 if (info == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnableFindChat) + " (info_null)");
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnableFindChat) + " (info_null)");
                     return;
                 }
 
                 // Removes the generated conversation snippets as they will no longer be used in that channel.
-                await UserService.RemoveSnippetByChannelAsync(user, guild.Id, channel.Id);
+                await UserManager.RemoveSnippetByChannelAsync(user, guild.Id, channel.Id);
 
                 AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Id}\"");
 
-                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.CloseChat));
+                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.CloseChat));
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();

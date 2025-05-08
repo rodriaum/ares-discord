@@ -5,6 +5,7 @@
  */
 
 using Ares.Core;
+using Ares.Core.Manager;
 using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
@@ -13,7 +14,6 @@ using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
-using Ares.Core.Service;
 using Ares.Core.Util;
 using Ares.Discord.Util;
 using Discord;
@@ -121,7 +121,7 @@ public class SelectedChatListener
 
                 if (gid == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.CouldNotFindInfoID));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfoID));
                     return;
                 }
 
@@ -129,7 +129,7 @@ public class SelectedChatListener
 
                 if (usageRole == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.RoleEliminated));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.RoleEliminated));
                     return;
                 }
 
@@ -137,7 +137,7 @@ public class SelectedChatListener
 
                 if (!member.Roles.Contains(usageRole))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.RoleMissing).Replace("{0}", usageRole.Mention));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.RoleMissing).Replace("{0}", usageRole.Mention));
                     return;
                 }
 
@@ -145,20 +145,20 @@ public class SelectedChatListener
 
                 if (exclusiveRole == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.RoleEliminated));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.RoleEliminated));
                     return;
                 }
 
-                if (UserService.HasActiveUserConversation(user, guildId))
+                if (UserManager.HasActiveUserConversation(user, guildId))
                 {
                     bool isPremium = member.Roles.Contains(exclusiveRole);
-                    int conversations = UserService.GetConversationsCount(user, guildId, active: true);
+                    int conversations = UserManager.GetConversationsCount(user, guildId, active: true);
 
                     if (!isPremium)
                     {
                         if (conversations >= AresConstant.MaxFreeConversations)
                         {
-                            await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ActiveConversation));
+                            await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ActiveConversation));
                             return;
                         }
                     }
@@ -166,35 +166,43 @@ public class SelectedChatListener
                     {
                         if (conversations >= AresConstant.MaxPremiumConversations)
                         {
-                            await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.PremiumChatLimit));
+                            await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.PremiumChatLimit));
                             return;
                         }
                     }
                 }
 
-                ChatModel? model = ChatModel.GetByModel(args.Data.Values.First());
+                ChatModelRepository? repository = AresCore.ChatModelRepository;
+
+                if (repository == null)
+                {
+                    await message.ModifyAsync(it => it.Content = "Não foi possível encontrar os dados dos modelos.");
+                    return;
+                }
+
+                ChatModel? model = await repository.FetchAsync(args.Data.Values.First(), saveInRedis: true);
 
                 if (model == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ModelNotFound));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ModelNotFound));
                     return;
                 }
 
                 if (model.Dev && !AresCore.IsDeveloper(socketUser.Id))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ModelDevMode));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ModelDevMode));
                     return;
                 }
 
                 if (!model.Available)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ModelUnavailable));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ModelUnavailable));
                     return;
                 }
 
                 if (model.Exclusive && !member.Roles.Contains(exclusiveRole))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
                     return;
                 }
 
@@ -206,8 +214,8 @@ public class SelectedChatListener
                 UserChatInfo info = new UserChatInfo
                     (
                         active: true,
-                        channel: channel.Id,
-                        model: model.Model
+                        channelId: channel.Id,
+                        modelId: model.Id
                     );
 
                 DateTime time = DateTime.Now;
@@ -216,12 +224,12 @@ public class SelectedChatListener
                       (time.Hour >= 12 && time.Hour < 18) ? LangKeys.GoodAfternoon :
                       LangKeys.GoodNight;
 
-                string helloMessage = string.Format(GuildService.GetTranslation(guild, LangKeys.HelloMessage), GuildService.GetTranslation(guild, greetingKey), socketUser.GlobalName);
+                string helloMessage = string.Format(GuildManager.GetTranslation(guild, LangKeys.HelloMessage), GuildManager.GetTranslation(guild, greetingKey), socketUser.GlobalName);
 
                 UserChatHistoricModel historic = new UserChatHistoricModel(system: helloMessage);
                 info.Historics.Add(historic);
 
-                if (!await UserService.CreateChatData(user, guildId, info))
+                if (!await UserManager.CreateChatData(user, guildId, info))
                 {
                     await channel.DeleteAsync();
                     await Task.Delay(500);
@@ -233,13 +241,13 @@ public class SelectedChatListener
                     .WithColor(Color.Green)
                     .WithFooter(footer => footer.WithText($"{time.Year} - {AresConstant.AppName}"));
 
-                infoEmbed.AddField(GuildService.GetTranslation(guild, LangKeys.FieldModel), model.DisplayName);
-                infoEmbed.AddField(GuildService.GetTranslation(guild, LangKeys.FieldRules), GuildService.GetTranslation(guild, LangKeys.ChatDescriptionRules));
-                infoEmbed.AddField(GuildService.GetTranslation(guild, LangKeys.FieldTime), GuildService.GetTranslation(guild, LangKeys.ChatDescriptionTime));
+                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldModel), model.DisplayName);
+                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldRules), GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionRules));
+                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldTime), GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionTime));
 
                 if (!string.IsNullOrWhiteSpace(model.DescriptionKey))
                 {
-                    infoEmbed.AddField(GuildService.GetTranslation(guild, LangKeys.FieldDescription), GuildService.GetTranslation(guild, model.DescriptionKey));
+                    infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldDescription), GuildManager.GetTranslation(guild, model.DescriptionKey));
                 }
 
                 ComponentBuilder component = new ComponentBuilder();
@@ -247,13 +255,13 @@ public class SelectedChatListener
                 switch (model.Type)
                 {
                     case ModelType.Chat:
-                        infoEmbed.AddField(GuildService.GetTranslation(guild, LangKeys.FieldHistory), GuildService.GetTranslation(guild, LangKeys.HistoryChatDesc));
-                        infoEmbed.WithDescription(GuildService.GetTranslation(guild, LangKeys.ChatDescriptionDefault));
+                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldHistory), GuildManager.GetTranslation(guild, LangKeys.HistoryChatDesc));
+                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionDefault));
                         break;
 
                     case ModelType.Image:
-                        infoEmbed.AddField(GuildService.GetTranslation(guild, LangKeys.FieldHistory), GuildService.GetTranslation(guild, LangKeys.HistoryImageDesc));
-                        infoEmbed.WithDescription(GuildService.GetTranslation(guild, LangKeys.ChatDescriptionImage));
+                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldHistory), GuildManager.GetTranslation(guild, LangKeys.HistoryImageDesc));
+                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionImage));
 
                         #region Quality Menu
 
@@ -317,19 +325,47 @@ public class SelectedChatListener
                         break;
 
                     case ModelType.TTS:
-                        infoEmbed.AddField(GuildService.GetTranslation(guild, LangKeys.FieldHistory), GuildService.GetTranslation(guild, LangKeys.HistoryTTSDesc));
-                        infoEmbed.WithDescription(GuildService.GetTranslation(guild, LangKeys.ChatDescriptionTTS));
+                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldHistory), GuildManager.GetTranslation(guild, LangKeys.HistoryTTSDesc));
+                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionTTS));
                         break;
 
                     default:
-                        infoEmbed.WithDescription(GuildService.GetTranslation(guild, LangKeys.ChatDescriptionDefault));
+                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionDefault));
                         break;
                 }
 
+                #region Close Chat Button
+
                 component.WithButton(new ButtonBuilder()
-                   .WithLabel(GuildService.GetTranslation(guild, LangKeys.ButtonEndChat))
+                   .WithLabel(GuildManager.GetTranslation(guild, LangKeys.ButtonEndChat))
                    .WithStyle(ButtonStyle.Danger)
                    .WithCustomId("close-chat"));
+
+                #endregion
+
+                #region User Chat Preference 
+
+                SelectMenuBuilder preferenceMenu = new SelectMenuBuilder()
+                    .WithPlaceholder("Preferências de Usuário (Não Funciona")
+                    .WithCustomId($"user-chat-pref-{StringUtil.GenerateExclusiveCode(length: 8)}");
+
+                preferenceMenu.AddOption(new SelectMenuOptionBuilder
+                {
+                    Label = $"Lembrar Histórico Passado",
+                    Value = StringUtil.GenerateExclusiveCode(length: 24),
+                    Emote = new Emoji("❌")
+                });
+
+                preferenceMenu.AddOption(new SelectMenuOptionBuilder
+                {
+                    Label = $"Mostrar Média de Valores",
+                    Value = StringUtil.GenerateExclusiveCode(length: 24),
+                    Emote = new Emoji("✅")
+                });
+
+                component.WithSelectMenu(preferenceMenu);
+
+                #endregion
 
                 await channel.SendMessageAsync(embed: infoEmbed.Build(), components: component.Build());
 
@@ -353,7 +389,7 @@ public class SelectedChatListener
 
                 await channel.AddPermissionOverwriteAsync(socketUser, permissions);
 
-                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
+                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
                 await Task.Delay(TimeSpan.FromSeconds(5));
                 await message.DeleteAsync();
             }

@@ -5,6 +5,7 @@
  */
 
 using Ares.Core.Objects.Chat.Image;
+using System.Text.Json.Serialization;
 
 namespace Ares.Core.Objects.Chat.Price;
 
@@ -20,29 +21,38 @@ public class ChatPriceUsage
     /// <summary> 
     /// Price per 1M token at completion generated.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("outputPriceToken")]
     public decimal OutputPriceToken { get; }
 
     /// <summary> 
     /// Price per 1M token at request process.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("inputPriceToken")]
     public decimal InputPriceToken { get; }
 
     /// <summary> 
     /// Price per image.
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("inputPricePerImage")]
     public decimal InputPricePerImage { get; set; }
 
     /// <summary> 
     /// Price in detail. (Optional)
     /// </summary>
+    [JsonInclude]
+    [JsonPropertyName("chatPriceUsageDetail")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<ChatPriceUsageDetail>? ChatPriceUsageDetail { get; set; }
 
-    public ChatPriceUsage(decimal outPriceToken = 0, decimal inPriceToken = 0, decimal inputPricePerImage = 0, List<ChatPriceUsageDetail>? details = null)
+    public ChatPriceUsage(decimal outputPriceToken = 0, decimal inputPriceToken = 0, decimal inputPricePerImage = 0, List<ChatPriceUsageDetail>? chatPriceUsageDetail = null)
     {
-        this.OutputPriceToken = outPriceToken;
-        this.InputPriceToken = inPriceToken;
+        this.OutputPriceToken = outputPriceToken;
+        this.InputPriceToken = inputPriceToken;
         this.InputPricePerImage = inputPricePerImage;
-        this.ChatPriceUsageDetail = details ?? new List<ChatPriceUsageDetail>();
+        this.ChatPriceUsageDetail = chatPriceUsageDetail ?? new List<ChatPriceUsageDetail>();
     }
 
     public decimal OutputPriceTokenPerToken()

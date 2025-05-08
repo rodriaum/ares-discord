@@ -1,0 +1,59 @@
+﻿/*
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+
+using Ares.Core.Models;
+using Ares.Core.Objects.Model;
+using Ares.Core.Util;
+
+namespace Ares.Core.Manager;
+
+/// <summary>
+/// User service to manage data and operations.
+/// </summary>
+public class ChatModelManager
+{
+    /// <summary>
+    /// Saves the specified fields of the user to the database.
+    /// </summary>
+    /// <param name="model">The user to save.</param>
+    /// <param name="fields">List of field names to be saved.</param>
+    /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
+    public static async Task<bool> SaveAsync(ChatModel model, params string[] fields)
+    {
+        if (fields == null || fields.Length == 0)
+        {
+            AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
+            return false;
+        }
+
+        if (AresCore.ChatModelRepository is not { } repository)
+        {
+            AresLogger.Log(nameof(SaveAsync), "Chat model data is null. Unable to save fields.", severity: Severity.Error);
+            return false;
+        }
+
+        try
+        {
+            foreach (string field in fields)
+            {
+                if (string.IsNullOrWhiteSpace(field))
+                {
+                    AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
+                    continue;
+                }
+
+                await repository.UpdateAsync(model, field);
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
+            return false;
+        }
+    }
+}

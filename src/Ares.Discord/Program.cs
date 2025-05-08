@@ -6,9 +6,7 @@
 
 using Ares.Core;
 using Ares.Core.Models;
-using Ares.Core.Models.Chat;
 using Ares.Core.Objects.Model;
-using Ares.Core.Provider;
 using Ares.Core.Util;
 using Ares.Discord.Commands;
 using Ares.Discord.Listener;
@@ -118,9 +116,6 @@ public class Program
 
         // Register commands
         await RegisterCommands();
-
-        // Register models
-        new ModelsProvider();
 
         // Configure bot status
         await ConfigureBotStatus();

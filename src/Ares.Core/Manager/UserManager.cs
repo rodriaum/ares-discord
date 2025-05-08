@@ -9,14 +9,15 @@ using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Model;
+using Ares.Core.Repository;
 using Ares.Core.Util;
 
-namespace Ares.Core.Service;
+namespace Ares.Core.Manager;
 
 /// <summary>
 /// User service to manage data and operations.
 /// </summary>
-public class UserService
+public class UserManager
 {
     /// <summary>
     /// Saves the specified fields of the user to the database.
@@ -125,7 +126,7 @@ public class UserService
             await SaveInfoAsync(user, guildId, infos, onlyCached: true);
         }
 
-        UserChatInfo? existingInfo = infos.LastOrDefault(it => it.Channel.Equals(info.Channel));
+        UserChatInfo? existingInfo = infos.LastOrDefault(it => it.ChannelId.Equals(info.ChannelId));
 
         // It seems strange, but it is done so as not to add the same information as the chat.
         if (existingInfo != null && user.Chat.Infos.ContainsKey(guildId))
@@ -173,7 +174,7 @@ public class UserService
 
         if (channelId != 0)
         {
-            infos = infos.FindAll(historic => historic.Channel == channelId);
+            infos = infos.FindAll(historic => historic.ChannelId == channelId);
         }
 
         List<UserChatHistoricModel> historics = infos.SelectMany(info => info.Historics).ToList();
@@ -222,7 +223,7 @@ public class UserService
         List<UserChatInfo>? userInfos = Infos(user)?.GetValueOrDefault(guildId);
         if (userInfos == null || !userInfos.Any()) return null;
 
-        return userInfos.Find(historic => historic.Channel == channelId);
+        return userInfos.Find(historic => historic.ChannelId == channelId);
     }
 
     /// <summary>
@@ -233,23 +234,32 @@ public class UserService
     /// <param name="channelId">The channel ID for the chat.</param>
     /// <param name="active">The new active status: true to activate, false to deactivate.</param>
     /// <returns>Returns true if status was successfully changed, false otherwise.</returns>
-    public static Task<bool> ToggleChatInfo(User guild, ulong guildId, ulong channelId, bool active)
+    public static async Task<bool> ToggleChatInfo(User guild, ulong guildId, ulong channelId, bool active)
     {
         List<UserChatInfo>? infos = ChatInfos(guild, guildId);
         if (infos == null)
         {
             AresLogger.Log(nameof(ToggleChatInfo), "Unable to change the status of a chat information.", severity: Severity.Error);
-            return Task.FromResult(false);
+            return false;
         }
 
-        UserChatInfo? info = infos.LastOrDefault(i => i.Channel == channelId);
+        UserChatInfo? info = infos.LastOrDefault(i => i.ChannelId == channelId);
 
         if (info != null)
         {
             info.Active = active;
+
+            if (!active)
+            {
+                ChatModelRepository? repository = AresCore.ChatModelRepository;
+                if (repository == null) return false;
+
+                // Delete cache if is not used more.
+                await repository.DeleteCache(info.ModelId);
+            }
         }
 
-        return SaveInfoAsync(guild, guildId, infos);
+        return await SaveInfoAsync(guild, guildId, infos);
     }
 
     /// <summary>
@@ -283,7 +293,7 @@ public class UserService
         if (infos == null || infos.Count == 0)
             return null;
 
-        return channelId != 0 ? infos.FindAll(it => it.Channel == channelId).LastOrDefault() : infos.LastOrDefault();
+        return channelId != 0 ? infos.FindAll(it => it.ChannelId == channelId).LastOrDefault() : infos.LastOrDefault();
     }
 
     /// <summary>
@@ -465,7 +475,7 @@ public class UserService
             return value[value.Count - 1].Active;
         }
 
-        UserChatInfo? chat = value.Find(x => x.Channel == channelId);
+        UserChatInfo? chat = value.Find(x => x.ChannelId == channelId);
         return chat?.Active ?? value[value.Count - 1].Active;
     }
 
@@ -500,15 +510,18 @@ public class UserService
     /// <param name="channel">Optional: Channel ID to filter by. If 0, returns the last model from any channel.</param>
     /// <returns>The last chat model or null if not found.</returns>
     /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
-    public static ChatModel? GetLastModelByUser(User user, ulong guildId, ulong channel = 0)
+    public static async Task<ChatModel?> GetLastModelByUser(User user, ulong guildId, ulong channel = 0)
     {
         UserChatInfo? info = LastChatInfo(user, guildId, channelId: channel);
         if (info == null) return null;
 
-        string model = info.Model;
+        string model = info.ModelId;
         if (string.IsNullOrWhiteSpace(model)) return null;
 
-        return ChatModel.GetByNearestModel(model);
+        ChatModelRepository? repository = AresCore.ChatModelRepository;
+        if (repository == null) return null;
+
+        return await repository.FetchByNearestModelAsync(model, saveInRedis: true);
     }
 
     #endregion

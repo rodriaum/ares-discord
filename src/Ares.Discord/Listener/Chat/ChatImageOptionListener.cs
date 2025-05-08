@@ -5,6 +5,7 @@
  */
 
 using Ares.Core;
+using Ares.Core.Manager;
 using Ares.Core.Models;
 using Ares.Core.Models.Chat.Sub;
 using Ares.Core.Models.Collection;
@@ -12,10 +13,11 @@ using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
-using Ares.Core.Service;
 using Ares.Core.Util;
+using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
+using System.Collections.Concurrent;
 
 namespace Ares.Discord.Listener.Chat;
 
@@ -109,25 +111,33 @@ public class ChatImageOptionListener
 
                 if (!channelId.HasValue)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnablePerformTask));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask));
                     return;
                 }
 
                 SocketUser socketUser = args.User;
 
-                UserChatInfo? chat = UserService.ChatInfoByChannel(user, guildId.Value, channelId.Value);
+                UserChatInfo? chat = UserManager.ChatInfoByChannel(user, guildId.Value, channelId.Value);
 
                 if (chat == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.CouldNotFindChat));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.CouldNotFindChat));
                     return;
                 }
 
-                ChatModel? model = ChatModel.GetByModel(chat.Model);
+                ChatModelRepository? repository = AresCore.ChatModelRepository;
+
+                if (repository == null)
+                {
+                    await message.ModifyAsync(it => it.Content = "Não foi possível encontrar os dados dos modelos.");
+                    return;
+                }
+
+                ChatModel? model = await repository.FetchAsync(chat.ModelId, saveInRedis: true);
 
                 if (model == null || model != null && model.Type != ModelType.Image)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.ChatIncompatibleOption));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ChatIncompatibleOption));
                     return;
                 }
 
@@ -165,14 +175,14 @@ public class ChatImageOptionListener
 
                 if (!success)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.UnablePerformTask) + $" (#{optionValue})");
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask) + $" (#{optionValue})");
                     return;
                 }
 
                 chat.ImageGenOptions = options;
-                await UserService.UpdateChatInfoAsync(user, guildId.Value, chat);
+                await UserManager.UpdateChatInfoAsync(user, guildId.Value, chat);
 
-                await message.ModifyAsync(it => it.Content = GuildService.GetTranslation(guild, LangKeys.Success));
+                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.Success));
             }
             catch (Exception e)
             {

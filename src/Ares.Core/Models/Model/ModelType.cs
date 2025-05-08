@@ -51,5 +51,9 @@ public enum ModelType
     /// <summary>
     /// Model used for audio transcription, including Whisper-based systems.
     /// </summary>
-    Transcription
+    Transcription,
+
+    /// <summary>
+    /// Model used for don't found any model.
+    None
 }

@@ -16,12 +16,12 @@ using System.Text.Json;
 namespace Ares.Core.Repository;
 
 /// <summary>
-/// Class responsible for managing guild data in MongoDB database.
+/// Class responsible for managing user data in MongoDB database.
 /// </summary>
 public class UserRepository
 {
     /// <summary>
-    /// Represents the "guilds" collection in MongoDB database.
+    /// Represents the "users" collection in MongoDB database.
     /// </summary>
     private readonly IMongoCollection<BsonDocument>? _collection;
 
@@ -31,9 +31,9 @@ public class UserRepository
     private readonly RedisService _redisDatabase;
 
     /// <summary>
-    /// Key prefix used for guild data in Redis.
+    /// Key prefix used for user data in Redis.
     /// </summary>
-    private readonly string GRedisKey = "user:";
+    private readonly string GRedisKey = $"{AresConstant.AppName.ToLower()}:user:";
 
     /*
      * Constructors and initialization methods.
@@ -54,7 +54,7 @@ public class UserRepository
     }
 
     /// <summary>
-    /// Creates indexes in the "guilds" collection to improve query performance.
+    /// Creates indexes in the "users" collection to improve query performance.
     /// </summary>
     public async void CreateIndexesAsync()
     {
@@ -63,7 +63,7 @@ public class UserRepository
         // Check if the collection was initialized before trying to create indexes.
         if (_collection == null)
         {
-            await AresLogger.LogAsync("CollectionNull", "Collection returned null when creating guild data indexes.", severity: Severity.Error);
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when creating user data indexes.", severity: Severity.Error);
             return;
         }
 
@@ -95,7 +95,7 @@ public class UserRepository
     {
         if (_collection == null)
         {
-            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save guild data.", severity: Severity.Error);
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save user data.", severity: Severity.Error);
             return null;
         }
 
@@ -186,6 +186,7 @@ public class UserRepository
             // Update Redis
             await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
 
+            await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\".");
             return true;
         }
         catch (Exception e)
@@ -244,10 +245,10 @@ public class UserRepository
         {
             try
             {
-                User? guild = await JsonUtil.BsonDocToObjectAsync<User>(document);
+                User? user = await JsonUtil.BsonDocToObjectAsync<User>(document);
 
-                if (guild != null)
-                    users.Add(guild);
+                if (user != null)
+                    users.Add(user);
             }
             catch (JsonException ex)
             {

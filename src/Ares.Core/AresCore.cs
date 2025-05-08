@@ -40,7 +40,15 @@ public class AresCore
     /// </summary>
     public static GuildRepository? GuildRepository { get; private set; }
 
+    /// <summary>
+    /// Gets or sets the user collection for database operations.
+    /// </summary>
     public static UserRepository? UserRepository { get; private set; }
+
+    /// <summary>
+    /// Gets or sets the model collection for database operations.
+    /// </summary>
+    public static ChatModelRepository? ChatModelRepository { get; private set; }
 
     /// <summary>
     /// Language manager instance for handling localization.
@@ -120,8 +128,9 @@ public class AresCore
          * Database collections
          */
 
-        GuildRepository = new GuildRepository(mongoDatabase, redisDatabase);
-        UserRepository = new UserRepository(mongoDatabase, redisDatabase);
+        GuildRepository = new(mongoDatabase, redisDatabase);
+        UserRepository = new(mongoDatabase, redisDatabase);
+        ChatModelRepository = new(mongoDatabase, redisDatabase);
 
         return mongoDatabase != null && redisDatabase != null;
     }
