@@ -7,7 +7,7 @@
 using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Models;
-using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Chat;
 using Ares.Core.Objects.Chat.Image;
@@ -125,7 +125,7 @@ public class ReceivedContentListener
                 }
 
                 SocketGuildUser guildUser = socketGuild.GetUser(iuser.Id);
-                List<UserChatHistoricModel>? historics = UserManager.ChatHistoricsByChannel(user, guild.Id, channel.Id);
+                List<UserChatHistoric>? historics = UserManager.ChatHistoricsByChannel(user, guild.Id, channel.Id);
 
                 // Process message based on template type
                 switch (model.Type)
@@ -186,17 +186,17 @@ public class ReceivedContentListener
         RestUserMessage botMessage,
         EmbedBuilder embed,
         UserRepository userRepository,
-        List<UserChatHistoricModel>? historics)
+        List<UserChatHistoric>? historics)
     {
         DateTime date = DateTime.Now;
 
         EmbedBuilder? priceEmbed = null;
 
-        string menuCustomId = $"chat-snippet-{StringUtil.GenerateExclusiveCode(length: 11)}";
+        string menuId = $"chat-snippet-{StringUtil.GenerateExclusiveCode()}";
 
         SelectMenuBuilder menu = new SelectMenuBuilder()
             .WithPlaceholder("Lista de Trechos")
-            .WithCustomId(menuCustomId);
+            .WithCustomId(menuId);
 
         var (result, success) = await NeuralService.GenerateConversationAsync(guild, user, model, channelId, prompt);
 
@@ -213,18 +213,20 @@ public class ReceivedContentListener
                 string code = match.Groups[1].Value.Trim();
                 if (string.IsNullOrWhiteSpace(code)) continue;
 
-                snippets.Add(new UserChatSnippet(channelId, botMessage.Id, index, code, id: menuCustomId));
+                UserChatSnippet snippet = new UserChatSnippet(channelId, botMessage.Id, index, code);
+
+                snippets.Add(snippet);
 
                 menu.AddOption(new SelectMenuOptionBuilder
                 {
                     Label = $"Trecho n.º {index + 1}",
-                    Value = $"option-snippet-{StringUtil.GenerateExclusiveCode()}",
+                    Value = snippet.Id,
                 });
 
                 index++;
             }
 
-            await UserManager.UpdateSnippetsAsync(user, guild.Id, snippets);
+            await UserManager.SaveSnippetsAsync(user, guild.Id, snippets);
 
             // Set color based on model category
             Color color = AresUtil.GetColorByModelCategory(model.Category);
@@ -270,7 +272,7 @@ public class ReceivedContentListener
         string prompt,
         RestUserMessage botMessage,
         EmbedBuilder embed,
-        List<UserChatHistoricModel>? historics)
+        List<UserChatHistoric>? historics)
     {
         ImageGenOptions options = info.ImageGenOptions ?? new ImageGenOptions();
 
@@ -310,7 +312,7 @@ public class ReceivedContentListener
         string prompt,
         RestUserMessage botMessage,
         EmbedBuilder embed,
-        List<UserChatHistoricModel>? historics)
+        List<UserChatHistoric>? historics)
     {
         (string responseBinary, bool isAudio) = await NeuralService.GenerateTTSAsync(guild, user, model, channelId, prompt);
 
@@ -374,12 +376,12 @@ public class ReceivedContentListener
         await UpdateBotMessage(botMessage, embed, /*priceEmbed,*/ attachments: attachments);
     }
 
-    private EmbedBuilder? CreatePriceEmbedForChat(Guild guild, ChatModel model, List<UserChatHistoricModel>? historics)
+    private EmbedBuilder? CreatePriceEmbedForChat(Guild guild, ChatModel model, List<UserChatHistoric>? historics)
     {
         if (historics == null || !historics.Any())
             return null;
 
-        UserChatHistoricModel? historic = historics.LastOrDefault();
+        UserChatHistoric? historic = historics.LastOrDefault();
         if (historic == null)
             return null;
 
@@ -411,12 +413,12 @@ public class ReceivedContentListener
         return priceEmbed;
     }
 
-    private EmbedBuilder? CreatePriceEmbedForImage(Guild guild, ChatModel model, List<UserChatHistoricModel>? historics, ImageGenOptions options)
+    private EmbedBuilder? CreatePriceEmbedForImage(Guild guild, ChatModel model, List<UserChatHistoric>? historics, ImageGenOptions options)
     {
         if (historics == null || !historics.Any())
             return null;
 
-        UserChatHistoricModel? historic = historics.LastOrDefault();
+        UserChatHistoric? historic = historics.LastOrDefault();
         if (historic == null)
             return null;
 

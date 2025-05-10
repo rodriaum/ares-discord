@@ -7,17 +7,15 @@
 using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Models;
-using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using Ares.Core.Util;
-using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using System.Collections.Concurrent;
 
 namespace Ares.Discord.Listener.Chat;
 

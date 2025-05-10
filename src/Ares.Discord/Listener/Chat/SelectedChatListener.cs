@@ -7,7 +7,7 @@
 using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Models;
-using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Preference;
 using Ares.Core.Objects.Chat.Image;
@@ -226,7 +226,7 @@ public class SelectedChatListener
 
                 string helloMessage = string.Format(GuildManager.GetTranslation(guild, LangKeys.HelloMessage), GuildManager.GetTranslation(guild, greetingKey), socketUser.GlobalName);
 
-                UserChatHistoricModel historic = new UserChatHistoricModel(system: helloMessage);
+                UserChatHistoric historic = new UserChatHistoric(system: helloMessage);
                 info.Historics.Add(historic);
 
                 if (!await UserManager.CreateChatData(user, guildId, info))

@@ -1,6 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using Ares.Core.Util;
+using System.Text.Json.Serialization;
 
-namespace Ares.Core.Models.Chat.Sub;
+namespace Ares.Core.Models.Chat.Historic;
 
 public class UserChatSnippet
 {
@@ -26,7 +27,7 @@ public class UserChatSnippet
 
     public UserChatSnippet(ulong channelId, ulong messageId, uint index, string text, string? id = null)
     {
-        Id = id ?? Guid.NewGuid().ToString();
+        Id = id ?? StringUtil.GenerateExclusiveCode(length: 25);
         ChannelId = channelId;
         MessageId = messageId;
         Index = index;

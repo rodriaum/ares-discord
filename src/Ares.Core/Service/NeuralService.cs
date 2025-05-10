@@ -6,7 +6,7 @@
 
 using Ares.Core.Manager;
 using Ares.Core.Models;
-using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Model;
 using Ares.Core.Models.Token;
@@ -251,7 +251,7 @@ public class NeuralService
         string prompt)
     {
         // Get chat history and info
-        List<UserChatHistoricModel>? historics = UserManager.ChatHistorics(user, guild.Id, channelId: channel);
+        List<UserChatHistoric>? historics = UserManager.ChatHistorics(user, guild.Id, channelId: channel);
 
         UserChatInfo? info = UserManager.ChatInfoByChannel(user, guild.Id, channel);
 
@@ -262,7 +262,7 @@ public class NeuralService
         }
 
         // Prepare messages for the API request
-        List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? UserChatHistoricModel.ToLocal(historics) : new();
+        List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? UserChatHistoric.ToLocal(historics) : new();
         messages.Add(new(ChatRole.User, prompt));
 
         // Configure the API client
@@ -308,7 +308,7 @@ public class NeuralService
         }
 
         // Get chat history and info
-        List<UserChatHistoricModel>? historics = UserManager.ChatHistorics(user, guild.Id, channelId: channel);
+        List<UserChatHistoric>? historics = UserManager.ChatHistorics(user, guild.Id, channelId: channel);
         UserChatInfo? info = UserManager.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
@@ -318,7 +318,7 @@ public class NeuralService
         }
 
         // Prepare messages for the API request
-        List<OpenAI.Chat.ChatMessage> messages = historics != null ? UserChatHistoricModel.ToRemote(historics) : new();
+        List<OpenAI.Chat.ChatMessage> messages = historics != null ? UserChatHistoric.ToRemote(historics) : new();
         messages.Add(new UserChatMessage(prompt));
 
         // Configure the API client
@@ -360,7 +360,7 @@ public class NeuralService
         }
 
         // Save to history
-        UserChatHistoricModel historic = UserChatHistoricModel.From(prompt, responseOpenAi: completion)[0];
+        UserChatHistoric historic = UserChatHistoric.From(prompt, responseOpenAi: completion)[0];
 
         info.Historics.Add(historic);
 
@@ -407,7 +407,7 @@ public class NeuralService
         }
 
         // Save to history
-        UserChatHistoricModel historic = UserChatHistoricModel.From(prompt, ollamaResponse: response)[0];
+        UserChatHistoric historic = UserChatHistoric.From(prompt, ollamaResponse: response)[0];
 
         info.Historics.Add(historic);
 
@@ -546,19 +546,19 @@ public class NeuralService
             return false;
         }
 
-        UserChatHistoricModel historic;
+        UserChatHistoric historic;
 
         if (imageOpenAi != null)
         {
-            historic = UserChatHistoricModel.From(prompt, imageUrl: imageUrl, imageOpenAi: imageOpenAi)[0];
+            historic = UserChatHistoric.From(prompt, imageUrl: imageUrl, imageOpenAi: imageOpenAi)[0];
         }
         else if (responseOpenAi != null)
         {
-            historic = UserChatHistoricModel.From(prompt, responseOpenAi: responseOpenAi)[0];
+            historic = UserChatHistoric.From(prompt, responseOpenAi: responseOpenAi)[0];
         }
         else
         {
-            historic = new UserChatHistoricModel(prompt: prompt, response: response ?? string.Empty, usage: usage);
+            historic = new UserChatHistoric(prompt: prompt, response: response ?? string.Empty, usage: usage);
         }
 
         info.Historics.Add(historic);

@@ -7,7 +7,7 @@
 using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Models;
-using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Language;
 using Ares.Core.Repository;

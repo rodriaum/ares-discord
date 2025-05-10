@@ -9,7 +9,7 @@ using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Models.Chat.Sub;
+namespace Ares.Core.Models.Chat.Historic;
 
 public class UserChatInfo
 {
@@ -36,9 +36,9 @@ public class UserChatInfo
 
     [JsonInclude]
     [JsonPropertyName("historics")]
-    public List<UserChatHistoricModel> Historics { get; set; }
+    public List<UserChatHistoric> Historics { get; set; }
 
-    public UserChatInfo(ulong channelId, string modelId, bool active = false, ImageGenOptions? imageGenOptions = null, List<UserChatHistoricModel>? historics = null)
+    public UserChatInfo(ulong channelId, string modelId, bool active = false, ImageGenOptions? imageGenOptions = null, List<UserChatHistoric>? historics = null)
     {
         Id = Guid.NewGuid().ToString();
         ChannelId = channelId;
@@ -46,7 +46,7 @@ public class UserChatInfo
         Active = active;
         ImageGenOptions = imageGenOptions;
 
-        Historics = historics ?? new List<UserChatHistoricModel>();
+        Historics = historics ?? new List<UserChatHistoric>();
 
         InitializeImageGenOptions();
     }

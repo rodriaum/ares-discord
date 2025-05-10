@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Chat.Historic;
 using System.Text.Json.Serialization;
 
 namespace Ares.Core.Models.Chat;

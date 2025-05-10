@@ -7,7 +7,7 @@
 using Ares.Core;
 using Ares.Core.Manager;
 using Ares.Core.Models;
-using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
 using Ares.Core.Repository;
 using Ares.Core.Util;
@@ -70,7 +70,9 @@ public class ChatCodeSnippetListener
 
                 #endregion
 
-                UserChatSnippet? snippet = UserManager.GetSnippet(user, guildId, args.Data.CustomId);
+                string id = args.Data.Values.FirstOrDefault("");
+
+                UserChatSnippet? snippet = UserManager.GetSnippetById(user, guildId, id);
 
                 if (snippet == null)
                 {

@@ -6,7 +6,7 @@
 
 using Ares.Core.Models;
 using Ares.Core.Models.Chat;
-using Ares.Core.Models.Chat.Sub;
+using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
@@ -153,7 +153,7 @@ public class UserManager
     /// <summary>
     /// Retrieves the conversation history of the guild by user.
     /// </summary>
-    public static List<UserChatHistoricModel>? AllChatHistorics(User user, ulong guildId)
+    public static List<UserChatHistoric>? AllChatHistorics(User user, ulong guildId)
     {
         List<UserChatInfo>? infos = Infos(user)?.GetValueOrDefault(guildId);
         if (infos == null) return null;
@@ -167,7 +167,7 @@ public class UserManager
     /// <param name="guildId">The user to get chat history for.</param>
     /// <param name="channelId">Optional: Channel ID to filter history by. If 0, returns all channels.</param>
     /// <returns>List of chat history records or null if not found.</returns>
-    public static List<UserChatHistoricModel>? ChatHistorics(User user, ulong guildId, ulong channelId = 0)
+    public static List<UserChatHistoric>? ChatHistorics(User user, ulong guildId, ulong channelId = 0)
     {
         List<UserChatInfo>? infos = Infos(user)?.GetValueOrDefault(guildId);
         if (infos == null) return null;
@@ -177,7 +177,7 @@ public class UserManager
             infos = infos.FindAll(historic => historic.ChannelId == channelId);
         }
 
-        List<UserChatHistoricModel> historics = infos.SelectMany(info => info.Historics).ToList();
+        List<UserChatHistoric> historics = infos.SelectMany(info => info.Historics).ToList();
 
         return historics;
     }
@@ -203,9 +203,9 @@ public class UserManager
     /// <param name="guildId">The user to get chat history for.</param>
     /// <param name="channelId">The channel ID to filter history by.</param>
     /// <returns>List of chat history records or null if not found.</returns>
-    public static List<UserChatHistoricModel>? ChatHistoricsByChannel(User user, ulong guildId, ulong channelId)
+    public static List<UserChatHistoric>? ChatHistoricsByChannel(User user, ulong guildId, ulong channelId)
     {
-        List<UserChatHistoricModel>? historics = ChatHistorics(user, guildId, channelId: channelId);
+        List<UserChatHistoric>? historics = ChatHistorics(user, guildId, channelId: channelId);
         if (historics == null) return null;
 
         return historics;
@@ -269,7 +269,7 @@ public class UserManager
     /// <param name="guildId">The user to get the last chat history for.</param>
     /// <param name="channelId">Optional: Channel ID to filter by. If 0, returns the last record from any channel.</param>
     /// <returns>The last chat history record or null if not found.</returns>
-    public static UserChatHistoricModel? LastChatHistoric(User guild, ulong guildId, ulong channelId = 0)
+    public static UserChatHistoric? LastChatHistoric(User guild, ulong guildId, ulong channelId = 0)
     {
         if (channelId != 0)
         {
@@ -332,7 +332,7 @@ public class UserManager
 
             if (info.Historics == null)
             {
-                info.Historics = new List<UserChatHistoricModel>();
+                info.Historics = new List<UserChatHistoric>();
             }
 
             infos.Add(info);
@@ -362,7 +362,7 @@ public class UserManager
     /// <param name="historics">The updated list of chat history records.</param>
     /// <returns>Returns true if history was successfully updated, false otherwise.</returns>
     /// <exception cref="ArgumentNullException">Thrown when user or historics is null.</exception>
-    public static async Task<bool> UpdateChatHistoricsAsync(User user, ulong guildId, ulong channelId, List<UserChatHistoricModel> historics)
+    public static async Task<bool> UpdateChatHistoricsAsync(User user, ulong guildId, ulong channelId, List<UserChatHistoric> historics)
     {
         if (historics == null)
         {
@@ -395,7 +395,7 @@ public class UserManager
     /// <param name="channelId">The channel ID for the chat.</param>
     /// <param name="historic">The chat history record to add.</param>
     /// <returns>Returns true if history was successfully added, false otherwise.</returns>
-    public static async Task<bool> UpdateChatHistoricsAsync(User user, ulong guildId, ulong channelId, UserChatHistoricModel historic)
+    public static async Task<bool> UpdateChatHistoricsAsync(User user, ulong guildId, ulong channelId, UserChatHistoric historic)
     {
         UserChatInfo? info = ChatInfoByChannel(user, guildId, channelId);
 
@@ -405,7 +405,7 @@ public class UserManager
             return false;
         }
 
-        List<UserChatHistoricModel> historics = info.Historics;
+        List<UserChatHistoric> historics = info.Historics;
 
         if (historics == null)
         {
@@ -426,7 +426,7 @@ public class UserManager
     /// <param name="channelId">The channel ID for the conversation.</param>
     /// <param name="historic">The specific history record to remove.</param>
     /// <returns>Returns true if the record was successfully removed, false otherwise.</returns>
-    public static async Task<bool> RemoveConversationAsync(User user, ulong guildId, ulong channelId, UserChatHistoricModel historic)
+    public static async Task<bool> RemoveConversationAsync(User user, ulong guildId, ulong channelId, UserChatHistoric historic)
     {
         UserChatInfo? info = ChatInfoByChannel(user, guildId, channelId);
 
@@ -436,7 +436,7 @@ public class UserManager
             return false;
         }
 
-        List<UserChatHistoricModel> historics = info.Historics;
+        List<UserChatHistoric> historics = info.Historics;
 
         if (historics == null)
         {
@@ -543,6 +543,24 @@ public class UserManager
     }
 
     /// <summary>
+    /// Saves the conversation historics for a specific user and guild.
+    /// </summary>
+    /// <param name="user">The user to save the snippets for.</param>
+    /// <param name="guildId">The guild ID to save the snippets in.</param>
+    /// <param name="snippets">The list of snippets to save.</param>
+    /// <param name="onlyCached">Optional: If true, data is stored locally instead of in the database.</param>
+    /// <returns>Returns true if the snippets were successfully saved, false otherwise.</returns>
+    public static async Task<bool> SaveSnippetsAsync(User user, ulong guildId, List<UserChatSnippet> snippets, bool onlyCached = false)
+    {
+        List<UserChatSnippet>? saveSnippets = GetSnippetsByGuild(user, guildId);
+        if (saveSnippets == null) return false;
+
+        saveSnippets.AddRange(snippets);
+
+        return await UpdateSnippetsAsync(user, guildId, saveSnippets, onlyCached: onlyCached);
+    }
+
+    /// <summary>
     /// Saves a new snippet for a specific user and guild.
     /// </summary>
     /// <param name="user">The user to save the snippet for.</param>
@@ -562,7 +580,7 @@ public class UserManager
 
         snippets.Add(snippet);
 
-        return await UpdateSnippetsAsync(user, guildId, snippets, onlyCached);
+        return await SaveSnippetsAsync(user, guildId, snippets, onlyCached);
     }
 
     /// <summary>
@@ -578,7 +596,7 @@ public class UserManager
         if (snippets == null) return false;
 
         snippets.RemoveAll(it => it.ChannelId == channelId);
-        return await UpdateSnippetsAsync(user, guildId, snippets);
+        return await SaveSnippetsAsync(user, guildId, snippets);
     }
 
     /// <summary>
@@ -614,12 +632,29 @@ public class UserManager
     /// <param name="guildId">The guild ID to get the snippet from.</param>
     /// <param name="id">The ID of the snippet to retrieve.</param>
     /// <returns>The snippet or null if not found.</returns>
-    public static UserChatSnippet? GetSnippet(User user, ulong guildId, string id)
+    public static UserChatSnippet? GetSnippetById(User user, ulong guildId, string id)
     {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+
         List<UserChatSnippet>? snippets = GetSnippetsByGuild(user, guildId);
         if (snippets == null) return null;
 
         return snippets.Find(it => it.Id == id);
+    }
+
+    /// <summary>
+    /// Get a specific snippet by its index for a specific user and guild.
+    /// </summary>
+    /// <param name="user">The user to get the snippet for.</param>
+    /// <param name="guildId">The guild ID to get the snippet from.</param>
+    /// <param name="index">The index of the snippet to retrieve.</param>
+    /// <returns>The snippet or null if not found.</returns>
+    public static UserChatSnippet? GetSnippetByIndex(User user, ulong guildId, ulong channelId, uint index)
+    {
+        List<UserChatSnippet>? snippets = GetSnippetsByChannel(user, guildId, channelId);
+        if (snippets == null) return null;
+
+        return snippets.Find(it => it.Index == index);
     }
 
     #endregion
