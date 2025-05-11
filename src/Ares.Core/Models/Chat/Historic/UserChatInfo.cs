@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Objects;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;

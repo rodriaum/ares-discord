@@ -5,12 +5,13 @@
  */
 
 using Ares.Core;
-using Ares.Core.Manager;
-using Ares.Core.Models;
+using Ares.Core.Constants;
+using Ares.Core.Manager.Database;
 using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
+using Ares.Core.Objects;
 using Ares.Core.Objects.Chat.Image;
-using Ares.Core.Objects.Language;
+using Ares.Core.Objects.Image;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using Ares.Core.Util;
@@ -109,7 +110,7 @@ public class ChatImageOptionListener
 
                 if (!channelId.HasValue)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.UnablePerformTask));
                     return;
                 }
 
@@ -119,7 +120,7 @@ public class ChatImageOptionListener
 
                 if (chat == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.CouldNotFindChat));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindChat));
                     return;
                 }
 
@@ -135,7 +136,7 @@ public class ChatImageOptionListener
 
                 if (model == null || model != null && model.Type != ModelType.Image)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ChatIncompatibleOption));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.ChatIncompatibleOption));
                     return;
                 }
 
@@ -173,14 +174,14 @@ public class ChatImageOptionListener
 
                 if (!success)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask) + $" (#{optionValue})");
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.UnablePerformTask) + $" (#{optionValue})");
                     return;
                 }
 
                 chat.ImageGenOptions = options;
                 await UserManager.UpdateChatInfoAsync(user, guildId.Value, chat);
 
-                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.Success));
+                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.Success));
             }
             catch (Exception e)
             {

@@ -4,7 +4,6 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models.Model;
 using Ares.Core.Objects.Chat.Price;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;

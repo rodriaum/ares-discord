@@ -4,9 +4,7 @@
  * Proprietary and confidential
  */
 
-using MongoDB.Bson.Serialization.Conventions;
-
-namespace Ares.Core;
+namespace Ares.Core.Constants;
 
 public class AresConstant
 {

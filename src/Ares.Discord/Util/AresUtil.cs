@@ -1,4 +1,5 @@
-﻿using Ares.Core.Objects.Model;
+﻿using Ares.Core.Objects;
+using Ares.Core.Objects.Model;
 using Discord;
 
 namespace Ares.Discord.Util;

@@ -4,10 +4,13 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Core.Objects.Chat.Image;
+namespace Ares.Core.Objects.Image;
 
-public enum ImageStyle
+public enum ImageSize
 {
-    Natural,
-    Vivid
+    W256xH256,
+    W512xH512,
+    W1024xH1024,
+    W1024xH1792,
+    W1792xH1024
 }

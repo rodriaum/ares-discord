@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Objects.Chat.Image;
+using Ares.Core.Objects.Image;
 using System.Text.Json.Serialization;
 
 namespace Ares.Core.Objects.Chat.Price;

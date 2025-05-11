@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models;
+using Ares.Core.Objects.Image;
 using Ares.Core.Util;
 using OpenAI.Images;
 using System.Text.Json.Serialization;

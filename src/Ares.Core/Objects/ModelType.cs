@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Core.Objects.Model;
+namespace Ares.Core.Objects;
 
 public enum ModelType
 {

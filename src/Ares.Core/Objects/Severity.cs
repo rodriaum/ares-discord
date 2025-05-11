@@ -1,4 +1,4 @@
-﻿namespace Ares.Core.Models;
+﻿namespace Ares.Core.Objects;
 
 /// <summary>
 /// Specifies the severity.

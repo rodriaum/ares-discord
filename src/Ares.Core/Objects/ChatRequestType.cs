@@ -1,4 +1,4 @@
-﻿namespace Ares.Core.Models.Model;
+﻿namespace Ares.Core.Objects;
 
 public enum ChatRequestType
 {

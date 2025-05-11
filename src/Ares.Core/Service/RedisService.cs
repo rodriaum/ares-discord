@@ -5,6 +5,7 @@
  */
 
 using Ares.Core.Models;
+using Ares.Core.Objects;
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
 using StackExchange.Redis;

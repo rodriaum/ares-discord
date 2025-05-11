@@ -5,11 +5,11 @@
  */
 
 using Ares.Core;
-using Ares.Core.Manager;
+using Ares.Core.Constants;
+using Ares.Core.Manager.Database;
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
-using Ares.Core.Objects.Language;
 using Ares.Core.Repository;
 using Discord;
 using Discord.Rest;
@@ -110,7 +110,7 @@ public class ConfigCommand
                 {
                     await message.ModifyAsync(msg =>
                         msg.Embed = embed
-                            .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOptions))
+                            .WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.InvalidOptions))
                             .WithColor(Color.Red)
                             .Build()
                     );
@@ -124,7 +124,7 @@ public class ConfigCommand
                 {
                     await message.ModifyAsync(msg =>
                         msg.Embed = embed
-                            .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOptionValue))
+                            .WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.InvalidOptionValue))
                             .WithColor(Color.Red)
                             .Build()
                     );
@@ -243,7 +243,7 @@ public class ConfigCommand
                     default:
                         await message.ModifyAsync(msg =>
                             msg.Embed = embed
-                                .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOption))
+                                .WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.InvalidOption))
                                 .WithColor(Color.Red)
                                 .Build()
                         );
@@ -251,7 +251,7 @@ public class ConfigCommand
                 }
 
                 sb.AppendLine(GuildManager
-                    .GetTranslation(guild, LangKeys.ConfigUpdateSuccess)
+                    .GetTranslation(guild, LangKeysConstant.ConfigUpdateSuccess)
                     .Replace("{0}", optionName ?? "N/A")
                     .Replace("{1}", (!string.IsNullOrWhiteSpace(optionValueString) ? optionValueString : "N/A")));
             }
@@ -282,7 +282,7 @@ public class ConfigCommand
             {
                 await message.ModifyAsync(msg =>
                     msg.Embed = embed
-                        .WithDescription(GuildManager.GetTranslation(guild, LangKeys.ConfigUpdateUnSuccess))
+                        .WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.ConfigUpdateUnSuccess))
                         .WithColor(Color.Gold)
                         .Build()
                     );

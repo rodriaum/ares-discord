@@ -1,4 +1,5 @@
-﻿using Ares.Core.Util;
+﻿using Ares.Core.Models.Collection;
+using Ares.Core.Util;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -54,6 +55,8 @@ public class SystemMonitor
 
         UpdateHistory(_cpuUsageHistory, cpuUsage);
         UpdateHistory(_ramUsageHistory, usedRam);
+
+        SystemStatistic statistic = new SystemStatistic();
 
         string statsMessage = $"Statistics\n * CPU (Last 30m, 15m, 5m): {GetAverage(_cpuUsageHistory, 6):F2}%, {GetAverage(_cpuUsageHistory, 3):F2}%, {GetAverage(_cpuUsageHistory, 1):F2}%\n" +
                               $" * RAM (Last 30m, 15m, 5m): {FormatterUtil.FormatRam(GetAverage(_ramUsageHistory, 6))}, {FormatterUtil.FormatRam(GetAverage(_ramUsageHistory, 3))}, {FormatterUtil.FormatRam(GetAverage(_ramUsageHistory, 1))}\n";

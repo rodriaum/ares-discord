@@ -4,7 +4,8 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models;
+using Ares.Core.Constants;
+using Ares.Core.Objects;
 using System.Net.Http.Headers;
 using System.Text.Json;
 

@@ -4,9 +4,9 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Core.Objects.Language;
+namespace Ares.Core.Constants;
 
-public class LangKeys
+public class LangKeysConstant
 {
     public static readonly string AI = "ai";
     public static readonly string TakeUpMinutes = "take-up-minutes";

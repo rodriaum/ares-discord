@@ -4,10 +4,10 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Core.Objects.Chat.Image;
+namespace Ares.Core.Objects.Image;
 
-public enum ImageQuality
+public enum ImageStyle
 {
-    Standard,
-    High
+    Natural,
+    Vivid
 }

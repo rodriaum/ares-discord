@@ -4,15 +4,15 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models;
 using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
+using Ares.Core.Objects;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using Ares.Core.Util;
 
-namespace Ares.Core.Manager;
+namespace Ares.Core.Manager.Database;
 
 /// <summary>
 /// User service to manage data and operations.
@@ -75,7 +75,7 @@ public class UserManager
             user.Chat = chat;
         }
 
-        return await SaveAsync(user, "chat");
+        return await  SaveAsync(user, "chat");
     }
 
     /// <summary>
