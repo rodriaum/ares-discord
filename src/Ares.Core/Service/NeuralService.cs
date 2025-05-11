@@ -5,8 +5,8 @@
  */
 
 using Ares.Core.Constants;
-using Ares.Core.Manager;
 using Ares.Core.Manager.Database;
+using Ares.Core.Manager.Lang;
 using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Token;

@@ -5,7 +5,7 @@ using Ares.Core.Util;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Ares.Core.Manager
+namespace Ares.Core.Manager.Lang
 {
     /// <summary>
     /// Inspired by a legacy, complex Minecraft network design.

@@ -5,7 +5,7 @@
  */
 
 using Ares.Core.Constants;
-using Ares.Core.Manager;
+using Ares.Core.Manager.Lang;
 using Ares.Core.Models;
 using Ares.Core.Monitor;
 using Ares.Core.Repository;
