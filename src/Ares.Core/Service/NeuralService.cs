@@ -57,14 +57,14 @@ public class NeuralService
 
         if (model.Type != ModelType.Image)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.ModelUnavailable), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.ModelUnavailable), false);
         }
 
         GToken? tokenData = guild.Token;
 
         if (tokenData == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindInfoToken), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfoToken), false);
         }
 
         string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
@@ -72,7 +72,7 @@ public class NeuralService
 
         if (string.IsNullOrEmpty(modelToken))
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindToken), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
         }
 
         try
@@ -92,7 +92,7 @@ public class NeuralService
 
             if (image == null)
             {
-                return (GuildManager.GetTranslation(guild, LangKeysConstant.InvalidRequest) + $"({nameof(GenerateConversationAsync)})", false);
+                return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $"({nameof(GenerateConversationAsync)})", false);
             }
 
             // Use original URL if no Imgur token is available
@@ -103,7 +103,7 @@ public class NeuralService
             // Save the image generation to chat history
             if (!await SaveToHistoryAsync(guild, user, channel, prompt, imageUrl: imageUrl, imageOpenAi: image))
             {
-                return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})", false);
+                return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})", false);
             }
 
             return (imageUrl, true);
@@ -146,21 +146,21 @@ public class NeuralService
 
         if (model.Type != ModelType.TTS)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.ModelUnavailable), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.ModelUnavailable), false);
         }
 
         GToken? tokenData = guild.Token;
 
         if (tokenData == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindToken), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
         }
 
         string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
 
         if (string.IsNullOrWhiteSpace(modelToken))
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindToken), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
         }
 
         OpenAIClientOptions clientOptions = new OpenAIClientOptions { Endpoint = model.Category.GetEndpoint() };
@@ -218,7 +218,7 @@ public class NeuralService
 
         if (model.Type != ModelType.Chat)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.ModelUnavailable), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.ModelUnavailable), false);
         }
 
         try
@@ -259,7 +259,7 @@ public class NeuralService
         if (info == null)
         {
             AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Chat information could not be accessed.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindInfo), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfo), false);
         }
 
         // Prepare messages for the API request
@@ -272,7 +272,7 @@ public class NeuralService
         if (ollama == null)
         {
             AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Ollama client is null.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.UnablePerformTask) + " (ollama_null)", false);
+            return (GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask) + " (ollama_null)", false);
         }
 
         ChatOptions chatOptions = new ChatOptions
@@ -298,14 +298,14 @@ public class NeuralService
 
         if (tokenData == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindToken), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
         }
 
         string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
 
         if (string.IsNullOrWhiteSpace(modelToken))
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindToken), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
         }
 
         // Get chat history and info
@@ -315,7 +315,7 @@ public class NeuralService
         if (info == null)
         {
             AresLogger.Log("GenerateConversationAsync", "Chat information could not be accessed.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindInfo), false);
+            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfo), false);
         }
 
         // Prepare messages for the API request
@@ -357,7 +357,7 @@ public class NeuralService
         if (completion == null)
         {
             AresLogger.Log("OpenAI", "Unable to get response.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
+            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
         }
 
         // Save to history
@@ -371,16 +371,16 @@ public class NeuralService
 
         if (content == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
+            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
         }
 
         string result = completion.FinishReason switch
         {
             OpenAI.Chat.ChatFinishReason.Stop => content.Text,
-            OpenAI.Chat.ChatFinishReason.Length => GuildManager.GetTranslation(guild, LangKeysConstant.RateLimitExceeded),
-            OpenAI.Chat.ChatFinishReason.ContentFilter => GuildManager.GetTranslation(guild, LangKeysConstant.ContentPolityViolation),
-            OpenAI.Chat.ChatFinishReason.FunctionCall => GuildManager.GetTranslation(guild, LangKeysConstant.FunctionCall),
-            _ => GuildManager.GetTranslation(guild, LangKeysConstant.UnableGenerateOrder).Replace("{0}", completion.FinishReason.ToString() ?? "-/-")
+            OpenAI.Chat.ChatFinishReason.Length => GuildManager.GetTranslation(guild, LangKeys.RateLimitExceeded),
+            OpenAI.Chat.ChatFinishReason.ContentFilter => GuildManager.GetTranslation(guild, LangKeys.ContentPolityViolation),
+            OpenAI.Chat.ChatFinishReason.FunctionCall => GuildManager.GetTranslation(guild, LangKeys.FunctionCall),
+            _ => GuildManager.GetTranslation(guild, LangKeys.UnableGenerateOrder).Replace("{0}", completion.FinishReason.ToString() ?? "-/-")
         };
 
         return (result, true);
@@ -404,7 +404,7 @@ public class NeuralService
         if (response == null)
         {
             AresLogger.Log("OpenAI", "Unable to get response.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
+            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
         // Save to history
@@ -418,14 +418,14 @@ public class NeuralService
 
         if (message == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
+            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
         Microsoft.Extensions.AI.ChatFinishReason? finishReason = response.FinishReason;
 
         if (finishReason == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeysConstant.InvalidRequest) + $"  {nameof(HandleLocalNonStreamingResponseAsync)}", false);
+            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $"  {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
         // Regular expression to remove everything between <think> and </think>
@@ -435,10 +435,10 @@ public class NeuralService
         string result = finishReason.ToString() switch
         {
             "stop" => responseFixed,
-            "length" => GuildManager.GetTranslation(guild, LangKeysConstant.RateLimitExceeded),
-            "content_filter" => GuildManager.GetTranslation(guild, LangKeysConstant.ContentPolityViolation),
-            "tool_calls" => GuildManager.GetTranslation(guild, LangKeysConstant.FunctionCall),
-            _ => GuildManager.GetTranslation(guild, LangKeysConstant.UnableGenerateOrder).Replace("{0}", finishReason.ToString() ?? "-/-")
+            "length" => GuildManager.GetTranslation(guild, LangKeys.RateLimitExceeded),
+            "content_filter" => GuildManager.GetTranslation(guild, LangKeys.ContentPolityViolation),
+            "tool_calls" => GuildManager.GetTranslation(guild, LangKeys.FunctionCall),
+            _ => GuildManager.GetTranslation(guild, LangKeys.UnableGenerateOrder).Replace("{0}", finishReason.ToString() ?? "-/-")
         };
 
         return (result, true);
@@ -461,14 +461,14 @@ public class NeuralService
         // Dictionary mapping error keys to language keys for error messages
         Dictionary<string, string> errorKeyMapping = new()
     {
-        { "content_policy_violation", LangKeysConstant.ContentPolityViolation },
-        { "rate_limit_exceeded", LangKeysConstant.RateLimitExceeded },
-        { "invalid_request", LangKeysConstant.InvalidRequest },
-        { "authentication_error", LangKeysConstant.AuthenticationError },
-        { "server_error", LangKeysConstant.ServerError },
-        { "overloaded_error", LangKeysConstant.OverloadedError },
-        { "timeout", LangKeysConstant.Timeout },
-        { "model_not_found", LangKeysConstant.ModelNotFound }
+        { "content_policy_violation", LangKeys.ContentPolityViolation },
+        { "rate_limit_exceeded", LangKeys.RateLimitExceeded },
+        { "invalid_request", LangKeys.InvalidRequest },
+        { "authentication_error", LangKeys.AuthenticationError },
+        { "server_error", LangKeys.ServerError },
+        { "overloaded_error", LangKeys.OverloadedError },
+        { "timeout", LangKeys.Timeout },
+        { "model_not_found", LangKeys.ModelNotFound }
     };
 
         // Search for any matching error keys
@@ -481,7 +481,7 @@ public class NeuralService
         }
 
         // Default error message if no specific match is found
-        return manager.GetTranslation(category, LangKeysConstant.UnablePerformTask);
+        return manager.GetTranslation(category, LangKeys.UnablePerformTask);
     }
 
     /// <summary>

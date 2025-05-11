@@ -104,7 +104,7 @@ public class ChatButtonListener
 
                 if (channel == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.UnablePerformTask));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask));
                     return;
                 }
 
@@ -112,13 +112,13 @@ public class ChatButtonListener
 
                 if (!UserManager.IsChatOwner(user, guild.Id, channel.Id))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.NotChatOwner));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.NotChatOwner));
                     return;
                 }
 
                 if (!await UserManager.ToggleChatInfo(user, guild.Id, channel.Id, false))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.UnableFindChat) + " (toggle_chat_info)");
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnableFindChat) + " (toggle_chat_info)");
                     return;
                 }
 
@@ -126,7 +126,7 @@ public class ChatButtonListener
 
                 if (info == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.UnableFindChat) + " (info_null)");
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnableFindChat) + " (info_null)");
                     return;
                 }
 
@@ -135,7 +135,7 @@ public class ChatButtonListener
 
                 AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Id}\"");
 
-                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.CloseChat));
+                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.CloseChat));
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();

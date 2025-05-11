@@ -121,7 +121,7 @@ public class SelectedChatListener
 
                 if (gid == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.CouldNotFindInfoID));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfoID));
                     return;
                 }
 
@@ -129,7 +129,7 @@ public class SelectedChatListener
 
                 if (usageRole == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.RoleEliminated));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.RoleEliminated));
                     return;
                 }
 
@@ -137,7 +137,7 @@ public class SelectedChatListener
 
                 if (!member.Roles.Contains(usageRole))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.RoleMissing).Replace("{0}", usageRole.Mention));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.RoleMissing).Replace("{0}", usageRole.Mention));
                     return;
                 }
 
@@ -145,7 +145,7 @@ public class SelectedChatListener
 
                 if (exclusiveRole == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.RoleEliminated));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.RoleEliminated));
                     return;
                 }
 
@@ -158,7 +158,7 @@ public class SelectedChatListener
                     {
                         if (conversations >= AresConstant.MaxFreeConversations)
                         {
-                            await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.ActiveConversation));
+                            await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ActiveConversation));
                             return;
                         }
                     }
@@ -166,7 +166,7 @@ public class SelectedChatListener
                     {
                         if (conversations >= AresConstant.MaxPremiumConversations)
                         {
-                            await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.PremiumChatLimit));
+                            await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.PremiumChatLimit));
                             return;
                         }
                     }
@@ -184,25 +184,25 @@ public class SelectedChatListener
 
                 if (model == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.ModelNotFound));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ModelNotFound));
                     return;
                 }
 
                 if (model.Dev && !AresCore.IsDeveloper(socketUser.Id))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.ModelDevMode));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ModelDevMode));
                     return;
                 }
 
                 if (!model.Available)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.ModelUnavailable));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ModelUnavailable));
                     return;
                 }
 
                 if (model.Exclusive && !member.Roles.Contains(exclusiveRole))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.RoleMissing).Replace("{0}", exclusiveRole.Mention));
+                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
                     return;
                 }
 
@@ -220,11 +220,11 @@ public class SelectedChatListener
 
                 DateTime time = DateTime.Now;
 
-                string greetingKey = (time.Hour >= 5 && time.Hour < 12) ? LangKeysConstant.GoodMorning :
-                      (time.Hour >= 12 && time.Hour < 18) ? LangKeysConstant.GoodAfternoon :
-                      LangKeysConstant.GoodNight;
+                string greetingKey = (time.Hour >= 5 && time.Hour < 12) ? LangKeys.GoodMorning :
+                      (time.Hour >= 12 && time.Hour < 18) ? LangKeys.GoodAfternoon :
+                      LangKeys.GoodNight;
 
-                string helloMessage = string.Format(GuildManager.GetTranslation(guild, LangKeysConstant.HelloMessage), GuildManager.GetTranslation(guild, greetingKey), socketUser.GlobalName);
+                string helloMessage = string.Format(GuildManager.GetTranslation(guild, LangKeys.HelloMessage), GuildManager.GetTranslation(guild, greetingKey), socketUser.GlobalName);
 
                 UserChatHistoric historic = new UserChatHistoric(system: helloMessage);
                 info.Historics.Add(historic);
@@ -241,13 +241,13 @@ public class SelectedChatListener
                     .WithColor(Color.Green)
                     .WithFooter(footer => footer.WithText($"{time.Year} - {AresConstant.AppName}"));
 
-                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeysConstant.FieldModel), model.DisplayName);
-                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeysConstant.FieldRules), GuildManager.GetTranslation(guild, LangKeysConstant.ChatDescriptionRules));
-                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeysConstant.FieldTime), GuildManager.GetTranslation(guild, LangKeysConstant.ChatDescriptionTime));
+                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldModel), model.DisplayName);
+                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldRules), GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionRules));
+                infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldTime), GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionTime));
 
                 if (!string.IsNullOrWhiteSpace(model.DescriptionKey))
                 {
-                    infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeysConstant.FieldDescription), GuildManager.GetTranslation(guild, model.DescriptionKey));
+                    infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldDescription), GuildManager.GetTranslation(guild, model.DescriptionKey));
                 }
 
                 ComponentBuilder component = new ComponentBuilder();
@@ -255,13 +255,13 @@ public class SelectedChatListener
                 switch (model.Type)
                 {
                     case ModelType.Chat:
-                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeysConstant.FieldHistory), GuildManager.GetTranslation(guild, LangKeysConstant.HistoryChatDesc));
-                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.ChatDescriptionDefault));
+                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldHistory), GuildManager.GetTranslation(guild, LangKeys.HistoryChatDesc));
+                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionDefault));
                         break;
 
                     case ModelType.Image:
-                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeysConstant.FieldHistory), GuildManager.GetTranslation(guild, LangKeysConstant.HistoryImageDesc));
-                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.ChatDescriptionImage));
+                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldHistory), GuildManager.GetTranslation(guild, LangKeys.HistoryImageDesc));
+                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionImage));
 
                         #region Quality Menu
 
@@ -325,19 +325,19 @@ public class SelectedChatListener
                         break;
 
                     case ModelType.TTS:
-                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeysConstant.FieldHistory), GuildManager.GetTranslation(guild, LangKeysConstant.HistoryTTSDesc));
-                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.ChatDescriptionTTS));
+                        infoEmbed.AddField(GuildManager.GetTranslation(guild, LangKeys.FieldHistory), GuildManager.GetTranslation(guild, LangKeys.HistoryTTSDesc));
+                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionTTS));
                         break;
 
                     default:
-                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.ChatDescriptionDefault));
+                        infoEmbed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.ChatDescriptionDefault));
                         break;
                 }
 
                 #region Close Chat Button
 
                 component.WithButton(new ButtonBuilder()
-                   .WithLabel(GuildManager.GetTranslation(guild, LangKeysConstant.ButtonEndChat))
+                   .WithLabel(GuildManager.GetTranslation(guild, LangKeys.ButtonEndChat))
                    .WithStyle(ButtonStyle.Danger)
                    .WithCustomId("close-chat"));
 
@@ -389,7 +389,7 @@ public class SelectedChatListener
 
                 await channel.AddPermissionOverwriteAsync(socketUser, permissions);
 
-                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeysConstant.SuccessChatCreated).Replace("{0}", channel.Mention));
+                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
                 await Task.Delay(TimeSpan.FromSeconds(5));
                 await message.DeleteAsync();
             }

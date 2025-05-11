@@ -110,7 +110,7 @@ public class ConfigCommand
                 {
                     await message.ModifyAsync(msg =>
                         msg.Embed = embed
-                            .WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.InvalidOptions))
+                            .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOptions))
                             .WithColor(Color.Red)
                             .Build()
                     );
@@ -124,7 +124,7 @@ public class ConfigCommand
                 {
                     await message.ModifyAsync(msg =>
                         msg.Embed = embed
-                            .WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.InvalidOptionValue))
+                            .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOptionValue))
                             .WithColor(Color.Red)
                             .Build()
                     );
@@ -243,7 +243,7 @@ public class ConfigCommand
                     default:
                         await message.ModifyAsync(msg =>
                             msg.Embed = embed
-                                .WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.InvalidOption))
+                                .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOption))
                                 .WithColor(Color.Red)
                                 .Build()
                         );
@@ -251,7 +251,7 @@ public class ConfigCommand
                 }
 
                 sb.AppendLine(GuildManager
-                    .GetTranslation(guild, LangKeysConstant.ConfigUpdateSuccess)
+                    .GetTranslation(guild, LangKeys.ConfigUpdateSuccess)
                     .Replace("{0}", optionName ?? "N/A")
                     .Replace("{1}", (!string.IsNullOrWhiteSpace(optionValueString) ? optionValueString : "N/A")));
             }
@@ -282,7 +282,7 @@ public class ConfigCommand
             {
                 await message.ModifyAsync(msg =>
                     msg.Embed = embed
-                        .WithDescription(GuildManager.GetTranslation(guild, LangKeysConstant.ConfigUpdateUnSuccess))
+                        .WithDescription(GuildManager.GetTranslation(guild, LangKeys.ConfigUpdateUnSuccess))
                         .WithColor(Color.Gold)
                         .Build()
                     );
