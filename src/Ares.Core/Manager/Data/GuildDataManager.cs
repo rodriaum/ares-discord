@@ -4,20 +4,20 @@
 * Proprietary and confidential
 */
 
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Data;
+using Ares.Core.Models.Language;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Language;
 using Ares.Core.Util;
 using System.Collections.Concurrent;
 
-namespace Ares.Core.Manager.Database;
+namespace Ares.Core.Manager.Data;
 
 /// <summary>
 /// Guild service to manage data and operations of an guild.
 /// </summary>
-public class GuildManager
+public class GuildDataManager
 {
     /// <summary>
     /// Dictionary of locks for concurrent operations on the same guild
@@ -44,7 +44,7 @@ public class GuildManager
                 return false;
             }
 
-            if (AresCore.GuildRepository is not { } repository)
+            if (AppCore.GuildRepository is not { } repository)
             {
                 AresLogger.Log(nameof(SaveAsync), "Guild data is null. Unable to save fields.", severity: Severity.Error);
                 return false;
@@ -67,7 +67,7 @@ public class GuildManager
             }
             catch (Exception ex)
             {
-                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
+                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", severity: Severity.Error, extra: ex.Message);
                 return false;
             }
         }
@@ -148,9 +148,9 @@ public class GuildManager
     /// </summary>
     /// <param name="guild">The guild to get the language category for.</param>
     /// <returns>The language category object or null if not found.</returns>
-    public static LangCategory? LangCategory(Guild guild)
+    public static LanguageCategory? LangCategory(Guild guild)
     {
-        return AresCore.LangManager.GetCategoryByCode(Language(guild));
+        return AppCore.LangManager.GetCategoryByCode(Language(guild));
     }
 
     /// <summary>
@@ -161,10 +161,10 @@ public class GuildManager
     /// <returns>The translated string or the original code if translation was not found.</returns>
     public static string GetTranslation(Guild guild, string code)
     {
-        LangCategory? category = LangCategory(guild);
+        LanguageCategory? category = LangCategory(guild);
         if (category == null) return code;
 
-        return AresCore.LangManager.GetTranslation(category, code);
+        return AppCore.LangManager.GetTranslation(category, code);
     }
 
     /// <summary>

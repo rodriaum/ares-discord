@@ -6,7 +6,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Objects.Chat;
+namespace Ares.Core.Models.Chat;
 
 /// <summary>
 /// Represents computed token consumption statistics for a chat completion request.
@@ -43,9 +43,9 @@ public class ChatTokenUsage
 
     public ChatTokenUsage(long outputTokens = 0, long inputTokens = 0, long totalTokens = 0)
     {
-        this.OutputTokens = outputTokens;
-        this.InputTokens = inputTokens;
+        OutputTokens = outputTokens;
+        InputTokens = inputTokens;
 
-        this.TotalTokens = (totalTokens == 0 ? (outputTokens + inputTokens) : totalTokens);
+        TotalTokens = totalTokens == 0 ? outputTokens + inputTokens : totalTokens;
     }
 }

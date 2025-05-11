@@ -79,7 +79,7 @@ public class MongoService : IDatabase
                 }
                 catch (Exception e)
                 {
-                    await AresLogger.LogAsync("DB: Mongo", "Unable to connect.", e.Message, severity: Severity.Error);
+                    await AresLogger.LogAsync("DB: Mongo", "Unable to connect.", severity: Severity.Error, extra: e.Message);
 
                     connected = false;
                     currentTries++;
@@ -117,7 +117,7 @@ public class MongoService : IDatabase
                 }
                 catch (Exception e)
                 {
-                    AresLogger.Log("DB: Mongo", "Unable to close connection.", e.Message, severity: Severity.Error);
+                    AresLogger.Log("DB: Mongo", "Unable to close connection.", severity: Severity.Error, extra: e.Message);
                     return Task.FromResult(false);
                 }
             }

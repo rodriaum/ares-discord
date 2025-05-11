@@ -7,7 +7,7 @@
 using Ares.Core.Objects.Image;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Objects.Chat.Price;
+namespace Ares.Core.Models.Chat.Price;
 
 /// <summary>
 /// Representa o preço por algo exato (ex: imagem) usado no pedido.

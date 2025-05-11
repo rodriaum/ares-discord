@@ -4,15 +4,15 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Core.Objects.Language;
+namespace Ares.Core.Models.Language;
 
-public class LangCategory
+public class LanguageCategory
 {
     public string Name { get; set; }
     public string Description { get; set; }
     public string Code { get; set; }
 
-    public LangCategory(string name, string description, string code)
+    public LanguageCategory(string name, string description, string code)
     {
         this.Name = name;
         this.Description = description;

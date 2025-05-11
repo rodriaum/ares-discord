@@ -29,5 +29,10 @@ public enum Severity
     /// <summary>
     /// Logs that contain the most detailed messages.
     /// </summary>
-    Debug = 5
+    Debug = 5,
+    /// <summary>
+    /// Logs for when something goes right.
+    /// </summary>
+    Success = 6
+
 }

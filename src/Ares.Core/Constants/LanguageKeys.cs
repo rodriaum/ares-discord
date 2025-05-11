@@ -6,7 +6,7 @@
 
 namespace Ares.Core.Constants;
 
-public class LangKeys
+public class LanguageKeys
 {
     public const string AI = "ai";
     public const string TakeUpMinutes = "take-up-minutes";

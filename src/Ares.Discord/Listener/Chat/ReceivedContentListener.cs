@@ -6,14 +6,14 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Database;
+using Ares.Core.Manager.Data;
+using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Chat.Image;
+using Ares.Core.Models.Chat.Model;
+using Ares.Core.Models.Chat.Price;
+using Ares.Core.Models.Data;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Chat;
-using Ares.Core.Objects.Chat.Image;
-using Ares.Core.Objects.Chat.Price;
-using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using Ares.Core.Service.Neural;
 using Ares.Core.Util;
@@ -61,16 +61,16 @@ public class ReceivedContentListener
                 SocketGuild socketGuild = channel.Guild;
                 if (socketGuild == null)
                 {
-                    await channel.SendMessageAsync(AresConstant.UnableGetMember);
+                    await channel.SendMessageAsync(AppConstants.UnableGetMember);
                     return;
                 }
 
-                GuildRepository? guildRepository = AresCore.GuildRepository;
-                UserRepository? userRepository = AresCore.UserRepository;
+                GuildRepository? guildRepository = AppCore.GuildRepository;
+                UserRepository? userRepository = AppCore.UserRepository;
 
                 if (guildRepository == null || userRepository == null)
                 {
-                    await channel.SendMessageAsync(AresConstant.UnablePerformTask);
+                    await channel.SendMessageAsync(AppConstants.UnablePerformTask);
                     return;
                 }
 
@@ -85,7 +85,7 @@ public class ReceivedContentListener
                 // Check if the channel is in the correct category and the user has an active conversation
                 // Alert: This code must be right here, if you move it to another place there may be problems.
                 if (!(channel.CategoryId.Equals(guild.Preferences?.ChatsCategoryId) &&
-                      UserManager.HasActiveUserConversation(user, guild.Id, channelId: channel.Id)))
+                      UserDataManager.HasActiveUserConversation(user, guild.Id, channelId: channel.Id)))
                     return;
 
                 // Check if the channel belongs to the user
@@ -97,17 +97,17 @@ public class ReceivedContentListener
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
 
                 // Search for necessary information
-                UserChatInfo? info = UserManager.ChatInfoByChannel(user, guild.Id, channel.Id);
+                UserChatInfo? info = UserDataManager.ChatInfoByChannel(user, guild.Id, channel.Id);
                 if (info == null)
                 {
-                    await ModifyMessageWithError(botMessage, embed, GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfo));
+                    await ModifyMessageWithError(botMessage, embed, GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo));
                     return;
                 }
 
-                ChatModel? model = await UserManager.GetLastModelByUser(user, guild.Id, channel: channel.Id);
+                ChatModel? model = await UserDataManager.GetLastModelByUser(user, guild.Id, channel: channel.Id);
                 if (model == null)
                 {
-                    await ModifyMessageWithError(botMessage, embed, GuildManager.GetTranslation(guild, LangKeys.CouldNotFindLastModel));
+                    await ModifyMessageWithError(botMessage, embed, GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindLastModel));
                     return;
                 }
 
@@ -118,14 +118,14 @@ public class ReceivedContentListener
                 {
                     await ModifyMessageWithError(
                             botMessage,
-                            embed.WithColor(Color.DarkOrange).WithFooter(AresConstant.AppName),
+                            embed.WithColor(Color.DarkOrange).WithFooter(AppConstants.AppName),
                             "Atualmente o sistema de chat só está disponível por mensagem."
                         );
                     return;
                 }
 
                 SocketGuildUser guildUser = socketGuild.GetUser(iuser.Id);
-                List<UserChatHistoric>? historics = UserManager.ChatHistoricsByChannel(user, guild.Id, channel.Id);
+                List<UserChatHistoric>? historics = UserDataManager.ChatHistoricsByChannel(user, guild.Id, channel.Id);
 
                 // Process message based on template type
                 switch (model.Type)
@@ -147,7 +147,7 @@ public class ReceivedContentListener
                             (
                                 botMessage,
                                 new EmbedBuilder()
-                                    .WithDescription(GuildManager.GetTranslation(guild, LangKeys.CouldNotFindModel))
+                                    .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindModel))
                                     .WithColor(Color.Red)
                             );
                         break;
@@ -155,7 +155,7 @@ public class ReceivedContentListener
             }
             catch (Exception e)
             {
-                await AresLogger.LogAsync(nameof(MessageReceivedHandler), "Can't process the content receiver.", e.Message, severity: Severity.Error);
+                await AresLogger.LogAsync(nameof(MessageReceivedHandler), "Can't process the content receiver.", severity: Severity.Error, extra: e.Message);
             }
         });
 
@@ -165,10 +165,10 @@ public class ReceivedContentListener
     private EmbedBuilder CreateInitialEmbed(Guild guild)
     {
         return new EmbedBuilder()
-            .WithTitle(GuildManager.GetTranslation(guild, LangKeys.AI))
-            .WithDescription(GuildManager.GetTranslation(guild, LangKeys.ToProcess))
+            .WithTitle(GuildDataManager.GetTranslation(guild, LanguageKeys.AI))
+            .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ToProcess))
             .WithColor(Color.Gold)
-            .WithFooter(GuildManager.GetTranslation(guild, LangKeys.TakeUpMinutes));
+            .WithFooter(GuildDataManager.GetTranslation(guild, LanguageKeys.TakeUpMinutes));
     }
 
     private async Task ModifyMessageWithError(RestUserMessage botMessage, EmbedBuilder embed, string errorMessage)
@@ -226,7 +226,7 @@ public class ReceivedContentListener
                 index++;
             }
 
-            await UserManager.SaveSnippetsAsync(user, guild.Id, snippets);
+            await UserDataManager.SaveSnippetsAsync(user, guild.Id, snippets);
 
             // Set color based on model category
             Color color = AresUtil.GetColorByModelCategory(model.Category);
@@ -238,17 +238,17 @@ public class ReceivedContentListener
             {
                 embed.WithDescription(result.Substring(0, Limit))
                     .WithColor(color)
-                    .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName} (♾️)");
+                    .WithFooter($"{date.Year} - {AppConstants.AppName} | {model.DisplayName} (♾️)");
             }
             else
             {
                 embed.WithDescription(result)
                     .WithColor(color)
-                    .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
+                    .WithFooter($"{date.Year} - {AppConstants.AppName} | {model.DisplayName}");
             }
 
             // Atualiza o historico de chat após a geracão.
-            historics = UserManager.ChatHistorics(user, guild.Id, channelId: channelId);
+            historics = UserDataManager.ChatHistorics(user, guild.Id, channelId: channelId);
 
             // Process pricing information
             priceEmbed = CreatePriceEmbedForChat(guild, model, historics);
@@ -257,7 +257,7 @@ public class ReceivedContentListener
         {
             embed.WithDescription(result)
                 .WithColor(Color.Red)
-                .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
+                .WithFooter($"{date.Year} - {AppConstants.AppName} | {model.DisplayName}");
         }
 
         await UpdateBotMessage(botMessage, embed, priceEmbed: priceEmbed, selectMenu: menu);
@@ -283,7 +283,7 @@ public class ReceivedContentListener
             // Check if the result is a valid URL
             if (WebUtil.IsValidUrl(responseImageUrl))
             {
-                embed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.Success))
+                embed.WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.Success))
                     .WithColor(Color.Green)
                     .WithImageUrl(responseImageUrl);
             }
@@ -295,7 +295,7 @@ public class ReceivedContentListener
         }
         else
         {
-            embed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.UnableGenerateOrder))
+            embed.WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.UnableGenerateOrder))
                 .WithColor(Color.Red);
         }
 
@@ -325,8 +325,8 @@ public class ReceivedContentListener
         // Handle Discord's description character limit
         if (string.IsNullOrEmpty(responseBinary) || !isAudio)
         {
-            embed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.UnableGenerateOrder))
-                .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
+            embed.WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.UnableGenerateOrder))
+                .WithFooter($"{date.Year} - {AppConstants.AppName} | {model.DisplayName}");
         }
         else
         {
@@ -344,7 +344,7 @@ public class ReceivedContentListener
                 memory.Position = 0;
 
                 embed.WithDescription($"🔊 TTS: {prompt}")
-                    .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
+                    .WithFooter($"{date.Year} - {AppConstants.AppName} | {model.DisplayName}");
 
                 long fileSize = memory.Length;
 
@@ -364,10 +364,10 @@ public class ReceivedContentListener
             }
             catch (Exception ex)
             {
-                embed.WithDescription(GuildManager.GetTranslation(guild, LangKeys.UnableGenerateOrder))
-                    .WithFooter($"{date.Year} - {AresConstant.AppName} | {model.DisplayName}");
+                embed.WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.UnableGenerateOrder))
+                    .WithFooter($"{date.Year} - {AppConstants.AppName} | {model.DisplayName}");
 
-                AresLogger.Log("TTS", "Unable to generate TTS audio.", ex.Message, severity: Severity.Error);
+                AresLogger.Log("TTS", "Unable to generate TTS audio.", severity: Severity.Error, extra: ex.Message);
             }
         }
 
@@ -397,18 +397,18 @@ public class ReceivedContentListener
         EmbedBuilder priceEmbed = new EmbedBuilder()
             // Input Field
             .AddField("Tokens", usage.InputTokens, true)
-            .AddField(GuildManager.GetTranslation(guild, LangKeys.Request), $"$ {FormatterUtil.FormatPrice(inputPrice)}", true)
+            .AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.Request), $"$ {FormatterUtil.FormatPrice(inputPrice)}", true)
             // Broke Line
             .AddField("\u200B", "\u200B", false)
             // Output Field
             .AddField("Tokens", usage.OutputTokens, true)
-            .AddField(GuildManager.GetTranslation(guild, LangKeys.Response), $"$ {FormatterUtil.FormatPrice(outputPrice)}", true)
+            .AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.Response), $"$ {FormatterUtil.FormatPrice(outputPrice)}", true)
             // Broke Line
             .AddField("\u200B", "\u200B", false)
             // Total Field
             .AddField("Tokens", usage.TotalTokens, true)
-            .AddField(GuildManager.GetTranslation(guild, LangKeys.Total), $"$ {FormatterUtil.FormatPrice(inputPrice + outputPrice)}", true)
-            .WithFooter(GuildManager.GetTranslation(guild, LangKeys.PriceLowerCache));
+            .AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.Total), $"$ {FormatterUtil.FormatPrice(inputPrice + outputPrice)}", true)
+            .WithFooter(GuildDataManager.GetTranslation(guild, LanguageKeys.PriceLowerCache));
 
         return priceEmbed;
     }
@@ -435,8 +435,8 @@ public class ReceivedContentListener
             return null;
 
         EmbedBuilder priceEmbed = new EmbedBuilder()
-            .AddField(GuildManager.GetTranslation(guild, LangKeys.Total), $"$ {FormatterUtil.FormatPrice(priceDetail.Price)}", true)
-            .WithFooter(AresConstant.AppName);
+            .AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.Total), $"$ {FormatterUtil.FormatPrice(priceDetail.Price)}", true)
+            .WithFooter(AppConstants.AppName);
 
         return priceEmbed;
     }

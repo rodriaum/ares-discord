@@ -4,12 +4,14 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Objects.Chat.Price;
+using Ares.Core.Models.Chat.Price;
+using Ares.Core.Models.Data.Chat.Model;
+using Ares.Core.Objects;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Objects.Model;
+namespace Ares.Core.Models.Chat.Model;
 
 public class ChatModel
 {
@@ -71,20 +73,20 @@ public class ChatModel
             bool dev = false
         )
     {
-        this.RequestType = requestType;
-        this.Category = category;
-        this.Type = type;
-        this.DisplayName = displayName;
-        this.Id = id;
-        this.DescriptionKey = descriptionKey;
-        this.Price = price;
-        this.Exclusive = exclusive;
-        this.Available = available;
-        this.Dev = dev; // Only in dev mode
+        RequestType = requestType;
+        Category = category;
+        Type = type;
+        DisplayName = displayName;
+        Id = id;
+        DescriptionKey = descriptionKey;
+        Price = price;
+        Exclusive = exclusive;
+        Available = available;
+        Dev = dev; // Only in dev mode
     }
 
     public bool IsAvailable()
     {
-        return (this.Dev ? false : this.Available);
+        return Dev ? false : Available;
     }
 }

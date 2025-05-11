@@ -6,9 +6,9 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Database;
+using Ares.Core.Manager.Data;
 using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Data;
 using Ares.Core.Objects;
 using Ares.Core.Repository;
 using Ares.Core.Util;
@@ -40,19 +40,19 @@ public class ChatCodeSnippetListener
 
                 if (_client == null || socketUser == null)
                 {
-                    await args.RespondAsync(ephemeral: true, text: AresConstant.UnableGetMember);
+                    await args.RespondAsync(ephemeral: true, text: AppConstants.UnableGetMember);
                     return;
                 }
 
                 #region Check if user is in database
 
-                UserRepository? userRepository = AresCore.UserRepository;
+                UserRepository? userRepository = AppCore.UserRepository;
 
                 int maxAttempts = 3;
 
                 if (userRepository == null)
                 {
-                    await args.RespondAsync(ephemeral: true, text: $"{AresConstant.UnablePerformTask} (#u_repo_null)");
+                    await args.RespondAsync(ephemeral: true, text: $"{AppConstants.UnablePerformTask} (#u_repo_null)");
                     return;
                 }
 
@@ -73,7 +73,7 @@ public class ChatCodeSnippetListener
 
                 string id = args.Data.Values.FirstOrDefault("");
 
-                UserChatSnippet? snippet = UserManager.GetSnippetById(user, guildId, id);
+                UserChatSnippet? snippet = UserDataManager.GetSnippetById(user, guildId, id);
 
                 if (snippet == null)
                 {
@@ -100,11 +100,11 @@ public class ChatCodeSnippetListener
             {
                 try
                 {
-                    await args.RespondAsync(ephemeral: true, text: AresConstant.UnablePerformTask);
+                    await args.RespondAsync(ephemeral: true, text: AppConstants.UnablePerformTask);
                 }
                 catch { }
 
-                await AresLogger.LogAsync("SelectException", "Unable to process chat code snippet.", e.Message, severity: Severity.Error);
+                await AresLogger.LogAsync("SelectException", "Unable to process chat code snippet.", severity: Severity.Error, extra: e.Message);
             }
         });
 

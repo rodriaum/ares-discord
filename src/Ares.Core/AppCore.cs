@@ -9,7 +9,7 @@ using Ares.Core.Manager.Lang;
 using Ares.Core.Models;
 using Ares.Core.Monitor;
 using Ares.Core.Repository;
-using Ares.Core.Service.Database;
+using Ares.Core.Service;
 using DotNetEnv;
 using Microsoft.Extensions.AI;
 
@@ -19,7 +19,7 @@ namespace Ares.Core;
 /// It has the function of managing all types of data,
 /// as well as offering a variety of usable features.
 /// </summary>
-public class AresCore
+public class AppCore
 {
     /// <summary>
     /// Gets or sets the Ollama client instance.
@@ -54,7 +54,7 @@ public class AresCore
     /// <summary>
     /// Language manager instance for handling localization.
     /// </summary>
-    public static LangManager LangManager = new LangManager();
+    public static LanguageManager LangManager = new LanguageManager();
 
     /// <summary>
     /// Initializes the core components.
@@ -62,7 +62,7 @@ public class AresCore
     /// <returns>True if the initialization was successful, otherwise false.</returns>
     public static async Task<bool> Init()
     {
-        if (AresConstant.AppMonitorDebugMode)
+        if (AppConstants.AppMonitorDebugMode)
         {
             SystemMonitor monitor = new SystemMonitor();
             _ = monitor.Init();
@@ -86,7 +86,7 @@ public class AresCore
 
     public static bool IsDeveloper(ulong userId)
     {
-        return AresConstant.DeveloperUserIds.Any(id => id.Equals(userId.ToString()));
+        return AppConstants.DeveloperUserIds.Any(id => id.Equals(userId.ToString()));
     }
 
     /// <summary>

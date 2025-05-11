@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Core.Objects.Chat;
+namespace Ares.Core.Models.Chat;
 
 /// <summary>
 /// Representa os diferentes papéis das mensagens no chat.

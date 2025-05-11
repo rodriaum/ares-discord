@@ -6,19 +6,19 @@
 
 using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Chat.Model;
+using Ares.Core.Models.Data;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using Ares.Core.Util;
 using System.Collections.Concurrent;
 
-namespace Ares.Core.Manager.Database;
+namespace Ares.Core.Manager.Data;
 
 /// <summary>
 /// User service to manage data and operations.
 /// </summary>
-public class UserManager
+public class UserDataManager
 {
     /// <summary>
     /// Dictionary of locks for concurrent operations on the same user
@@ -45,7 +45,7 @@ public class UserManager
                 return false;
             }
 
-            if (AresCore.UserRepository is not { } repository)
+            if (AppCore.UserRepository is not { } repository)
             {
                 AresLogger.Log(nameof(SaveAsync), "User data is null. Unable to save fields.", severity: Severity.Error);
                 return false;
@@ -68,7 +68,7 @@ public class UserManager
             }
             catch (Exception ex)
             {
-                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
+                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", severity: Severity.Error, extra: ex.Message);
                 return false;
             }
         }
@@ -318,7 +318,7 @@ public class UserManager
 
                 if (!active)
                 {
-                    ChatModelRepository? repository = AresCore.ChatModelRepository;
+                    ChatModelRepository? repository = AppCore.ChatModelRepository;
                     if (repository == null) return false;
 
                     // Delete cache if is not used more.
@@ -426,7 +426,7 @@ public class UserManager
             }
             catch (Exception ex)
             {
-                AresLogger.Log(nameof(CreateChatData), "Error trying to create a chat history for the user.", ex.Message, severity: Severity.Error);
+                AresLogger.Log(nameof(CreateChatData), "Error trying to create a chat history for the user.", severity: Severity.Error, extra: ex.Message);
                 return await Task.FromResult(false);
             }
         }
@@ -634,7 +634,7 @@ public class UserManager
         string model = info.ModelId;
         if (string.IsNullOrWhiteSpace(model)) return null;
 
-        ChatModelRepository? repository = AresCore.ChatModelRepository;
+        ChatModelRepository? repository = AppCore.ChatModelRepository;
         if (repository == null) return null;
 
         return await repository.FetchByNearestModelAsync(model, saveInRedis: true);

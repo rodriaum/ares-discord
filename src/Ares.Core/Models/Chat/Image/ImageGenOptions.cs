@@ -4,12 +4,13 @@
  * Proprietary and confidential
  */
 
+using Ares.Core.Objects;
 using Ares.Core.Objects.Image;
 using Ares.Core.Util;
 using OpenAI.Images;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Objects.Chat.Image;
+namespace Ares.Core.Models.Chat.Image;
 
 public class ImageGenOptions
 {
@@ -29,7 +30,7 @@ public class ImageGenOptions
     {
         Quality = quality;
         Size = size;
-        this.Style = style;
+        Style = style;
     }
 
     /// <summary>
@@ -38,19 +39,19 @@ public class ImageGenOptions
     /// <param name="options">Opções de geração de imagem customizado.</param>
     public ImageGenerationOptions ToImageGenerationOptions()
     {
-        GeneratedImageQuality quality = this.Quality switch
+        GeneratedImageQuality quality = Quality switch
         {
             ImageQuality.Standard => GeneratedImageQuality.Standard,
             _ => GeneratedImageQuality.High,
         };
 
-        GeneratedImageStyle style = this.Style switch
+        GeneratedImageStyle style = Style switch
         {
             ImageStyle.Vivid => GeneratedImageStyle.Vivid,
             _ => GeneratedImageStyle.Natural,
         };
 
-        GeneratedImageSize size = this.Size switch
+        GeneratedImageSize size = Size switch
         {
             ImageSize.W1792xH1024 => GeneratedImageSize.W1792xH1024,
             ImageSize.W1024xH1792 => GeneratedImageSize.W1024xH1024,
@@ -91,7 +92,7 @@ public class ImageGenOptions
             }
             catch (ArgumentException e)
             {
-                AresLogger.Log(nameof(From), "Could not convert a class to ImageGenOptions.", e.Message, severity: Severity.Error);
+                AresLogger.Log(nameof(From), "Could not convert a class to ImageGenOptions.", severity: Severity.Error, e.Message);
             }
         }
 

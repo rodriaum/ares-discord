@@ -1,6 +1,6 @@
 ﻿using Ares.Core.Constants;
+using Ares.Core.Models.Language;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Language;
 using Ares.Core.Util;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -13,19 +13,19 @@ namespace Ares.Core.Manager.Lang
     /// https://github.com/StudioLoad/Load/blob/main/core/src/main/java/br/com/loadmc/core/manager/LanguageManager.java
     /// </summary>
 
-    public class LangManager
+    public class LanguageManager
     {
-        readonly List<LangCategory> _languages = new List<LangCategory>();
-        readonly Dictionary<LangCategory, Dictionary<string, string>> _translation = new Dictionary<LangCategory, Dictionary<string, string>>();
+        readonly List<LanguageCategory> _languages = new List<LanguageCategory>();
+        readonly Dictionary<LanguageCategory, Dictionary<string, string>> _translation = new Dictionary<LanguageCategory, Dictionary<string, string>>();
 
-        public LangManager()
+        public LanguageManager()
         {
             _languages = GetLanguageCategories();
         }
 
         public async Task Init()
         {
-            foreach (LangCategory category in _languages)
+            foreach (LanguageCategory category in _languages)
             {
                 try
                 {
@@ -35,7 +35,7 @@ namespace Ares.Core.Manager.Lang
                     if (!File.Exists(filePath))
                     {
                         // Project File Path
-                        filePath = Path.Combine(AresConstant.ProjectPath, filePath);
+                        filePath = Path.Combine(AppConstants.ProjectPath, filePath);
                         if (!File.Exists(filePath)) continue;
                     }
 
@@ -45,10 +45,10 @@ namespace Ares.Core.Manager.Lang
                     await fileStream.CopyToAsync(memoryStream);
                     memoryStream.Position = 0;
 
-                    JsonDocumentOptions documentOptions = new JsonDocumentOptions 
+                    JsonDocumentOptions documentOptions = new JsonDocumentOptions
                     {
                         CommentHandling = JsonCommentHandling.Skip,
-                        AllowTrailingCommas = true 
+                        AllowTrailingCommas = true
                     };
 
                     JsonNode? rootNode = await JsonNode.ParseAsync(memoryStream, documentOptions: documentOptions);
@@ -66,16 +66,16 @@ namespace Ares.Core.Manager.Lang
                 }
                 catch (Exception e)
                 {
-                    AresLogger.Log(nameof(LangManager), $"Can't load language \"{category.Code}\"", e.Message, severity: Severity.Error);
+                    AresLogger.Log(nameof(LanguageManager), $"Can't load language \"{category.Code}\"", severity: Severity.Error, extra: e.Message);
                 }
             }
         }
 
-        public List<LangCategory> GetLanguages() => _languages;
+        public List<LanguageCategory> GetLanguages() => _languages;
 
-        static List<LangCategory> GetLanguageCategories()
+        static List<LanguageCategory> GetLanguageCategories()
         {
-            return new List<LangCategory>
+            return new List<LanguageCategory>
             {
                 new("Português", "Português de Portugal", "pt"),
                 new("English", "English", "en")
@@ -94,16 +94,16 @@ namespace Ares.Core.Manager.Lang
             return element.ToString() ?? string.Empty;
         }
 
-        public bool IsKeyAvailable(LangCategory category, string key) =>
+        public bool IsKeyAvailable(LanguageCategory category, string key) =>
             category != null && key != null && _translation.TryGetValue(category, out var keys) && keys.ContainsKey(key.ToLower());
 
-        public string GetTranslation(LangCategory category, string key)
+        public string GetTranslation(LanguageCategory category, string key)
         {
             if (!IsKeyAvailable(category, key)) return key;
             return _translation[category][key.ToLower()];
         }
 
-        public LangCategory? GetCategoryByCode(string code) =>
+        public LanguageCategory? GetCategoryByCode(string code) =>
             _languages.Find(category => category.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
     }
 }

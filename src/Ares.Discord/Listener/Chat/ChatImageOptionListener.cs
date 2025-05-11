@@ -6,13 +6,13 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Database;
+using Ares.Core.Manager.Data;
 using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Chat.Image;
+using Ares.Core.Models.Chat.Model;
+using Ares.Core.Models.Data;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Image;
-using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using Ares.Core.Util;
 using Discord.Rest;
@@ -37,7 +37,7 @@ public class ChatImageOptionListener
                 args.Data.CustomId.Equals("size-menu")
             )) return;
 
-            await args.RespondAsync(ephemeral: true, text: AresConstant.LoadingEmote);
+            await args.RespondAsync(ephemeral: true, text: AppConstants.LoadingEmote);
             RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
             try
@@ -46,17 +46,17 @@ public class ChatImageOptionListener
 
                 if (!guildId.HasValue)
                 {
-                    await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                    await message.ModifyAsync(it => it.Content = AppConstants.UnablePerformTask);
                     return;
                 }
 
                 #region Check if guild is in database
 
-                GuildRepository? guildRepository = AresCore.GuildRepository;
+                GuildRepository? guildRepository = AppCore.GuildRepository;
 
                 if (guildRepository == null)
                 {
-                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#g_repo_null)");
+                    await message.ModifyAsync(it => it.Content = $"{AppConstants.UnablePerformTask} (#g_repo_null)");
                     return;
                 }
 
@@ -81,11 +81,11 @@ public class ChatImageOptionListener
 
                 #region Check if user is in database
 
-                UserRepository? userRepository = AresCore.UserRepository;
+                UserRepository? userRepository = AppCore.UserRepository;
 
                 if (userRepository == null)
                 {
-                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#u_repo_null)");
+                    await message.ModifyAsync(it => it.Content = $"{AppConstants.UnablePerformTask} (#u_repo_null)");
                     return;
                 }
 
@@ -110,21 +110,21 @@ public class ChatImageOptionListener
 
                 if (!channelId.HasValue)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask));
+                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.UnablePerformTask));
                     return;
                 }
 
                 SocketUser socketUser = args.User;
 
-                UserChatInfo? chat = UserManager.ChatInfoByChannel(user, guildId.Value, channelId.Value);
+                UserChatInfo? chat = UserDataManager.ChatInfoByChannel(user, guildId.Value, channelId.Value);
 
                 if (chat == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.CouldNotFindChat));
+                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindChat));
                     return;
                 }
 
-                ChatModelRepository? repository = AresCore.ChatModelRepository;
+                ChatModelRepository? repository = AppCore.ChatModelRepository;
 
                 if (repository == null)
                 {
@@ -136,7 +136,7 @@ public class ChatImageOptionListener
 
                 if (model == null || model != null && model.Type != ModelType.Image)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.ChatIncompatibleOption));
+                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.ChatIncompatibleOption));
                     return;
                 }
 
@@ -174,19 +174,19 @@ public class ChatImageOptionListener
 
                 if (!success)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask) + $" (#{optionValue})");
+                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.UnablePerformTask) + $" (#{optionValue})");
                     return;
                 }
 
                 chat.ImageGenOptions = options;
-                await UserManager.UpdateChatInfoAsync(user, guildId.Value, chat);
+                await UserDataManager.UpdateChatInfoAsync(user, guildId.Value, chat);
 
-                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.Success));
+                await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.Success));
             }
             catch (Exception e)
             {
-                await args.FollowupAsync(AresConstant.UnablePerformTask);
-                await AresLogger.LogAsync("ButtonException", "Unable to close chat.", e.Message, severity: Severity.Error);
+                await args.FollowupAsync(AppConstants.UnablePerformTask);
+                await AresLogger.LogAsync("ButtonException", "Unable to close chat.", severity: Severity.Error, extra: e.Message);
             }
         });
 

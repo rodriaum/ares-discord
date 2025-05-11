@@ -4,17 +4,17 @@
 * Proprietary and confidential
 */
 
+using Ares.Core.Models.Chat.Model;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using System.Collections.Concurrent;
 
-namespace Ares.Core.Manager.Database;
+namespace Ares.Core.Manager.Data;
 
 /// <summary>
 /// User service to manage data and operations.
 /// </summary>
-public class ChatModelManager
+public class ChatModelDataManager
 {
     /// <summary>
     /// Dictionary of locks for concurrent operations on the same model
@@ -41,7 +41,7 @@ public class ChatModelManager
                 return false;
             }
 
-            if (AresCore.ChatModelRepository is not { } repository)
+            if (AppCore.ChatModelRepository is not { } repository)
             {
                 AresLogger.Log(nameof(SaveAsync), "Chat model data is null. Unable to save fields.", severity: Severity.Error);
                 return false;
@@ -64,7 +64,7 @@ public class ChatModelManager
             }
             catch (Exception ex)
             {
-                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
+                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", severity: Severity.Error, extra: ex.Message);
                 return false;
             }
         }

@@ -6,13 +6,12 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Database;
+using Ares.Core.Manager.Data;
 using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Data;
 using Ares.Core.Objects;
 using Ares.Core.Repository;
 using Ares.Core.Util;
-using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 
@@ -31,7 +30,7 @@ public class ChatButtonListener
         {
             if (!args.Data.CustomId.Equals("close-chat")) return;
 
-            await args.RespondAsync(ephemeral: true, text: AresConstant.LoadingEmote);
+            await args.RespondAsync(ephemeral: true, text: AppConstants.LoadingEmote);
             RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
             try
@@ -40,17 +39,17 @@ public class ChatButtonListener
 
                 if (!guildId.HasValue)
                 {
-                    await message.ModifyAsync(it => it.Content = AresConstant.UnablePerformTask);
+                    await message.ModifyAsync(it => it.Content = AppConstants.UnablePerformTask);
                     return;
                 }
 
                 #region Check if guild is in database
 
-                GuildRepository? guildRepository = AresCore.GuildRepository;
+                GuildRepository? guildRepository = AppCore.GuildRepository;
 
                 if (guildRepository == null)
                 {
-                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#g_repo_null)");
+                    await message.ModifyAsync(it => it.Content = $"{AppConstants.UnablePerformTask} (#g_repo_null)");
                     return;
                 }
 
@@ -75,11 +74,11 @@ public class ChatButtonListener
 
                 #region Check if user is in database
 
-                UserRepository? userRepository = AresCore.UserRepository;
+                UserRepository? userRepository = AppCore.UserRepository;
 
                 if (userRepository == null)
                 {
-                    await message.ModifyAsync(it => it.Content = $"{AresConstant.UnablePerformTask} (#u_repo_null)");
+                    await message.ModifyAsync(it => it.Content = $"{AppConstants.UnablePerformTask} (#u_repo_null)");
                     return;
                 }
 
@@ -104,46 +103,46 @@ public class ChatButtonListener
 
                 if (channel == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask));
+                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.UnablePerformTask));
                     return;
                 }
 
                 SocketUser socketUser = args.User;
 
-                if (!UserManager.IsChatOwner(user, guild.Id, channel.Id))
+                if (!UserDataManager.IsChatOwner(user, guild.Id, channel.Id))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.NotChatOwner));
+                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.NotChatOwner));
                     return;
                 }
 
-                if (!await UserManager.ToggleChatInfo(user, guild.Id, channel.Id, false))
+                if (!await UserDataManager.ToggleChatInfo(user, guild.Id, channel.Id, false))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnableFindChat) + " (toggle_chat_info)");
+                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (toggle_chat_info)");
                     return;
                 }
 
-                UserChatInfo? info = UserManager.ChatInfoByChannel(user, guild.Id, channel.Id);
+                UserChatInfo? info = UserDataManager.ChatInfoByChannel(user, guild.Id, channel.Id);
 
                 if (info == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.UnableFindChat) + " (info_null)");
+                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (info_null)");
                     return;
                 }
 
                 // Removes the generated conversation snippets as they will no longer be used in that channel.
-                await UserManager.RemoveSnippetByChannelAsync(user, guild.Id, channel.Id);
+                await UserDataManager.RemoveSnippetByChannelAsync(user, guild.Id, channel.Id);
 
                 AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Id}\"");
 
-                await message.ModifyAsync(it => it.Content = GuildManager.GetTranslation(guild, LangKeys.CloseChat));
+                await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.CloseChat));
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();
             }
             catch (Exception e)
             {
-                await args.FollowupAsync(AresConstant.UnablePerformTask);
-                await AresLogger.LogAsync("ButtonException", "Unable to close chat.", e.Message, severity: Severity.Error);
+                await args.FollowupAsync(AppConstants.UnablePerformTask);
+                await AresLogger.LogAsync("ButtonException", "Unable to close chat.", severity: Severity.Error, extra: e.Message);
             }
         });
 

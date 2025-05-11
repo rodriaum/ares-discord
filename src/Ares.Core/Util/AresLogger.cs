@@ -5,8 +5,6 @@
  */
 
 using Ares.Core.Objects;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Diagnostics;
 
 namespace Ares.Core.Util;
 
@@ -16,17 +14,43 @@ public class AresLogger
 
     /* Functions */
 
-    public static void Log(string prefix, string message, string extra = "", Severity severity = Severity.Info)
+    public static void Log(string prefix, string message, Severity severity = Severity.Info, params string[] extra)
     {
         Console.ForegroundColor = GetColorBySeverity(severity);
-        Console.Error.WriteLine(Output(prefix, message, extra: extra, severity: severity));
+
+        Console.Error.WriteLine(Output(prefix, message, severity: severity, extra: extra));
+
+        if (extra.Any())
+        {
+            for (int i = 0; i < extra.Length; i++)
+            {
+                Console.Error.WriteLine($" -> {extra[i]}");
+
+                if (i < extra.Length - 1)
+                    Console.Error.WriteLine("\n");
+            }
+        }
+
         Console.ResetColor();
     }
 
-    public static async Task LogAsync(string prefix, string message, string extra = "", Severity severity = Severity.Info)
+    public static async Task LogAsync(string prefix, string message, Severity severity = Severity.Info, params string[] extra)
     {
         Console.ForegroundColor = GetColorBySeverity(severity);
-        await Console.Error.WriteLineAsync(Output(prefix, message, extra: extra, severity: severity));
+
+        await Console.Error.WriteLineAsync(Output(prefix, message, severity: severity, extra: extra));
+
+        if (extra.Any())
+        {
+            for (int i = 0; i < extra.Length; i++)
+            {
+                await Console.Error.WriteLineAsync($" -> {extra[i]}");
+
+                if (i < extra.Length - 1)
+                    await Console.Error.WriteLineAsync("\n");
+            }
+        }
+
         Console.ResetColor();
     }
 
@@ -42,14 +66,15 @@ public class AresLogger
             Severity.Info => ConsoleColor.Gray,
             Severity.Verbose => ConsoleColor.White,
             Severity.Debug => ConsoleColor.DarkGray,
+            Severity.Success => ConsoleColor.Green,
             _ => ConsoleColor.Gray
         };
     }
 
-    private static string Output(string prefix, string message, string extra = "", Severity severity = Severity.Info)
+    private static string Output(string prefix, string message, Severity severity = Severity.Info, params string[] extra)
     {
         string date = $"{time.Hour}:{time.Minute}:{time.Second}";
 
-        return $"[{date} - {severity.ToString()}] {(!string.IsNullOrEmpty(prefix) ? $"[{prefix}] " : "")}{message}{(!string.IsNullOrEmpty(extra) ? $"\n -> {extra}\n" : "")}";
+        return $"[{date} - {severity.ToString()}] {(!string.IsNullOrEmpty(prefix) ? $"[{prefix}] " : "")}{message}";
     }
 }

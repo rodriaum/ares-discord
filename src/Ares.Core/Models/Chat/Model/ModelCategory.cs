@@ -6,7 +6,7 @@
 
 using System.Reflection;
 
-namespace Ares.Core.Objects.Model;
+namespace Ares.Core.Models.Data.Chat.Model;
 
 public enum ModelCategory
 {
@@ -63,7 +63,7 @@ public class WebApiAttribute : Attribute
 
     public WebApiAttribute(string? endpoint = null)
     {
-        this.RemoteEndpoint = endpoint;
+        RemoteEndpoint = endpoint;
     }
 }
 
@@ -71,7 +71,7 @@ public static class ModelCategoryExtensions
 {
     public static Uri? GetEndpoint(this ModelCategory category)
     {
-        WebApiAttribute? attribute = GetWebApiAttribute(category);
+        WebApiAttribute? attribute = category.GetWebApiAttribute();
 
         if (attribute == null)
             return null;

@@ -55,7 +55,7 @@ public class UserChatHistoric
     [JsonInclude]
     [JsonPropertyName("usage")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public Objects.Chat.ChatTokenUsage? Usage { get; set; }
+    public ChatTokenUsage? Usage { get; set; }
 
     /// <summary>
     /// Timestamp da conversa.
@@ -77,7 +77,7 @@ public class UserChatHistoric
             string? prompt = null,
             string? response = null,
             string? imageUrl = null,
-            Objects.Chat.ChatTokenUsage? usage = null,
+            ChatTokenUsage? usage = null,
             long timestamp = -1)
     {
         System = system;
@@ -119,7 +119,7 @@ public class UserChatHistoric
                 prompt: prompt,
                 response: contentOpenAi.Text,
                 imageUrl: !string.IsNullOrWhiteSpace(imageUrl) ? contentOpenAi.ImageUri?.OriginalString : imageUrl,
-                usage: new Objects.Chat.ChatTokenUsage(responseOpenAi.Usage.OutputTokenCount, responseOpenAi.Usage.InputTokenCount),
+                usage: new ChatTokenUsage(responseOpenAi.Usage.OutputTokenCount, responseOpenAi.Usage.InputTokenCount),
                 timestamp: responseOpenAi.CreatedAt.Ticks
             ));
         }
@@ -149,7 +149,7 @@ public class UserChatHistoric
                     (
                         prompt: prompt,
                         response: ollamaResponse.Text,
-                        usage: new Objects.Chat.ChatTokenUsage(outputTokens.Value, inputTokens.Value),
+                        usage: new ChatTokenUsage(outputTokens.Value, inputTokens.Value),
                         timestamp: TimeUtil.CurrentTimeMillis()
                     ));
                 }

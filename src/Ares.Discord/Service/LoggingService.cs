@@ -34,7 +34,7 @@ public class LoggingService
             AresLogger.Log(
 					$"Command: {message.Source}",
 					$"{ex.Command.Aliases.First()} failed to execute in {ex.Context.Channel}.",
-					ex.Message,
+					extra: ex.Message,
 					severity: severity
                 );
         }

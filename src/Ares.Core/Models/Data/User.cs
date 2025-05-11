@@ -3,7 +3,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Models.Collection;
+namespace Ares.Core.Models.Data;
 
 /// <summary>
 /// Represents a User of Guild.

@@ -6,8 +6,9 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
+using Ares.Core.Models.Chat.Model;
+using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
 using Ares.Discord.Util;
 using Discord;
@@ -36,7 +37,7 @@ public class SetupCommand
             ulong? guildId = command.GuildId;
 
             EmbedBuilder embed = new EmbedBuilder()
-                .WithDescription(AresConstant.LoadingEmote)
+                .WithDescription(AppConstants.LoadingEmote)
                 .WithCurrentTimestamp();
 
             await command.RespondAsync(embed: embed.Build());
@@ -86,7 +87,7 @@ public class SetupCommand
         if (requestType != null)
             embed.WithFooter($"Modelos {requestType}");
 
-        ChatModelRepository? repository = AresCore.ChatModelRepository;
+        ChatModelRepository? repository = AppCore.ChatModelRepository;
 
         if (repository == null)
         {

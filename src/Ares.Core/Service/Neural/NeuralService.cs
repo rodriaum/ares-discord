@@ -5,15 +5,16 @@
  */
 
 using Ares.Core.Constants;
-using Ares.Core.Manager.Database;
+using Ares.Core.Manager.Data;
 using Ares.Core.Manager.Lang;
 using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Chat.Image;
+using Ares.Core.Models.Chat.Model;
+using Ares.Core.Models.Data;
+using Ares.Core.Models.Data.Chat.Model;
+using Ares.Core.Models.Language;
 using Ares.Core.Models.Token;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Chat.Image;
-using Ares.Core.Objects.Language;
-using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using Microsoft.Extensions.AI;
 using OpenAI;
@@ -57,14 +58,14 @@ public class NeuralService
 
         if (model.Type != ModelType.Image)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.ModelUnavailable), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.ModelUnavailable), false);
         }
 
         GToken? tokenData = guild.Token;
 
         if (tokenData == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfoToken), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfoToken), false);
         }
 
         string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
@@ -72,7 +73,7 @@ public class NeuralService
 
         if (string.IsNullOrEmpty(modelToken))
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindToken), false);
         }
 
         try
@@ -92,7 +93,7 @@ public class NeuralService
 
             if (image == null)
             {
-                return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $"({nameof(GenerateConversationAsync)})", false);
+                return (GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $"({nameof(GenerateConversationAsync)})", false);
             }
 
             // Use original URL if no Imgur token is available
@@ -103,16 +104,16 @@ public class NeuralService
             // Save the image generation to chat history
             if (!await SaveToHistoryAsync(guild, user, channel, prompt, imageUrl: imageUrl, imageOpenAi: image))
             {
-                return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})", false);
+                return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})", false);
             }
 
             return (imageUrl, true);
         }
         catch (Exception e)
         {
-            AresLogger.Log("Generation", "Unable to generate an image.", e.Message, severity: Severity.Error);
+            AresLogger.Log("Generation", "Unable to generate an image.", severity: Severity.Error, extra: e.Message);
 
-            LangCategory lang = GuildManager.LangCategory(guild) ?? AresCore.LangManager.GetLanguages().First();
+            LanguageCategory lang = GuildDataManager.LangCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
         }
     }
@@ -146,21 +147,21 @@ public class NeuralService
 
         if (model.Type != ModelType.TTS)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.ModelUnavailable), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.ModelUnavailable), false);
         }
 
         GToken? tokenData = guild.Token;
 
         if (tokenData == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindToken), false);
         }
 
         string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
 
         if (string.IsNullOrWhiteSpace(modelToken))
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindToken), false);
         }
 
         OpenAIClientOptions clientOptions = new OpenAIClientOptions { Endpoint = model.Category.GetEndpoint() };
@@ -181,9 +182,9 @@ public class NeuralService
         }
         catch (Exception e)
         {
-            AresLogger.Log("Generation", "Unable to generate TTS.", e.Message, severity: Severity.Error);
+            AresLogger.Log("Generation", "Unable to generate TTS.", severity: Severity.Error, extra: e.Message);
 
-            LangCategory lang = GuildManager.LangCategory(guild) ?? AresCore.LangManager.GetLanguages().First();
+            LanguageCategory lang = GuildDataManager.LangCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
         }
     }
@@ -218,7 +219,7 @@ public class NeuralService
 
         if (model.Type != ModelType.Chat)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.ModelUnavailable), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.ModelUnavailable), false);
         }
 
         try
@@ -235,8 +236,8 @@ public class NeuralService
         }
         catch (Exception e)
         {
-            AresLogger.Log("Generation", "Unable to generate a conversation.", e.Message, severity: Severity.Error);
-            LangCategory lang = GuildManager.LangCategory(guild) ?? AresCore.LangManager.GetLanguages().First();
+            AresLogger.Log("Generation", "Unable to generate a conversation.", severity: Severity.Error, extra: e.Message);
+            LanguageCategory lang = GuildDataManager.LangCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
         }
     }
@@ -252,27 +253,27 @@ public class NeuralService
         string prompt)
     {
         // Get chat history and info
-        List<UserChatHistoric>? historics = UserManager.ChatHistorics(user, guild.Id, channelId: channel);
+        List<UserChatHistoric>? historics = UserDataManager.ChatHistorics(user, guild.Id, channelId: channel);
 
-        UserChatInfo? info = UserManager.ChatInfoByChannel(user, guild.Id, channel);
+        UserChatInfo? info = UserDataManager.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
             AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Chat information could not be accessed.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfo), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo), false);
         }
 
         // Prepare messages for the API request
         List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? UserChatHistoric.ToLocal(historics) : new();
-        messages.Add(new(ChatRole.User, prompt));
+        messages.Add(new(Microsoft.Extensions.AI.ChatRole.User, prompt));
 
         // Configure the API client
-        IChatClient? ollama = AresCore.OllamaClient;
+        IChatClient? ollama = AppCore.OllamaClient;
 
         if (ollama == null)
         {
             AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Ollama client is null.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeys.UnablePerformTask) + " (ollama_null)", false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.UnablePerformTask) + " (ollama_null)", false);
         }
 
         ChatOptions chatOptions = new ChatOptions
@@ -298,24 +299,24 @@ public class NeuralService
 
         if (tokenData == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindToken), false);
         }
 
         string? modelToken = tokenData.GetToken(model.Category.ToString().ToLower());
 
         if (string.IsNullOrWhiteSpace(modelToken))
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindToken), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindToken), false);
         }
 
         // Get chat history and info
-        List<UserChatHistoric>? historics = UserManager.ChatHistorics(user, guild.Id, channelId: channel);
-        UserChatInfo? info = UserManager.ChatInfoByChannel(user, guild.Id, channel);
+        List<UserChatHistoric>? historics = UserDataManager.ChatHistorics(user, guild.Id, channelId: channel);
+        UserChatInfo? info = UserDataManager.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
             AresLogger.Log("GenerateConversationAsync", "Chat information could not be accessed.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeys.CouldNotFindInfo), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo), false);
         }
 
         // Prepare messages for the API request
@@ -357,7 +358,7 @@ public class NeuralService
         if (completion == null)
         {
             AresLogger.Log("OpenAI", "Unable to get response.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
         }
 
         // Save to history
@@ -365,22 +366,22 @@ public class NeuralService
 
         info.Historics.Add(historic);
 
-        await UserManager.UpdateChatInfoAsync(user, guild.Id, info);
+        await UserDataManager.UpdateChatInfoAsync(user, guild.Id, info);
 
         ChatMessageContentPart? content = completion.Content.FirstOrDefault();
 
         if (content == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
         }
 
         string result = completion.FinishReason switch
         {
             OpenAI.Chat.ChatFinishReason.Stop => content.Text,
-            OpenAI.Chat.ChatFinishReason.Length => GuildManager.GetTranslation(guild, LangKeys.RateLimitExceeded),
-            OpenAI.Chat.ChatFinishReason.ContentFilter => GuildManager.GetTranslation(guild, LangKeys.ContentPolityViolation),
-            OpenAI.Chat.ChatFinishReason.FunctionCall => GuildManager.GetTranslation(guild, LangKeys.FunctionCall),
-            _ => GuildManager.GetTranslation(guild, LangKeys.UnableGenerateOrder).Replace("{0}", completion.FinishReason.ToString() ?? "-/-")
+            OpenAI.Chat.ChatFinishReason.Length => GuildDataManager.GetTranslation(guild, LanguageKeys.RateLimitExceeded),
+            OpenAI.Chat.ChatFinishReason.ContentFilter => GuildDataManager.GetTranslation(guild, LanguageKeys.ContentPolityViolation),
+            OpenAI.Chat.ChatFinishReason.FunctionCall => GuildDataManager.GetTranslation(guild, LanguageKeys.FunctionCall),
+            _ => GuildDataManager.GetTranslation(guild, LanguageKeys.UnableGenerateOrder).Replace("{0}", completion.FinishReason.ToString() ?? "-/-")
         };
 
         return (result, true);
@@ -404,7 +405,7 @@ public class NeuralService
         if (response == null)
         {
             AresLogger.Log("OpenAI", "Unable to get response.", severity: Severity.Error);
-            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
         // Save to history
@@ -412,20 +413,20 @@ public class NeuralService
 
         info.Historics.Add(historic);
 
-        await UserManager.UpdateChatInfoAsync(user, guild.Id, info);
+        await UserDataManager.UpdateChatInfoAsync(user, guild.Id, info);
 
         Microsoft.Extensions.AI.ChatMessage? message = response.Messages.FirstOrDefault();
 
         if (message == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
         Microsoft.Extensions.AI.ChatFinishReason? finishReason = response.FinishReason;
 
         if (finishReason == null)
         {
-            return (GuildManager.GetTranslation(guild, LangKeys.InvalidRequest) + $"  {nameof(HandleLocalNonStreamingResponseAsync)}", false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $"  {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
         // Regular expression to remove everything between <think> and </think>
@@ -435,10 +436,10 @@ public class NeuralService
         string result = finishReason.ToString() switch
         {
             "stop" => responseFixed,
-            "length" => GuildManager.GetTranslation(guild, LangKeys.RateLimitExceeded),
-            "content_filter" => GuildManager.GetTranslation(guild, LangKeys.ContentPolityViolation),
-            "tool_calls" => GuildManager.GetTranslation(guild, LangKeys.FunctionCall),
-            _ => GuildManager.GetTranslation(guild, LangKeys.UnableGenerateOrder).Replace("{0}", finishReason.ToString() ?? "-/-")
+            "length" => GuildDataManager.GetTranslation(guild, LanguageKeys.RateLimitExceeded),
+            "content_filter" => GuildDataManager.GetTranslation(guild, LanguageKeys.ContentPolityViolation),
+            "tool_calls" => GuildDataManager.GetTranslation(guild, LanguageKeys.FunctionCall),
+            _ => GuildDataManager.GetTranslation(guild, LanguageKeys.UnableGenerateOrder).Replace("{0}", finishReason.ToString() ?? "-/-")
         };
 
         return (result, true);
@@ -454,21 +455,21 @@ public class NeuralService
     /// <param name="category">Language category</param>
     /// <param name="key">Error key</param>
     /// <returns>Localized error message</returns>
-    private static string GetMessageByErrorKey(LangCategory category, string key)
+    private static string GetMessageByErrorKey(LanguageCategory category, string key)
     {
-        LangManager manager = AresCore.LangManager;
+        LanguageManager manager = AppCore.LangManager;
 
         // Dictionary mapping error keys to language keys for error messages
         Dictionary<string, string> errorKeyMapping = new()
     {
-        { "content_policy_violation", LangKeys.ContentPolityViolation },
-        { "rate_limit_exceeded", LangKeys.RateLimitExceeded },
-        { "invalid_request", LangKeys.InvalidRequest },
-        { "authentication_error", LangKeys.AuthenticationError },
-        { "server_error", LangKeys.ServerError },
-        { "overloaded_error", LangKeys.OverloadedError },
-        { "timeout", LangKeys.Timeout },
-        { "model_not_found", LangKeys.ModelNotFound }
+        { "content_policy_violation", LanguageKeys.ContentPolityViolation },
+        { "rate_limit_exceeded", LanguageKeys.RateLimitExceeded },
+        { "invalid_request", LanguageKeys.InvalidRequest },
+        { "authentication_error", LanguageKeys.AuthenticationError },
+        { "server_error", LanguageKeys.ServerError },
+        { "overloaded_error", LanguageKeys.OverloadedError },
+        { "timeout", LanguageKeys.Timeout },
+        { "model_not_found", LanguageKeys.ModelNotFound }
     };
 
         // Search for any matching error keys
@@ -481,7 +482,7 @@ public class NeuralService
         }
 
         // Default error message if no specific match is found
-        return manager.GetTranslation(category, LangKeys.UnablePerformTask);
+        return manager.GetTranslation(category, LanguageKeys.UnablePerformTask);
     }
 
     /// <summary>
@@ -537,9 +538,9 @@ public class NeuralService
         string? imageUrl = null,
         GeneratedImage? imageOpenAi = null,
         ChatCompletion? responseOpenAi = null,
-        Objects.Chat.ChatTokenUsage? usage = null)
+        Models.Chat.ChatTokenUsage? usage = null)
     {
-        UserChatInfo? info = UserManager.ChatInfoByChannel(user, guild.Id, channel);
+        UserChatInfo? info = UserDataManager.ChatInfoByChannel(user, guild.Id, channel);
 
         if (info == null)
         {
@@ -563,7 +564,7 @@ public class NeuralService
         }
 
         info.Historics.Add(historic);
-        await UserManager.UpdateChatInfoAsync(user, guild.Id, info);
+        await UserDataManager.UpdateChatInfoAsync(user, guild.Id, info);
 
         return true;
     }

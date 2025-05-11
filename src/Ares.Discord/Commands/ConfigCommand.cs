@@ -6,8 +6,8 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Database;
-using Ares.Core.Models.Collection;
+using Ares.Core.Manager.Data;
+using Ares.Core.Models.Data;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using Ares.Core.Repository;
@@ -39,12 +39,12 @@ public class ConfigCommand
             .WithTitle("Config")
             .WithDescription("Aguarde...")
             .WithColor(Color.Gold)
-            .WithFooter($"{DateTime.Now.Year} - {AresConstant.AppName}");
+            .WithFooter($"{DateTime.Now.Year} - {AppConstants.AppName}");
 
             await command.RespondAsync(ephemeral: true, embed: embed.Build());
             RestInteractionMessage message = await command.GetOriginalResponseAsync();
 
-            GuildRepository? repository = AresCore.GuildRepository;
+            GuildRepository? repository = AppCore.GuildRepository;
 
             if (repository == null)
             {
@@ -110,7 +110,7 @@ public class ConfigCommand
                 {
                     await message.ModifyAsync(msg =>
                         msg.Embed = embed
-                            .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOptions))
+                            .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidOptions))
                             .WithColor(Color.Red)
                             .Build()
                     );
@@ -124,7 +124,7 @@ public class ConfigCommand
                 {
                     await message.ModifyAsync(msg =>
                         msg.Embed = embed
-                            .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOptionValue))
+                            .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidOptionValue))
                             .WithColor(Color.Red)
                             .Build()
                     );
@@ -243,15 +243,15 @@ public class ConfigCommand
                     default:
                         await message.ModifyAsync(msg =>
                             msg.Embed = embed
-                                .WithDescription(GuildManager.GetTranslation(guild, LangKeys.InvalidOption))
+                                .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidOption))
                                 .WithColor(Color.Red)
                                 .Build()
                         );
                         return;
                 }
 
-                sb.AppendLine(GuildManager
-                    .GetTranslation(guild, LangKeys.ConfigUpdateSuccess)
+                sb.AppendLine(GuildDataManager
+                    .GetTranslation(guild, LanguageKeys.ConfigUpdateSuccess)
                     .Replace("{0}", optionName ?? "N/A")
                     .Replace("{1}", (!string.IsNullOrWhiteSpace(optionValueString) ? optionValueString : "N/A")));
             }
@@ -261,12 +261,12 @@ public class ConfigCommand
 
             if (tokenChange)
             {
-                success = await GuildManager.SaveTokenDataAsync(guild, tokenData);
+                success = await GuildDataManager.SaveTokenDataAsync(guild, tokenData);
             }
 
             if (configChange)
             {
-                success = await GuildManager.SavePreferenceDataAsync(guild, configData);
+                success = await GuildDataManager.SavePreferenceDataAsync(guild, configData);
             }
 
             if (success)
@@ -282,7 +282,7 @@ public class ConfigCommand
             {
                 await message.ModifyAsync(msg =>
                     msg.Embed = embed
-                        .WithDescription(GuildManager.GetTranslation(guild, LangKeys.ConfigUpdateUnSuccess))
+                        .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigUpdateUnSuccess))
                         .WithColor(Color.Gold)
                         .Build()
                     );

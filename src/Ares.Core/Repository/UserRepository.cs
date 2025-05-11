@@ -5,9 +5,9 @@
 */
 
 using Ares.Core.Constants;
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Data;
 using Ares.Core.Objects;
-using Ares.Core.Service.Database;
+using Ares.Core.Service;
 using Ares.Core.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -34,7 +34,7 @@ public class UserRepository
     /// <summary>
     /// Key prefix used for user data in Redis.
     /// </summary>
-    private readonly string GRedisKey = $"{AresConstant.AppName.ToLower()}:user:";
+    private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:user:";
 
     /// <summary>
     /// Dictionary of locks for concurrent operations on the same user
@@ -225,7 +225,7 @@ public class UserRepository
             }
             catch (Exception e)
             {
-                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update user data.", e.Message, severity: Severity.Error);
+                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update user data.", severity: Severity.Error, extra: e.Message);
                 return false;
             }
         }
@@ -291,7 +291,7 @@ public class UserRepository
             }
             catch (JsonException ex)
             {
-                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", ex.Message, severity: Severity.Error);
+                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", severity: Severity.Error, extra: ex.Message);
             }
         });
 

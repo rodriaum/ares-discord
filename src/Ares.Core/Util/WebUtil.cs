@@ -24,12 +24,12 @@ public class WebUtil
                 { new StringContent(imageUrl), "image" }
             };
 
-            HttpResponseMessage response = await client.PostAsync(AresConstant.ImgurApiUrl, content);
+            HttpResponseMessage response = await client.PostAsync(AppConstants.ImgurApiUrl, content);
             string jsonResponse = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                AresLogger.Log(nameof(UploadMediaFromUrl), $"Error sending a response.", jsonResponse, severity: Severity.Error);
+                AresLogger.Log(nameof(UploadMediaFromUrl), $"Error sending a response.", severity: Severity.Error, extra: jsonResponse);
             }
 
             using (JsonDocument doc = JsonDocument.Parse(jsonResponse))

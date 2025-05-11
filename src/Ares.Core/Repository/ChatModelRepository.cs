@@ -5,8 +5,9 @@
 */
 
 using Ares.Core.Constants;
+using Ares.Core.Models.Chat.Model;
+using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Model;
 using Ares.Core.Service;
 using Ares.Core.Util;
 using MongoDB.Bson;
@@ -35,7 +36,7 @@ public class ChatModelRepository
     /// <summary>
     /// Key prefix used for guild data in Redis.
     /// </summary>
-    private readonly string GRedisKey = $"{AresConstant.AppName.ToLower()}:model:";
+    private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:model:";
 
     /// <summary>
     /// Dictionary of locks for concurrent operations on the same model
@@ -269,7 +270,7 @@ public class ChatModelRepository
             }
             catch (Exception e)
             {
-                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update model data.", e.Message, severity: Severity.Error);
+                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update model data.", severity: Severity.Error, e.Message);
                 return false;
             }
         }
@@ -335,7 +336,7 @@ public class ChatModelRepository
             }
             catch (JsonException ex)
             {
-                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", ex.Message, severity: Severity.Error);
+                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", severity: Severity.Error, extra: ex.Message);
             }
         });
 

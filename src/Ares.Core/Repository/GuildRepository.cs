@@ -5,7 +5,7 @@
 */
 
 using Ares.Core.Constants;
-using Ares.Core.Models.Collection;
+using Ares.Core.Models.Data;
 using Ares.Core.Objects;
 using Ares.Core.Service;
 using Ares.Core.Util;
@@ -34,7 +34,7 @@ public class GuildRepository
     /// <summary>
     /// Key prefix used for guild data in Redis.
     /// </summary>
-    private readonly string GRedisKey = $"{AresConstant.AppName.ToLower()}:guild:";
+    private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:guild:";
 
     /// <summary>
     /// Dictionary of locks for concurrent operations on the same guild
@@ -225,7 +225,7 @@ public class GuildRepository
             }
             catch (Exception e)
             {
-                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update guild data.", e.Message, severity: Severity.Error);
+                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update guild data.", severity: Severity.Error, extra: e.Message);
                 return false;
             }
         }
@@ -291,7 +291,7 @@ public class GuildRepository
             }
             catch (JsonException ex)
             {
-                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", ex.Message, severity: Severity.Error);
+                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", severity: Severity.Error, extra: ex.Message);
             }
         });
 

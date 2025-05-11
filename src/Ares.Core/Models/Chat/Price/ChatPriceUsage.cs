@@ -7,7 +7,7 @@
 using Ares.Core.Objects.Image;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Objects.Chat.Price;
+namespace Ares.Core.Models.Chat.Price;
 
 /// <summary>
 /// Represents the price in dollars per token used in the request and response.
@@ -49,39 +49,39 @@ public class ChatPriceUsage
 
     public ChatPriceUsage(decimal outputPriceToken = 0, decimal inputPriceToken = 0, decimal inputPricePerImage = 0, List<ChatPriceUsageDetail>? chatPriceUsageDetail = null)
     {
-        this.OutputPriceToken = outputPriceToken;
-        this.InputPriceToken = inputPriceToken;
-        this.InputPricePerImage = inputPricePerImage;
-        this.ChatPriceUsageDetail = chatPriceUsageDetail ?? new List<ChatPriceUsageDetail>();
+        OutputPriceToken = outputPriceToken;
+        InputPriceToken = inputPriceToken;
+        InputPricePerImage = inputPricePerImage;
+        ChatPriceUsageDetail = chatPriceUsageDetail ?? new List<ChatPriceUsageDetail>();
     }
 
     public decimal OutputPriceTokenPerToken()
     {
-        return this.OutputPriceToken / 1_000_000m;
+        return OutputPriceToken / 1_000_000m;
     }
 
     public decimal InputPriceTokenPerToken()
     {
-        return this.OutputPriceToken / 1_000_000m;
+        return OutputPriceToken / 1_000_000m;
     }
 
     public decimal TotalTextChatPricePerToken()
     {
-        return this.OutputPriceTokenPerToken() + this.InputPriceTokenPerToken();
+        return OutputPriceTokenPerToken() + InputPriceTokenPerToken();
     }
 
     public decimal TotalTextChatPrice()
     {
-        return this.OutputPriceToken + this.InputPriceToken;
+        return OutputPriceToken + InputPriceToken;
     }
 
     public decimal TotalChatPrice()
     {
-        return this.TotalTextChatPrice() + this.InputPricePerImage;
+        return TotalTextChatPrice() + InputPricePerImage;
     }
 
     public decimal TotalImageChatPrice(ImageQuality quality, ImageSize size)
     {
-        return this.ChatPriceUsageDetail?.Find(x => x.Quality == quality && x.Size == size)?.Price ?? 0;
+        return ChatPriceUsageDetail?.Find(x => x.Quality == quality && x.Size == size)?.Price ?? 0;
     }
 }

@@ -6,8 +6,8 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
+using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
-using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using Ares.Discord.Commands;
 using Ares.Discord.Listener;
@@ -65,10 +65,10 @@ public class Program
         // Load environment variables in build/run path
         Env.Load();
         // Load environment variables in project path
-        Env.Load($@"{AresConstant.ProjectPath}.env");
+        Env.Load($@"{AppConstants.ProjectPath}.env");
 
         // Initialize Core
-        if (!await AresCore.Init())
+        if (!await AppCore.Init())
         {
             AresLogger.Log("Database", "Core initialization failed.", severity: Severity.Critical);
             return;
@@ -99,10 +99,10 @@ public class Program
         _client = new DiscordSocketClient(config);
         _commands = new CommandService();
 
-        string discordToken = (AresConstant.AppDevMode ? Env.GetString("DISCORD_TOKEN_DEV") : Env.GetString("DISCORD_TOKEN"));
+        string discordToken = (AppConstants.AppDevMode ? Env.GetString("DISCORD_TOKEN_DEV") : Env.GetString("DISCORD_TOKEN"));
         if (string.IsNullOrWhiteSpace(discordToken))
         {
-            await AresLogger.LogAsync("Token", $"Could not find application token. (Is Dev Mode: {AresConstant.AppDevMode})", severity: Severity.Error);
+            await AresLogger.LogAsync("Token", $"Could not find application token. (Is Dev Mode: {AppConstants.AppDevMode})", severity: Severity.Error);
             return;
         }
 
@@ -125,7 +125,7 @@ public class Program
         _client.Ready += RegisterCommands;
         _client.Ready += () =>
         {
-            AresLogger.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"");
+            AresLogger.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"", severity: Severity.Success);
             return Task.CompletedTask;
         };
 
@@ -133,7 +133,7 @@ public class Program
         {
             e.Cancel = true;
             await AresLogger.LogAsync("Exit", "Shutting down core system...");
-            await AresCore.Close();
+            await AppCore.Close();
             await AresLogger.LogAsync("Exit", "Core system shutdown.");
             _cts.Cancel();
             Environment.Exit(0);
@@ -188,7 +188,7 @@ public class Program
     public static async Task RegisterCommands()
     {
         // Get available language options
-        var langOptionChoices = AresCore.LangManager.GetLanguages()
+        var langOptionChoices = AppCore.LangManager.GetLanguages()
             .Select(category => new ApplicationCommandOptionChoiceProperties
             {
                 Name = category.Name,

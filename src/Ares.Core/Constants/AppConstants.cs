@@ -6,7 +6,7 @@
 
 namespace Ares.Core.Constants;
 
-public class AresConstant
+public class AppConstants
 {
     /*
      * App

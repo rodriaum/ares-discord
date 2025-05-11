@@ -146,14 +146,15 @@ public class RedisService : Interfaces.IDatabase
             {
                 try
                 {
-                    await FlushAsync();
-                    await AresLogger.LogAsync("DB: Redis", "Redis database cache has been cleared.");
+                    if (await FlushAsync() != null)
+                        await AresLogger.LogAsync("DB: Redis", "Redis database cache has been cleared.", severity: Severity.Debug);
+
                     await _connection?.CloseAsync()!;
                     await _connection.DisposeAsync();
                 }
                 catch (Exception ex)
                 {
-                    await AresLogger.LogAsync("DB: Redis", "Could not close connection.", ex.Message);
+                    await AresLogger.LogAsync("DB: Redis", "Could not close connection.", severity: Severity.Error, extra: ex.Message);
                 }
             }
         }
@@ -177,17 +178,8 @@ public class RedisService : Interfaces.IDatabase
     /// </summary>
     public async Task<RedisResult?> FlushAsync()
     {
-        try
-        {
-            await _connectionLock.WaitAsync();
-
-            if (_database == null) return null;
-            return await _database.ExecuteAsync("FLUSHDB");
-        }
-        finally
-        {
-            _connectionLock.Release();
-        }
+        if (_database == null) return null;
+        return await _database.ExecuteAsync("FLUSHDB");
     }
 
     /// <summary>

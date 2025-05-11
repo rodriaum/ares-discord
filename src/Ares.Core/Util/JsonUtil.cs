@@ -26,7 +26,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to generate JSON tree.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to generate JSON tree.", severity: Severity.Error, extra: ex.Message);
             return null;
         }
     }
@@ -47,14 +47,14 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Fallback to BsonDocument.Parse due to deserialization error.", ex.Message, severity: Severity.Warning);
+            AresLogger.Log("JsonUtil", "Fallback to BsonDocument.Parse due to deserialization error.", severity: Severity.Warning, extra: ex.Message);
             try
             {
                 return BsonDocument.Parse(element?.ToJsonString() ?? "{}");
             }
             catch (Exception parseEx)
             {
-                AresLogger.Log("JsonUtil", "Failed to parse JsonNode to BsonDocument.", parseEx.Message, severity: Severity.Error);
+                AresLogger.Log("JsonUtil", "Failed to parse JsonNode to BsonDocument.", severity: Severity.Error, extra: parseEx.Message);
                 return null;
             }
         }
@@ -91,7 +91,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to convert dictionary to object.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to convert dictionary to object.", severity: Severity.Error, extra: ex.Message);
             return default;
         }
     }
@@ -115,7 +115,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to convert object to dictionary.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to convert object to dictionary.", severity: Severity.Error, extra: ex.Message);
         }
 
         return map;
@@ -140,7 +140,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to convert object to dictionary list.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to convert object to dictionary list.", severity: Severity.Error, extra: ex.Message);
         }
 
         return map;
@@ -159,7 +159,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to serialize object to string.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to serialize object to string.", severity: Severity.Error, extra: ex.Message);
             return string.Empty;
         }
     }
@@ -183,7 +183,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to deserialize BsonDocument.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to deserialize BsonDocument.", severity: Severity.Error, extra: ex.Message);
             return default;
         }
     }
@@ -201,7 +201,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to serialize object to BsonDocument.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to serialize object to BsonDocument.", severity: Severity.Error, extra: ex.Message);
             return null;
         }
     }
@@ -215,7 +215,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to deserialize string to object.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to deserialize string to object.", severity: Severity.Error, extra: ex.Message);
             return default;
         }
     }
@@ -229,7 +229,7 @@ public static class JsonUtil
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to deserialize bytes to object.", ex.Message, severity: Severity.Error);
+            AresLogger.Log("JsonUtil", "Failed to deserialize bytes to object.", severity: Severity.Error, extra: ex.Message);
             return default;
         }
     }

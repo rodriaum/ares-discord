@@ -4,10 +4,7 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Objects;
-using Ares.Core.Objects.Chat.Image;
-using Ares.Core.Objects.Model;
-using Ares.Core.Repository;
+using Ares.Core.Models.Chat.Image;
 using System.Text.Json.Serialization;
 
 namespace Ares.Core.Models.Chat.Historic;
@@ -48,21 +45,5 @@ public class UserChatInfo
         ImageGenOptions = imageGenOptions;
 
         Historics = historics ?? new List<UserChatHistoric>();
-
-        InitializeImageGenOptions();
-    }
-
-    [Obsolete]
-    private async void InitializeImageGenOptions()
-    {
-        ChatModelRepository? repository = AresCore.ChatModelRepository;
-        if (repository != null && ImageGenOptions == null)
-        {
-            ChatModel? model = await repository.FetchAsync(ModelId, saveInRedis: true);
-            if (model != null && model.Type == ModelType.Image)
-            {
-                ImageGenOptions = new ImageGenOptions();
-            }
-        }
     }
 }
