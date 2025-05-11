@@ -1,14 +1,15 @@
 ﻿/*
- * Copyright (C) Rodrigo Ferreira, All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- */
+* Copyright (C) Rodrigo Ferreira, All Rights Reserved
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+*/
 
 using Ares.Core.Models;
 using Ares.Core.Objects;
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
 using StackExchange.Redis;
+using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace Ares.Core.Service;
@@ -26,6 +27,16 @@ public class RedisService : Interfaces.IDatabase
 
     private ConnectionMultiplexer? _connection;
     private IDatabase? _database;
+
+    /// <summary>
+    /// Dictionary of locks for concurrent operations on the same key
+    /// </summary>
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _keyLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
+
+    /// <summary>
+    /// Lock for connection operations
+    /// </summary>
+    private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
 
     /// <summary>
     /// Initializes a new instance of the RedisDatabase with specified credentials.
@@ -60,53 +71,62 @@ public class RedisService : Interfaces.IDatabase
     /// </remarks>
     public async Task ConnectAsync()
     {
-        long start = TimeUtil.CurrentTimeMillis();
-
-        await AresLogger.LogAsync("DB: Redis", "Starting connection to Redis...");
-
-        int time = 15;
-
-        int currentTries = 1;
-        int maxTries = 3;
-
-        bool connected = false;
-
-        while (!connected)
+        try
         {
-            try
+            await _connectionLock.WaitAsync();
+
+            long start = TimeUtil.CurrentTimeMillis();
+
+            await AresLogger.LogAsync("DB: Redis", "Starting connection to Redis...");
+
+            int time = 15;
+
+            int currentTries = 1;
+            int maxTries = 3;
+
+            bool connected = false;
+
+            while (!connected)
             {
-                ConfigurationOptions options = new ConfigurationOptions
+                try
                 {
-                    EndPoints = { $"{_credentials.Host}:{_credentials.Port}" },
-                    Password = _credentials.Password,
-                    ConnectTimeout = 5000,
-                    SyncTimeout = 5000,
-                    AsyncTimeout = 5000
-                };
+                    ConfigurationOptions options = new ConfigurationOptions
+                    {
+                        EndPoints = { $"{_credentials.Host}:{_credentials.Port}" },
+                        Password = _credentials.Password,
+                        ConnectTimeout = 5000,
+                        SyncTimeout = 5000,
+                        AsyncTimeout = 5000
+                    };
 
-                _connection = await ConnectionMultiplexer.ConnectAsync(options);
-                _database = _connection.GetDatabase();
+                    _connection = await ConnectionMultiplexer.ConnectAsync(options);
+                    _database = _connection.GetDatabase();
 
-                await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})");
-                connected = true;
-            }
-            catch (Exception ex)
-            {
-                await AresLogger.LogAsync("DB: Redis", "Could not connect to Redis.", extra: ex.Message, severity: Severity.Error);
-
-                connected = false;
-                currentTries++;
-
-                if (currentTries > maxTries)
-                {
-                    await AresLogger.LogAsync("DB: Redis", "Max tries reached, stopping connection attempts.", severity: Severity.Error);
-                    Environment.Exit(1);
-                    break;
+                    await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})");
+                    connected = true;
                 }
+                catch (Exception ex)
+                {
+                    await AresLogger.LogAsync("DB: Redis", "Could not connect to Redis.", extra: ex.Message, severity: Severity.Error);
 
-                await AresLogger.LogAsync("DB: Redis", $"Trying to connect in {time}s...", severity: Severity.Error);
-                await Task.Delay(time);
+                    connected = false;
+                    currentTries++;
+
+                    if (currentTries > maxTries)
+                    {
+                        await AresLogger.LogAsync("DB: Redis", "Max tries reached, stopping connection attempts.", severity: Severity.Error);
+                        Environment.Exit(1);
+                        break;
+                    }
+
+                    await AresLogger.LogAsync("DB: Redis", $"Trying to connect in {time}s...", severity: Severity.Error);
+                    await Task.Delay(time);
+                }
             }
+        }
+        finally
+        {
+            _connectionLock.Release();
         }
     }
 
@@ -118,19 +138,28 @@ public class RedisService : Interfaces.IDatabase
     /// </remarks>
     public async Task CloseAsync()
     {
-        if (IsConnected())
+        try
         {
-            try
+            await _connectionLock.WaitAsync();
+
+            if (IsConnected())
             {
-                await FlushAsync();
-                await AresLogger.LogAsync("DB: Redis", "Redis database cache has been cleared.");
-                await _connection?.CloseAsync()!;
-                await _connection.DisposeAsync();
+                try
+                {
+                    await FlushAsync();
+                    await AresLogger.LogAsync("DB: Redis", "Redis database cache has been cleared.");
+                    await _connection?.CloseAsync()!;
+                    await _connection.DisposeAsync();
+                }
+                catch (Exception ex)
+                {
+                    await AresLogger.LogAsync("DB: Redis", "Could not close connection.", ex.Message);
+                }
             }
-            catch (Exception ex)
-            {
-                await AresLogger.LogAsync("DB: Redis", "Could not close connection.", ex.Message);
-            }
+        }
+        finally
+        {
+            _connectionLock.Release();
         }
     }
 
@@ -148,8 +177,17 @@ public class RedisService : Interfaces.IDatabase
     /// </summary>
     public async Task<RedisResult?> FlushAsync()
     {
-        if (_database == null) return null;
-        return await _database.ExecuteAsync("FLUSHDB");
+        try
+        {
+            await _connectionLock.WaitAsync();
+
+            if (_database == null) return null;
+            return await _database.ExecuteAsync("FLUSHDB");
+        }
+        finally
+        {
+            _connectionLock.Release();
+        }
     }
 
     /// <summary>
@@ -170,11 +208,22 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="obj">The object to be saved.</param>
     public async Task SaveAsync(string key, object obj)
     {
-        if (_database == null) return;
-        if (await ExistsAsync(key)) return;
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
-        HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
-        await _database.HashSetAsync(key, fields);
+        try
+        {
+            await semaphore.WaitAsync();
+
+            if (_database == null) return;
+            if (await ExistsAsync(key)) return;
+
+            HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
+            await _database.HashSetAsync(key, fields);
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -184,12 +233,23 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="obj">The updated object.</param>
     public async Task UpdateAsync(string key, object obj)
     {
-        if (_database == null) return;
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
-        if (await ExistsAsync(key))
+        try
         {
-            HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
-            await _database.HashSetAsync(key, fields);
+            await semaphore.WaitAsync();
+
+            if (_database == null) return;
+
+            if (await ExistsAsync(key))
+            {
+                HashEntry[] fields = await ConvertToHashEntriesAsync(obj);
+                await _database.HashSetAsync(key, fields);
+            }
+        }
+        finally
+        {
+            semaphore.Release();
         }
     }
 
@@ -212,8 +272,19 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="expire">The number of seconds before the key expires.</param>
     public async Task SaveAsync(string key, object obj, int expire)
     {
-        await SaveAsync(key, obj);
-        await CacheAsync(key, expire);
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+
+        try
+        {
+            await semaphore.WaitAsync();
+
+            await SaveAsync(key, obj);
+            await CacheAsync(key, expire);
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -222,8 +293,19 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="key">The key to delete.</param
     public async Task<bool> DeleteAsync(string key)
     {
-        if (_database == null) return false;
-        return await _database.KeyDeleteAsync(key);
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+
+        try
+        {
+            await semaphore.WaitAsync();
+
+            if (_database == null) return false;
+            return await _database.KeyDeleteAsync(key);
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -233,8 +315,19 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="seconds">The number of seconds until expiration.</param>
     public async Task CacheAsync(string key, int seconds)
     {
-        if (_database == null) return;
-        await _database.KeyExpireAsync(key, TimeSpan.FromSeconds(seconds));
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+
+        try
+        {
+            await semaphore.WaitAsync();
+
+            if (_database == null) return;
+            await _database.KeyExpireAsync(key, TimeSpan.FromSeconds(seconds));
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -243,12 +336,23 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="key">The key to make persistent.</param>
     public async Task<bool> PersistAsync(string key)
     {
-        if (await _database?.KeyTimeToLiveAsync(key)! != null)
-        {
-            return await _database.KeyPersistAsync(key);
-        }
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
-        return false;
+        try
+        {
+            await semaphore.WaitAsync();
+
+            if (await _database?.KeyTimeToLiveAsync(key)! != null)
+            {
+                return await _database.KeyPersistAsync(key);
+            }
+
+            return false;
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -258,8 +362,19 @@ public class RedisService : Interfaces.IDatabase
     /// <param name="fields">The fields to delete.</param>
     public async Task<long> DeleteAsync(string key, params string[] fields)
     {
-        if (_database == null) return 0;
-        return await _database.HashDeleteAsync(key, fields.Select(f => (RedisValue)f).ToArray());
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+
+        try
+        {
+            await semaphore.WaitAsync();
+
+            if (_database == null) return 0;
+            return await _database.HashDeleteAsync(key, fields.Select(f => (RedisValue)f).ToArray());
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -270,14 +385,25 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>The loaded object, or null if not found.</returns>
     public async Task<T?> LoadAsync<T>(string key) where T : class
     {
-        if (_database == null) return null;
+        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
-        HashEntry[] fields = await _database.HashGetAllAsync(key);
+        try
+        {
+            await semaphore.WaitAsync();
 
-        if (fields.Length == 0)
-            return null;
+            if (_database == null) return null;
 
-        return await ConvertFromHashEntriesAsync<T>(fields);
+            HashEntry[] fields = await _database.HashGetAllAsync(key);
+
+            if (fields.Length == 0)
+                return null;
+
+            return await ConvertFromHashEntriesAsync<T>(fields);
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -295,13 +421,24 @@ public class RedisService : Interfaces.IDatabase
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
-            HashEntry[] fields = await _database.HashGetAllAsync(value.Key);
+            var semaphore = _keyLocks.GetOrAdd(value.Key, _ => new SemaphoreSlim(1, 1));
 
-            if (fields.Length > 0)
+            try
             {
-                T? obj = await ConvertFromHashEntriesAsync<T>(fields);
-                if (obj != null)
-                    results.Add(obj);
+                await semaphore.WaitAsync();
+
+                HashEntry[] fields = await _database.HashGetAllAsync(value.Key);
+
+                if (fields.Length > 0)
+                {
+                    T? obj = await ConvertFromHashEntriesAsync<T>(fields);
+                    if (obj != null)
+                        results.Add(obj);
+                }
+            }
+            finally
+            {
+                semaphore.Release();
             }
         }
 
@@ -320,7 +457,17 @@ public class RedisService : Interfaces.IDatabase
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
-            await _database.KeyDeleteAsync(value.Key);
+            var semaphore = _keyLocks.GetOrAdd(value.Key, _ => new SemaphoreSlim(1, 1));
+
+            try
+            {
+                await semaphore.WaitAsync();
+                await _database.KeyDeleteAsync(value.Key);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
     }
 
@@ -365,7 +512,6 @@ public class RedisService : Interfaces.IDatabase
     /// <returns>A Task representing the converted object, or null if conversion fails.</returns>
     private async Task<T?> ConvertFromHashEntriesAsync<T>(HashEntry[] entries) where T : class
     {
-
         Dictionary<string, string> dictionary = entries.ToDictionary(
             entry => entry.Name.ToString(),
             entry => entry.Value.ToString()
@@ -376,6 +522,19 @@ public class RedisService : Interfaces.IDatabase
                 dictionary,
                 deserializeOptions: new JsonSerializerOptions { IncludeFields = true }
             );
+    }
 
+    /// <summary>
+    /// Cleanup method to remove unused locks and free memory
+    /// </summary>
+    public void CleanupLocks(TimeSpan olderThan)
+    {
+        foreach (var key in _keyLocks.Keys)
+        {
+            if (_keyLocks.TryRemove(key, out var semaphore))
+            {
+                semaphore.Dispose();
+            }
+        }
     }
 }

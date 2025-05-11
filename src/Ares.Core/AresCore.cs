@@ -9,7 +9,7 @@ using Ares.Core.Manager.Lang;
 using Ares.Core.Models;
 using Ares.Core.Monitor;
 using Ares.Core.Repository;
-using Ares.Core.Service;
+using Ares.Core.Service.Database;
 using DotNetEnv;
 using Microsoft.Extensions.AI;
 

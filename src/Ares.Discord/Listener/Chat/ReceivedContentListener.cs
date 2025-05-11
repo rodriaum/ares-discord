@@ -15,7 +15,7 @@ using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Chat.Price;
 using Ares.Core.Objects.Model;
 using Ares.Core.Repository;
-using Ares.Core.Service;
+using Ares.Core.Service.Neural;
 using Ares.Core.Util;
 using Ares.Discord.Util;
 using Discord;

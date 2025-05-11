@@ -1,8 +1,8 @@
 ﻿/*
- * Copyright (C) Rodrigo Ferreira, All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- */
+* Copyright (C) Rodrigo Ferreira, All Rights Reserved
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+*/
 
 using Ares.Core.Models.Collection;
 using Ares.Core.Models.Preference;
@@ -10,6 +10,7 @@ using Ares.Core.Models.Token;
 using Ares.Core.Objects;
 using Ares.Core.Objects.Language;
 using Ares.Core.Util;
+using System.Collections.Concurrent;
 
 namespace Ares.Core.Manager.Database;
 
@@ -19,6 +20,11 @@ namespace Ares.Core.Manager.Database;
 public class GuildManager
 {
     /// <summary>
+    /// Dictionary of locks for concurrent operations on the same guild
+    /// </summary>
+    private static readonly ConcurrentDictionary<ulong, SemaphoreSlim> _guildLocks = new ConcurrentDictionary<ulong, SemaphoreSlim>();
+
+    /// <summary>
     /// Saves the specified fields of the guild to the database.
     /// </summary>
     /// <param name="guild">The guild to save.</param>
@@ -26,37 +32,48 @@ public class GuildManager
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveAsync(Guild guild, params string[] fields)
     {
-        if (fields == null || fields.Length == 0)
-        {
-            AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
-            return false;
-        }
-
-        if (AresCore.GuildRepository is not { } repository)
-        {
-            AresLogger.Log(nameof(SaveAsync), "Guild data is null. Unable to save fields.", severity: Severity.Error);
-            return false;
-        }
+        var semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
-            foreach (string field in fields)
-            {
-                if (string.IsNullOrWhiteSpace(field))
-                {
-                    AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
-                    continue;
-                }
+            await semaphore.WaitAsync();
 
-                await repository.UpdateAsync(guild, field);
+            if (fields == null || fields.Length == 0)
+            {
+                AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
+                return false;
             }
 
-            return true;
+            if (AresCore.GuildRepository is not { } repository)
+            {
+                AresLogger.Log(nameof(SaveAsync), "Guild data is null. Unable to save fields.", severity: Severity.Error);
+                return false;
+            }
+
+            try
+            {
+                foreach (string field in fields)
+                {
+                    if (string.IsNullOrWhiteSpace(field))
+                    {
+                        AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
+                        continue;
+                    }
+
+                    await repository.UpdateAsync(guild, field);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
+                return false;
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
-            return false;
+            semaphore.Release();
         }
     }
 
@@ -68,13 +85,24 @@ public class GuildManager
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveTokenDataAsync(Guild guild, GToken? token = null)
     {
-        // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
-        if (token != null)
-        {
-            guild.Token = token;
-        }
+        var semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
 
-        return await SaveAsync(guild, "token");
+        try
+        {
+            await semaphore.WaitAsync();
+
+            // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
+            if (token != null)
+            {
+                guild.Token = token;
+            }
+
+            return await SaveAsync(guild, "token");
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -85,13 +113,24 @@ public class GuildManager
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public static async Task<bool> SavePreferenceDataAsync(Guild guild, GPreference? config = null)
     {
-        // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
-        if (config != null)
-        {
-            guild.Preferences = config;
-        }
+        var semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
 
-        return await SaveAsync(guild, "preference");
+        try
+        {
+            await semaphore.WaitAsync();
+
+            // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
+            if (config != null)
+            {
+                guild.Preferences = config;
+            }
+
+            return await SaveAsync(guild, "preference");
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -126,5 +165,19 @@ public class GuildManager
         if (category == null) return code;
 
         return AresCore.LangManager.GetTranslation(category, code);
+    }
+
+    /// <summary>
+    /// Cleanup method to remove unused locks and free memory
+    /// </summary>
+    public static void CleanupLocks(TimeSpan olderThan)
+    {
+        foreach (var key in _guildLocks.Keys)
+        {
+            if (_guildLocks.TryRemove(key, out var semaphore))
+            {
+                semaphore.Dispose();
+            }
+        }
     }
 }

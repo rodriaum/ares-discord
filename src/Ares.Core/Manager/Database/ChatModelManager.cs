@@ -1,12 +1,13 @@
 ﻿/*
- * Copyright (C) Rodrigo Ferreira, All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- */
+* Copyright (C) Rodrigo Ferreira, All Rights Reserved
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+*/
 
 using Ares.Core.Objects;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
+using System.Collections.Concurrent;
 
 namespace Ares.Core.Manager.Database;
 
@@ -16,6 +17,11 @@ namespace Ares.Core.Manager.Database;
 public class ChatModelManager
 {
     /// <summary>
+    /// Dictionary of locks for concurrent operations on the same model
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _modelLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
+
+    /// <summary>
     /// Saves the specified fields of the user to the database.
     /// </summary>
     /// <param name="model">The user to save.</param>
@@ -23,37 +29,62 @@ public class ChatModelManager
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveAsync(ChatModel model, params string[] fields)
     {
-        if (fields == null || fields.Length == 0)
-        {
-            AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
-            return false;
-        }
-
-        if (AresCore.ChatModelRepository is not { } repository)
-        {
-            AresLogger.Log(nameof(SaveAsync), "Chat model data is null. Unable to save fields.", severity: Severity.Error);
-            return false;
-        }
+        var semaphore = _modelLocks.GetOrAdd(model.Id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
-            foreach (string field in fields)
-            {
-                if (string.IsNullOrWhiteSpace(field))
-                {
-                    AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
-                    continue;
-                }
+            await semaphore.WaitAsync();
 
-                await repository.UpdateAsync(model, field);
+            if (fields == null || fields.Length == 0)
+            {
+                AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
+                return false;
             }
 
-            return true;
+            if (AresCore.ChatModelRepository is not { } repository)
+            {
+                AresLogger.Log(nameof(SaveAsync), "Chat model data is null. Unable to save fields.", severity: Severity.Error);
+                return false;
+            }
+
+            try
+            {
+                foreach (string field in fields)
+                {
+                    if (string.IsNullOrWhiteSpace(field))
+                    {
+                        AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
+                        continue;
+                    }
+
+                    await repository.UpdateAsync(model, field);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
+                return false;
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", ex.Message, severity: Severity.Error);
-            return false;
+            semaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Cleanup method to remove unused locks and free memory
+    /// </summary>
+    public static void CleanupLocks(TimeSpan olderThan)
+    {
+        foreach (var key in _modelLocks.Keys)
+        {
+            if (_modelLocks.TryRemove(key, out var semaphore))
+            {
+                semaphore.Dispose();
+            }
         }
     }
 }

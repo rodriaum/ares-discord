@@ -23,7 +23,7 @@ using OpenAI.Images;
 using System.ClientModel;
 using System.Text.RegularExpressions;
 
-namespace Ares.Core.Service;
+namespace Ares.Core.Service.Neural;
 
 public class NeuralService
 {
