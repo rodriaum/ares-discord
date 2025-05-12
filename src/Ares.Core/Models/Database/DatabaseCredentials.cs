@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 
-namespace Ares.Core.Models;
+namespace Ares.Core.Models.Database;
 
 public partial class DatabaseCredentials
 {

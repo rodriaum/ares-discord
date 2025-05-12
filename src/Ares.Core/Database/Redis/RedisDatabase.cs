@@ -4,7 +4,7 @@
 * Proprietary and confidential
 */
 
-using Ares.Core.Models;
+using Ares.Core.Models.Database;
 using Ares.Core.Objects;
 using Ares.Core.Util;
 using MongoDB.Driver.Linq;
@@ -12,7 +12,7 @@ using StackExchange.Redis;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
-namespace Ares.Core.Service;
+namespace Ares.Core.Database.Redis;
 
 /// <summary>
 /// Represents a Redis database connection and provides methods for interacting with Redis.
@@ -21,7 +21,7 @@ namespace Ares.Core.Service;
 /// This class implements database operations using StackExchange.Redis library,
 /// supporting connection management, data storage, retrieval, and caching.
 /// </remarks>
-public class RedisService : Interfaces.IDatabase
+public class RedisDatabase : Interfaces.IDatabase
 {
     private readonly DatabaseCredentials _credentials;
 
@@ -42,7 +42,7 @@ public class RedisService : Interfaces.IDatabase
     /// Initializes a new instance of the RedisDatabase with specified credentials.
     /// </summary>
     /// <param name="credentials">The database connection credentials.</param>
-    public RedisService(DatabaseCredentials credentials)
+    public RedisDatabase(DatabaseCredentials credentials)
     {
         _credentials = credentials;
     }
@@ -53,7 +53,7 @@ public class RedisService : Interfaces.IDatabase
     /// <remarks>
     /// Uses default host "localhost" and port 6379.
     /// </remarks>
-    public RedisService()
+    public RedisDatabase()
     {
         _credentials = new DatabaseCredentials
         {

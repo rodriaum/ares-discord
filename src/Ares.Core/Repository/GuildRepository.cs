@@ -5,9 +5,10 @@
 */
 
 using Ares.Core.Constants;
+using Ares.Core.Database.Mongo;
+using Ares.Core.Database.Redis;
 using Ares.Core.Models.Data;
 using Ares.Core.Objects;
-using Ares.Core.Service;
 using Ares.Core.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -29,7 +30,7 @@ public class GuildRepository
     /// <summary>
     /// Reference to the Redis database used for caching operations and related logic.
     /// </summary>
-    private readonly RedisService _redisDatabase;
+    private readonly RedisDatabase _redisDatabase;
 
     /// <summary>
     /// Key prefix used for guild data in Redis.
@@ -50,7 +51,7 @@ public class GuildRepository
     /// </summary>
     /// <param name="mongoDatabase">MongoDB database instance that contains the "guilds" collection.</param>
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
-    public GuildRepository(MongoService mongoDatabase, RedisService redisDatabase)
+    public GuildRepository(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
     {
         _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("guilds");
         _redisDatabase = redisDatabase;

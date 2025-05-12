@@ -5,15 +5,15 @@
 */
 
 using Ares.Core.Interfaces;
-using Ares.Core.Models;
+using Ares.Core.Models.Database;
 using Ares.Core.Objects;
 using Ares.Core.Util;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
 
-namespace Ares.Core.Service;
+namespace Ares.Core.Database.Mongo;
 
-public class MongoService : IDatabase
+public class MongoDatabase : IDatabase
 {
     private static readonly string _pattern = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
     private static readonly Regex _ipPattern = new Regex(_pattern + "\\." + _pattern + "\\." + _pattern + "\\." + _pattern);
@@ -30,11 +30,11 @@ public class MongoService : IDatabase
     /// </summary>
     private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
 
-    public MongoService(DatabaseCredentials credential)
+    public MongoDatabase(DatabaseCredentials credential)
     {
         if (credential.Host == null)
         {
-            throw new ArgumentException($"Host cannot be null ({nameof(MongoService)})");
+            throw new ArgumentException($"Host cannot be null ({nameof(MongoDatabase)})");
         }
 
         url = _ipPattern.Match(credential.Host).Success

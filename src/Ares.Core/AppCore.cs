@@ -5,11 +5,12 @@
  */
 
 using Ares.Core.Constants;
+using Ares.Core.Database.Mongo;
+using Ares.Core.Database.Redis;
 using Ares.Core.Manager.Lang;
-using Ares.Core.Models;
+using Ares.Core.Models.Database;
 using Ares.Core.Monitor;
 using Ares.Core.Repository;
-using Ares.Core.Service;
 using DotNetEnv;
 using Microsoft.Extensions.AI;
 
@@ -29,12 +30,12 @@ public class AppCore
     /// <summary>
     /// Gets or sets the MongoDB database instance.
     /// </summary>
-    public static MongoService? MongoService { get; private set; }
+    public static MongoDatabase? MongoService { get; private set; }
 
     /// <summary>
     /// Gets or sets the Redis database instance.
     /// </summary>
-    public static RedisService? RedisService { get; private set; }
+    public static RedisDatabase? RedisService { get; private set; }
 
     /// <summary>
     /// Gets or sets the guild collection for database operations.
@@ -99,7 +100,7 @@ public class AppCore
          * MongoDB connection 
          */
 
-        MongoService mongoDatabase = new MongoService(new DatabaseCredentials
+        MongoDatabase mongoDatabase = new MongoDatabase(new DatabaseCredentials
         {
             Host = Env.GetString("MONGO_HOST"),
             User = Env.GetString("MONGO_USERNAME"),
@@ -115,7 +116,7 @@ public class AppCore
          * Redis connection
          */
 
-        RedisService redisDatabase = new RedisService(new DatabaseCredentials
+        RedisDatabase redisDatabase = new RedisDatabase(new DatabaseCredentials
         {
             Host = Env.GetString("REDIS_HOST"),
             Password = Env.GetString("REDIS_PASSWORD"),

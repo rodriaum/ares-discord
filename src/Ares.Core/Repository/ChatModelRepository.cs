@@ -5,10 +5,11 @@
 */
 
 using Ares.Core.Constants;
+using Ares.Core.Database.Mongo;
+using Ares.Core.Database.Redis;
 using Ares.Core.Models.Chat.Model;
 using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
-using Ares.Core.Service;
 using Ares.Core.Util;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -31,7 +32,7 @@ public class ChatModelRepository
     /// <summary>
     /// Reference to the Redis database used for caching operations and related logic.
     /// </summary>
-    private readonly RedisService _redisDatabase;
+    private readonly RedisDatabase _redisDatabase;
 
     /// <summary>
     /// Key prefix used for guild data in Redis.
@@ -50,7 +51,7 @@ public class ChatModelRepository
     /// </summary>
     /// <param name="mongoDatabase">MongoDB database instance that contains the "chat_models" collection.</param>
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
-    public ChatModelRepository(MongoService mongoDatabase, RedisService redisDatabase)
+    public ChatModelRepository(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
     {
         _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("chat_models");
         _redisDatabase = redisDatabase;
