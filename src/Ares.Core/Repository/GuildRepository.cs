@@ -100,7 +100,7 @@ public class GuildRepository
     /// <returns>A <see cref="User"/> object representing the saved or updated guild.</returns>
     public async Task<Guild?> SaveAsync(ulong id)
     {
-        var semaphore = _guildLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _guildLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -153,7 +153,7 @@ public class GuildRepository
     /// <seealso cref="FetchAsync(ulong, bool)"/>
     public async Task<Guild?> FetchAsync(ulong id, bool saveInRedis = false)
     {
-        var semaphore = _guildLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _guildLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -193,7 +193,7 @@ public class GuildRepository
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(Guild guild, string field)
     {
-        var semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -306,7 +306,7 @@ public class GuildRepository
     {
         foreach (var key in _guildLocks.Keys)
         {
-            if (_guildLocks.TryRemove(key, out var semaphore))
+            if (_guildLocks.TryRemove(key, out SemaphoreSlim semaphore))
             {
                 semaphore.Dispose();
             }

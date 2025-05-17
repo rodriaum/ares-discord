@@ -29,7 +29,7 @@ public class ChatModelDataManager
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveAsync(ChatModel model, params string[] fields)
     {
-        var semaphore = _modelLocks.GetOrAdd(model.Id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _modelLocks.GetOrAdd(model.Id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -81,7 +81,7 @@ public class ChatModelDataManager
     {
         foreach (var key in _modelLocks.Keys)
         {
-            if (_modelLocks.TryRemove(key, out var semaphore))
+            if (_modelLocks.TryRemove(key, out SemaphoreSlim semaphore))
             {
                 semaphore.Dispose();
             }

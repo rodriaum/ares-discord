@@ -25,6 +25,58 @@ public class GuildDataManager
     private static readonly ConcurrentDictionary<ulong, SemaphoreSlim> _guildLocks = new ConcurrentDictionary<ulong, SemaphoreSlim>();
 
     /// <summary>
+    /// Gets an existing lock or creates a new one for the specified guild ID.
+    /// </summary>
+    /// <param name="guildId">The ID of the guild.</param>
+    /// <returns>The semaphore for the guild.</returns>
+    private static SemaphoreSlim GetGuildLock(ulong guildId)
+    {
+        return _guildLocks.GetOrAdd(guildId, _ => new SemaphoreSlim(1, 1));
+    }
+
+    /// <summary>
+    /// Internal implementation of SaveAsync that doesn't acquire a lock.
+    /// </summary>
+    /// <param name="guild">The guild to save.</param>
+    /// <param name="fields">List of field names to be saved.</param>
+    /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
+    private static async Task<bool> SaveInternalAsync(Guild guild, params string[] fields)
+    {
+        if (fields == null || fields.Length == 0)
+        {
+            AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
+            return false;
+        }
+
+        if (AppCore.GuildRepository is not { } repository)
+        {
+            AresLogger.Log(nameof(SaveAsync), "Guild data is null. Unable to save fields.", severity: Severity.Error);
+            return false;
+        }
+
+        try
+        {
+            foreach (string field in fields)
+            {
+                if (string.IsNullOrWhiteSpace(field))
+                {
+                    AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
+                    continue;
+                }
+
+                await repository.UpdateAsync(guild, field);
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", severity: Severity.Error, extra: ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Saves the specified fields of the guild to the database.
     /// </summary>
     /// <param name="guild">The guild to save.</param>
@@ -32,44 +84,12 @@ public class GuildDataManager
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveAsync(Guild guild, params string[] fields)
     {
-        var semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = GetGuildLock(guild.Id);
 
         try
         {
             await semaphore.WaitAsync();
-
-            if (fields == null || fields.Length == 0)
-            {
-                AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
-                return false;
-            }
-
-            if (AppCore.GuildRepository is not { } repository)
-            {
-                AresLogger.Log(nameof(SaveAsync), "Guild data is null. Unable to save fields.", severity: Severity.Error);
-                return false;
-            }
-
-            try
-            {
-                foreach (string field in fields)
-                {
-                    if (string.IsNullOrWhiteSpace(field))
-                    {
-                        AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
-                        continue;
-                    }
-
-                    await repository.UpdateAsync(guild, field);
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", severity: Severity.Error, extra: ex.Message);
-                return false;
-            }
+            return await SaveInternalAsync(guild, fields);
         }
         finally
         {
@@ -85,7 +105,7 @@ public class GuildDataManager
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveTokenDataAsync(Guild guild, GToken? token = null)
     {
-        var semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = GetGuildLock(guild.Id);
 
         try
         {
@@ -97,7 +117,7 @@ public class GuildDataManager
                 guild.Token = token;
             }
 
-            return await SaveAsync(guild, "token");
+            return await SaveInternalAsync(guild, "token");
         }
         finally
         {
@@ -113,7 +133,7 @@ public class GuildDataManager
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public static async Task<bool> SavePreferenceDataAsync(Guild guild, GPreference? config = null)
     {
-        var semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = GetGuildLock(guild.Id);
 
         try
         {
@@ -125,7 +145,7 @@ public class GuildDataManager
                 guild.Preferences = config;
             }
 
-            return await SaveAsync(guild, "preference");
+            return await SaveInternalAsync(guild, "preference");
         }
         finally
         {

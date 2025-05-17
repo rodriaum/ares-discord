@@ -49,10 +49,8 @@ public class Program
     /// <returns>A task representing the asynchronous operation.</returns>
     static async Task Main()
     {
-        // Set the console output encoding to UTF-8
         Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-        // Check if the application is already running
         string currentProcessName = Process.GetCurrentProcess().ProcessName;
         bool isRunning = Process.GetProcessesByName(currentProcessName).Length > 1;
 
@@ -62,19 +60,15 @@ public class Program
             return;
         }
 
-        // Load environment variables in build/run path
-        Env.Load();
-        // Load environment variables in project path
-        Env.Load($@"{AppConstants.ProjectPath}.env");
+        Env.Load(); // Load environment variables in build/run path
+        Env.Load($@"{AppConstants.ProjectPath}.env"); // Load environment variables in project path
 
-        // Initialize Core
         if (!await AppCore.Init())
         {
             AresLogger.Log("Database", "Core initialization failed.", severity: Severity.Critical);
             return;
         }
 
-        // Configure Discord client with appropriate intents
         DiscordSocketConfig config = new DiscordSocketConfig()
         {
             GatewayIntents = GatewayIntents.Guilds |
@@ -102,11 +96,10 @@ public class Program
         string discordToken = (AppConstants.AppDevMode ? Env.GetString("DISCORD_TOKEN_DEV") : Env.GetString("DISCORD_TOKEN"));
         if (string.IsNullOrWhiteSpace(discordToken))
         {
-            await AresLogger.LogAsync("Token", $"Could not find application token. (Is Dev Mode: {AppConstants.AppDevMode})", severity: Severity.Error);
+            await AresLogger.LogAsync("Token", $"Could not find application token. (AppDevMode={AppConstants.AppDevMode})", severity: Severity.Error);
             return;
         }
 
-        // Connect to Discord
         await _client.LoginAsync(TokenType.Bot, discordToken);
         await _client.StartAsync();
 
@@ -121,7 +114,6 @@ public class Program
         // Configure bot status
         await ConfigureBotStatus();
 
-        // Subscribe to events
         _client.Ready += RegisterCommands;
         _client.Ready += () =>
         {

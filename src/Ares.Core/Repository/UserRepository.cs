@@ -100,7 +100,7 @@ public class UserRepository
     /// <returns>A <see cref="User"/> object representing the saved or updated user.</returns>
     public async Task<User?> SaveAsync(ulong id)
     {
-        var semaphore = _userLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _userLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -153,7 +153,7 @@ public class UserRepository
     /// <seealso cref="FetchAsync(ulong, bool)"/>
     public async Task<User?> FetchAsync(ulong id, bool saveInRedis = false)
     {
-        var semaphore = _userLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _userLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -193,7 +193,7 @@ public class UserRepository
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(User user, string field)
     {
-        var semaphore = _userLocks.GetOrAdd(user.Id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _userLocks.GetOrAdd(user.Id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -309,7 +309,7 @@ public class UserRepository
         // para rastrear quando um lock foi usado pela última vez
         foreach (var key in _userLocks.Keys)
         {
-            if (_userLocks.TryRemove(key, out var semaphore))
+            if (_userLocks.TryRemove(key, out SemaphoreSlim semaphore))
             {
                 semaphore.Dispose();
             }

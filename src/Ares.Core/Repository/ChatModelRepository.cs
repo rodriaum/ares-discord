@@ -101,7 +101,7 @@ public class ChatModelRepository
     /// <returns>A <see cref="ChatModel"/> object representing the saved or updated model.</returns>
     public async Task<ChatModel?> SaveAsync(string id, ChatModel? newModel = null)
     {
-        var semaphore = _modelLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _modelLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -168,7 +168,7 @@ public class ChatModelRepository
     /// <returns>A <see cref="ChatModel"/> object representing the retrieved model, or null if not found.</returns>
     public async Task<ChatModel?> FetchAsync(string id, bool saveInRedis = false)
     {
-        var semaphore = _modelLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _modelLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -238,7 +238,7 @@ public class ChatModelRepository
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(ChatModel model, string field)
     {
-        var semaphore = _modelLocks.GetOrAdd(model.Id, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _modelLocks.GetOrAdd(model.Id, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -351,7 +351,7 @@ public class ChatModelRepository
     {
         foreach (var key in _modelLocks.Keys)
         {
-            if (_modelLocks.TryRemove(key, out var semaphore))
+            if (_modelLocks.TryRemove(key, out SemaphoreSlim semaphore))
             {
                 semaphore.Dispose();
             }

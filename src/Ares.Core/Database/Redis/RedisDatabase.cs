@@ -200,7 +200,7 @@ public class RedisDatabase : Interfaces.IDatabase
     /// <param name="obj">The object to be saved.</param>
     public async Task SaveAsync(string key, object obj)
     {
-        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -225,7 +225,7 @@ public class RedisDatabase : Interfaces.IDatabase
     /// <param name="obj">The updated object.</param>
     public async Task UpdateAsync(string key, object obj)
     {
-        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -264,7 +264,7 @@ public class RedisDatabase : Interfaces.IDatabase
     /// <param name="expire">The number of seconds before the key expires.</param>
     public async Task SaveAsync(string key, object obj, int expire)
     {
-        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -285,7 +285,7 @@ public class RedisDatabase : Interfaces.IDatabase
     /// <param name="key">The key to delete.</param
     public async Task<bool> DeleteAsync(string key)
     {
-        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -307,7 +307,7 @@ public class RedisDatabase : Interfaces.IDatabase
     /// <param name="seconds">The number of seconds until expiration.</param>
     public async Task CacheAsync(string key, int seconds)
     {
-        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -328,7 +328,7 @@ public class RedisDatabase : Interfaces.IDatabase
     /// <param name="key">The key to make persistent.</param>
     public async Task<bool> PersistAsync(string key)
     {
-        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -354,7 +354,7 @@ public class RedisDatabase : Interfaces.IDatabase
     /// <param name="fields">The fields to delete.</param>
     public async Task<long> DeleteAsync(string key, params string[] fields)
     {
-        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -377,7 +377,7 @@ public class RedisDatabase : Interfaces.IDatabase
     /// <returns>The loaded object, or null if not found.</returns>
     public async Task<T?> LoadAsync<T>(string key) where T : class
     {
-        var semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim semaphore = _keyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 
         try
         {
@@ -413,7 +413,7 @@ public class RedisDatabase : Interfaces.IDatabase
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
-            var semaphore = _keyLocks.GetOrAdd(value.Key, _ => new SemaphoreSlim(1, 1));
+            SemaphoreSlim semaphore = _keyLocks.GetOrAdd(value.Key, _ => new SemaphoreSlim(1, 1));
 
             try
             {
@@ -449,7 +449,7 @@ public class RedisDatabase : Interfaces.IDatabase
 
         foreach (KeyValuePair<string, RedisResult> value in keys.ToDictionary())
         {
-            var semaphore = _keyLocks.GetOrAdd(value.Key, _ => new SemaphoreSlim(1, 1));
+            SemaphoreSlim semaphore = _keyLocks.GetOrAdd(value.Key, _ => new SemaphoreSlim(1, 1));
 
             try
             {
@@ -523,7 +523,7 @@ public class RedisDatabase : Interfaces.IDatabase
     {
         foreach (var key in _keyLocks.Keys)
         {
-            if (_keyLocks.TryRemove(key, out var semaphore))
+            if (_keyLocks.TryRemove(key, out SemaphoreSlim semaphore))
             {
                 semaphore.Dispose();
             }
