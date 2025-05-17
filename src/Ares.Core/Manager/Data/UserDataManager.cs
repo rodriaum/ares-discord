@@ -483,7 +483,7 @@ public class UserDataManager
 
                 if (result)
                 {
-                    AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{guildId}\"");
+                    AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{guildId}\"", severity: Severity.Debug);
                 }
             }
             catch (Exception ex)

@@ -221,7 +221,7 @@ public class UserRepository
                 // Update Redis
                 await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
 
-                await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\"");
+                await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\"", severity: Severity.Debug);
                 return true;
             }
             catch (Exception e)

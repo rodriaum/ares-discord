@@ -104,7 +104,7 @@ public class NeuralService
             // Save the image generation to chat history
             if (!await SaveToHistoryAsync(guild, user, channel, prompt, imageUrl: imageUrl, imageOpenAi: image))
             {
-                return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $"({nameof(GenerateConversationAsync)})", false);
+                return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $" ({nameof(GenerateConversationAsync)})", false);
             }
 
             return (imageUrl, true);
@@ -260,7 +260,7 @@ public class NeuralService
         if (info == null)
         {
             AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Chat information could not be accessed.", severity: Severity.Error);
-            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $" ({nameof(HandleLocalModelRequestAsync)})", false);
         }
 
         // Prepare messages for the API request
@@ -316,7 +316,7 @@ public class NeuralService
         if (info == null)
         {
             AresLogger.Log("GenerateConversationAsync", "Chat information could not be accessed.", severity: Severity.Error);
-            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo), false);
+            return (GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $" ({nameof(HandleRemoteModelRequestAsync)})", false);
         }
 
         // Prepare messages for the API request

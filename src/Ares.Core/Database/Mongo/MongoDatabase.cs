@@ -56,7 +56,7 @@ public class MongoDatabase : IDatabase
 
             long start = TimeUtil.CurrentTimeMillis();
 
-            await AresLogger.LogAsync("DB: Mongo", "Connecting...");
+            await AresLogger.LogAsync("DB: Redis", "Starting connection to Mongo...");
 
             int time = 15;
 
@@ -74,7 +74,7 @@ public class MongoDatabase : IDatabase
                     client = new MongoClient(settings);
                     mongoDatabase = client.GetDatabase(credentials.Database);
 
-                    await AresLogger.LogAsync("DB: Mongo", $"Connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})");
+                    await AresLogger.LogAsync("DB: Mongo", $"Connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})", severity: Severity.Success);
                     connected = true;
                 }
                 catch (Exception e)

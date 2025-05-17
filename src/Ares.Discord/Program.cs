@@ -117,7 +117,7 @@ public class Program
         _client.Ready += RegisterCommands;
         _client.Ready += () =>
         {
-            AresLogger.Log("Status", $"Success! Logged \"{_client.CurrentUser.Username}\"", severity: Severity.Success);
+            AresLogger.Log("Status", $"Yup! Logged with \"{_client.CurrentUser.Username}\"", severity: Severity.Success);
             return Task.CompletedTask;
         };
 

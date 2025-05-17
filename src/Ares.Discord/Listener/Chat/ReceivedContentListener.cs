@@ -100,7 +100,7 @@ public class ReceivedContentListener
                 UserChatInfo? info = UserDataManager.ChatInfoByChannel(user, guild.Id, channel.Id);
                 if (info == null)
                 {
-                    await ModifyMessageWithError(botMessage, embed, GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo));
+                    await ModifyMessageWithError(botMessage, embed, GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $" ({nameof(MessageReceivedHandler)})");
                     return;
                 }
 
@@ -120,7 +120,7 @@ public class ReceivedContentListener
                             botMessage,
                             embed.WithColor(Color.DarkOrange).WithFooter(AppConstants.AppName),
                             "Atualmente o sistema de chat só está disponível por mensagem."
-                        );
+                         );
                     return;
                 }
 

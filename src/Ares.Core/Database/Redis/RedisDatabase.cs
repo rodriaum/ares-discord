@@ -102,7 +102,7 @@ public class RedisDatabase : Interfaces.IDatabase
                     _connection = await ConnectionMultiplexer.ConnectAsync(options);
                     _database = _connection.GetDatabase();
 
-                    await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})");
+                    await AresLogger.LogAsync("DB: Redis", $"Redis connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})", severity: Severity.Success);
                     connected = true;
                 }
                 catch (Exception ex)

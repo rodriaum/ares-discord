@@ -266,7 +266,7 @@ public class ChatModelRepository
                 // Update Redis
                 await _redisDatabase.UpdateAsync(GRedisKey + model.Id, model);
 
-                await AresLogger.LogAsync("Repo: Chat Models", $"Updated \"{field}\" for model \"{model.Id}\".");
+                await AresLogger.LogAsync("Repo: Chat Models", $"Updated \"{field}\" for model \"{model.Id}\".", severity: Severity.Debug);
                 return true;
             }
             catch (Exception e)

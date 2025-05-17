@@ -221,7 +221,7 @@ public class GuildRepository
                 // Update Redis
                 await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
 
-                await AresLogger.LogAsync("Repo: Guild", $"Updated \"{field}\" for guild \"{guild.Id}\".");
+                await AresLogger.LogAsync("Repo: Guild", $"Updated \"{field}\" for guild \"{guild.Id}\".", severity: Severity.Debug);
                 return true;
             }
             catch (Exception e)

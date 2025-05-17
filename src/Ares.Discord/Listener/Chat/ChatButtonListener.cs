@@ -132,7 +132,7 @@ public class ChatButtonListener
                 // Removes the generated conversation snippets as they will no longer be used in that channel.
                 await UserDataManager.RemoveSnippetByChannelAsync(user, guild.Id, channel.Id);
 
-                AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Id}\"");
+                AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Id}\"", severity: Severity.Debug);
 
                 await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.CloseChat));
 

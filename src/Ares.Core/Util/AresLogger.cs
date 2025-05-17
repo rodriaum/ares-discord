@@ -26,7 +26,7 @@ public class AresLogger
             {
                 Console.Error.WriteLine($" -> {extra[i]}");
 
-                if (i < extra.Length - 1)
+                if (i > extra.Length - 1)
                     Console.Error.WriteLine("\n");
             }
         }
@@ -46,7 +46,7 @@ public class AresLogger
             {
                 await Console.Error.WriteLineAsync($" -> {extra[i]}");
 
-                if (i < extra.Length - 1)
+                if (i > extra.Length - 1)
                     await Console.Error.WriteLineAsync("\n");
             }
         }
