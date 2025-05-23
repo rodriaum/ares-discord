@@ -11,7 +11,6 @@ using Ares.Core.Models.Data;
 using Ares.Core.Objects;
 using Ares.Core.Repository;
 using Ares.Core.Util;
-using System.Collections.Concurrent;
 
 namespace Ares.Core.Manager.Data;
 
@@ -21,19 +20,9 @@ namespace Ares.Core.Manager.Data;
 public class UserDataManager
 {
     /// <summary>
-    /// Dictionary of locks for concurrent operations on the same user
+    /// Repository for user data operations.
     /// </summary>
-    private static readonly ConcurrentDictionary<ulong, SemaphoreSlim> _userLocks = new ConcurrentDictionary<ulong, SemaphoreSlim>();
-
-    /// <summary>
-    /// Gets a semaphore for the specified user ID
-    /// </summary>
-    /// <param name="userId">User ID to get the semaphore for</param>
-    /// <returns>A semaphore instance</returns>
-    private static SemaphoreSlim GetUserLock(ulong userId)
-    {
-        return _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
-    }
+    private static readonly UserRepository? _repository = AppCore.UserRepository;
 
     /// <summary>
     /// Saves the specified fields of the user to the database.
@@ -49,7 +38,7 @@ public class UserDataManager
             return false;
         }
 
-        if (AppCore.UserRepository is not { } repository)
+        if (_repository is not { } repository)
         {
             AresLogger.Log(nameof(SaveAsync), "User data is null. Unable to save fields.", severity: Severity.Error);
             return false;
@@ -78,39 +67,20 @@ public class UserDataManager
     }
 
     /// <summary>
-    /// Updates the chat data of the user in the database without overlapping locks
+    /// Updates the chat data of the user in the database.
     /// </summary>
     /// <param name="user">The user to save the chat data.</param>
     /// <param name="chat">Object containing the guild's chat data.</param>
     /// <returns>Returns true if data was successfully updated, false otherwise.</returns>
     public static async Task<bool> SaveChatDataAsync(User user, UserChat? chat = null)
     {
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-
-        try
+        // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
+        if (chat != null)
         {
-            await semaphore.WaitAsync();
-
-            // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
-            if (chat != null)
-            {
-                user.Chat = chat;
-            }
-
-            // Release lock before calling SaveAsync to prevent deadlock
-            semaphore.Release();
-
-            return await SaveAsync(user, "chat");
+            user.Chat = chat;
         }
-        catch
-        {
-            // Ensure semaphore is released in case of exception
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
-        }
+
+        return await SaveAsync(user, "chat");
     }
 
     /// <summary>
@@ -122,28 +92,8 @@ public class UserDataManager
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveInfoAsync(User user, ulong guildId, List<UserChatInfo> infos, bool onlyCached = false)
     {
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-
-        try
-        {
-            await semaphore.WaitAsync();
-
-            user.Chat.Infos[guildId] = infos;
-
-            // Release the lock before making another call that might acquire locks
-            semaphore.Release();
-
-            return !onlyCached ? await SaveChatDataAsync(user) : true;
-        }
-        catch
-        {
-            // Ensure semaphore is released in case of exception
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
-        }
+        user.Chat.Infos[guildId] = infos;
+        return !onlyCached ? await SaveChatDataAsync(user) : true;
     }
 
     /// <summary>
@@ -155,31 +105,11 @@ public class UserDataManager
     /// <returns>Returns true if the history was successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveHistoricAsync(User user, ulong guildId, UserChatInfo info)
     {
-        List<UserChatInfo>? list = null;
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
+        List<UserChatInfo>? list = ChatInfos(user, guildId);
 
-        try
-        {
-            await semaphore.WaitAsync();
-            list = ChatInfos(user, guildId);
+        if (list == null) return await Task.FromResult(false);
 
-            if (list == null)
-            {
-                semaphore.Release();
-                return false;
-            }
-
-            list.Add(info);
-            semaphore.Release();
-        }
-        catch
-        {
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
-        }
+        list.Add(info);
 
         return await SaveInfoAsync(user, guildId, list);
     }
@@ -193,52 +123,23 @@ public class UserDataManager
     /// <returns>Returns true if information was successfully updated, false otherwise.</returns>
     public static async Task<bool> UpdateChatInfoAsync(User user, ulong guildId, UserChatInfo info)
     {
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-        List<UserChatInfo>? infos = null;
-        bool updateNeeded = false;
+        List<UserChatInfo>? infos = ChatInfos(user, guildId);
 
-        try
+        if (infos == null)
         {
-            await semaphore.WaitAsync();
-
-            infos = ChatInfos(user, guildId);
-
-            if (infos == null)
-            {
-                infos = new List<UserChatInfo>();
-                user.Chat.Infos[guildId] = infos;
-                updateNeeded = true;
-            }
-            else
-            {
-                UserChatInfo? existingInfo = infos.LastOrDefault(it => it.ChannelId.Equals(info.ChannelId));
-
-                // It seems strange, but it is done so as not to add the same information as the chat.
-                if (existingInfo != null && user.Chat.Infos.ContainsKey(guildId))
-                {
-                    user.Chat.Infos[guildId].Remove(existingInfo);
-                }
-
-                user.Chat.Infos[guildId].Add(info);
-            }
-
-            semaphore.Release();
-        }
-        catch
-        {
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
-        }
-
-        // Execute operations requiring locks separately
-        if (updateNeeded)
-        {
+            infos = new List<UserChatInfo>();
             await SaveInfoAsync(user, guildId, infos, onlyCached: true);
         }
 
+        UserChatInfo? existingInfo = infos.LastOrDefault(it => it.ChannelId.Equals(info.ChannelId));
+
+        // It seems strange, but it is done so as not to add the same information as the chat.
+        if (existingInfo != null && user.Chat.Infos.ContainsKey(guildId))
+        {
+            user.Chat.Infos[guildId].Remove(existingInfo);
+        }
+
+        user.Chat.Infos[guildId].Add(info);
         return await SaveChatDataAsync(user);
     }
 
@@ -340,54 +241,26 @@ public class UserDataManager
     /// <returns>Returns true if status was successfully changed, false otherwise.</returns>
     public static async Task<bool> ToggleChatInfo(User guild, ulong guildId, ulong channelId, bool active)
     {
-        SemaphoreSlim semaphore = GetUserLock(guild.Id);
-        List<UserChatInfo>? infos = null;
-        bool modelChanged = false;
-        string? modelId = null;
-
-        try
+        List<UserChatInfo>? infos = ChatInfos(guild, guildId);
+        if (infos == null)
         {
-            await semaphore.WaitAsync();
-
-            infos = ChatInfos(guild, guildId);
-            if (infos == null)
-            {
-                AresLogger.Log(nameof(ToggleChatInfo), "Unable to change the status of a chat information.", severity: Severity.Error);
-                semaphore.Release();
-                return false;
-            }
-
-            UserChatInfo? info = infos.LastOrDefault(i => i.ChannelId == channelId);
-
-            if (info != null)
-            {
-                info.Active = active;
-
-                if (!active)
-                {
-                    modelChanged = true;
-                    modelId = info.ModelId;
-                }
-            }
-
-            semaphore.Release();
-        }
-        catch
-        {
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
+            AresLogger.Log(nameof(ToggleChatInfo), "Unable to change the status of a chat information.", severity: Severity.Error);
+            return false;
         }
 
-        // Handle model cache deletion outside the lock
-        if (modelChanged && !active && !string.IsNullOrEmpty(modelId))
+        UserChatInfo? info = infos.LastOrDefault(i => i.ChannelId == channelId);
+
+        if (info != null)
         {
-            ChatModelRepository? repository = AppCore.ChatModelRepository;
-            if (repository != null)
+            info.Active = active;
+
+            if (!active)
             {
-                await repository.DeleteCache(modelId);
+                ChatModelRepository? repository = AppCore.ChatModelRepository;
+                if (repository == null) return false;
+
+                // Delete cache if is not used more.
+                await repository.DeleteCache(info.ModelId);
             }
         }
 
@@ -454,62 +327,35 @@ public class UserDataManager
             return await Task.FromResult(false);
         }
 
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-        bool result = false;
-
         try
         {
-            await semaphore.WaitAsync();
-
-            try
+            if (!chat.Infos.TryGetValue(guildId, out List<UserChatInfo>? infos))
             {
-                if (!chat.Infos.TryGetValue(guildId, out List<UserChatInfo>? infos))
-                {
-                    infos = new List<UserChatInfo>();
-                    chat.Infos[guildId] = infos;
-                }
-
-                if (info.Historics == null)
-                {
-                    info.Historics = new List<UserChatHistoric>();
-                }
-
-                infos.Add(info);
-
-                // Release lock before making another lock-acquiring call
-                semaphore.Release();
-
-                result = await SaveChatDataAsync(user, chat);
-
-                if (result)
-                {
-                    AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{guildId}\"", severity: Severity.Debug);
-                }
+                infos = new List<UserChatInfo>();
+                chat.Infos[guildId] = infos;
             }
-            catch (Exception ex)
+
+            if (info.Historics == null)
             {
-                AresLogger.Log(nameof(CreateChatData), "Error trying to create a chat history for the user.", severity: Severity.Error, extra: ex.Message);
-
-                // Ensure semaphore is released in case of exception within the try block
-                if (semaphore.CurrentCount == 0)
-                {
-                    semaphore.Release();
-                }
-
-                return await Task.FromResult(false);
+                info.Historics = new List<UserChatHistoric>();
             }
+
+            infos.Add(info);
+
+            bool success = await SaveChatDataAsync(user, chat);
+
+            if (success)
+            {
+                AresLogger.Log("Chat", $"Chat \"{info.Id}\" created by \"{guildId}\"");
+            }
+
+            return success;
         }
-        catch
+        catch (Exception ex)
         {
-            // Ensure semaphore is released in case of exception in the outer try block
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
+            AresLogger.Log(nameof(CreateChatData), "Error trying to create a chat history for the user.", severity: Severity.Error, extra: ex.Message);
+            return await Task.FromResult(false);
         }
-
-        return result;
     }
 
     /// <summary>
@@ -523,51 +369,27 @@ public class UserDataManager
     /// <exception cref="ArgumentNullException">Thrown when user or historics is null.</exception>
     public static async Task<bool> UpdateChatHistoricsAsync(User user, ulong guildId, ulong channelId, List<UserChatHistoric> historics)
     {
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-        bool canProceed = false;
-
-        try
+        if (historics == null)
         {
-            await semaphore.WaitAsync();
-
-            if (historics == null)
-            {
-                AresLogger.Log(nameof(UpdateChatHistoricsAsync), "Historics is null. Unable to update chat history.", severity: Severity.Error);
-                semaphore.Release();
-                return false;
-            }
-
-            if (user.Chat is not { } chat)
-            {
-                semaphore.Release();
-                return false;
-            }
-
-            UserChatInfo? info = ChatInfoByChannel(user, guildId, channelId);
-
-            if (info == null)
-            {
-                AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
-                semaphore.Release();
-                return false;
-            }
-
-            info.Historics = historics;
-            user.Chat = chat;
-            canProceed = true;
-
-            semaphore.Release();
-        }
-        catch
-        {
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), "Historics is null. Unable to update chat history.", severity: Severity.Error);
+            return false;
         }
 
-        return canProceed ? await SaveChatDataAsync(user) : false;
+        if (user.Chat is not { } chat)
+            return false;
+
+        UserChatInfo? info = ChatInfoByChannel(user, guildId, channelId);
+
+        if (info == null)
+        {
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
+            return false;
+        }
+
+        info.Historics = historics;
+
+        user.Chat = chat;
+        return await SaveChatDataAsync(user);
     }
 
     /// <summary>
@@ -580,48 +402,25 @@ public class UserDataManager
     /// <returns>Returns true if history was successfully added, false otherwise.</returns>
     public static async Task<bool> UpdateChatHistoricsAsync(User user, ulong guildId, ulong channelId, UserChatHistoric historic)
     {
-        UserChatInfo? info = null;
-        List<UserChatHistoric>? historics = null;
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
+        UserChatInfo? info = ChatInfoByChannel(user, guildId, channelId);
 
-        try
+        if (info == null)
         {
-            await semaphore.WaitAsync();
-
-            info = ChatInfoByChannel(user, guildId, channelId);
-
-            if (info == null)
-            {
-                AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
-                semaphore.Release();
-                return false;
-            }
-
-            historics = info.Historics;
-
-            if (historics == null)
-            {
-                AresLogger.Log(nameof(UpdateChatHistoricsAsync), "Conversation historics are null.", severity: Severity.Error);
-                semaphore.Release();
-                return false;
-            }
-
-            historics.Add(historic);
-            // Keep a copy of history to update outside of the lock
-            var historicsCopy = new List<UserChatHistoric>(historics);
-
-            semaphore.Release();
-
-            return await UpdateChatHistoricsAsync(user, guildId, channelId, historicsCopy);
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
+            return false;
         }
-        catch
+
+        List<UserChatHistoric> historics = info.Historics;
+
+        if (historics == null)
         {
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), "Conversation historics are null.", severity: Severity.Error);
+            return false;
         }
+
+        historics.Add(historic);
+
+        return await UpdateChatHistoricsAsync(user, guildId, channelId, historics);
     }
 
     /// <summary>
@@ -634,48 +433,25 @@ public class UserDataManager
     /// <returns>Returns true if the record was successfully removed, false otherwise.</returns>
     public static async Task<bool> RemoveConversationAsync(User user, ulong guildId, ulong channelId, UserChatHistoric historic)
     {
-        UserChatInfo? info = null;
-        List<UserChatHistoric>? historicsCopy = null;
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
+        UserChatInfo? info = ChatInfoByChannel(user, guildId, channelId);
 
-        try
+        if (info == null)
         {
-            await semaphore.WaitAsync();
-
-            info = ChatInfoByChannel(user, guildId, channelId);
-
-            if (info == null)
-            {
-                AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
-                semaphore.Release();
-                return false;
-            }
-
-            List<UserChatHistoric> historics = info.Historics;
-
-            if (historics == null)
-            {
-                AresLogger.Log(nameof(RemoveConversationAsync), "Conversation historics are null.", severity: Severity.Error);
-                semaphore.Release();
-                return false;
-            }
-
-            historics.Remove(historic);
-            // Create a copy to work with outside the lock
-            historicsCopy = new List<UserChatHistoric>(historics);
-
-            semaphore.Release();
-        }
-        catch
-        {
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
+            AresLogger.Log(nameof(UpdateChatHistoricsAsync), $"Cannot retrieve chat info for user ID {guildId} and channel {channelId}.", severity: Severity.Error);
+            return false;
         }
 
-        return await UpdateChatHistoricsAsync(user, guildId, channelId, historicsCopy);
+        List<UserChatHistoric> historics = info.Historics;
+
+        if (historics == null)
+        {
+            AresLogger.Log(nameof(RemoveConversationAsync), "Conversation historics are null.", severity: Severity.Error);
+            return false;
+        }
+
+        historics.Remove(historic);
+
+        return await UpdateChatHistoricsAsync(user, guildId, channelId, historics);
     }
 
     /// <summary>
@@ -767,23 +543,7 @@ public class UserDataManager
     /// <returns>Returns true if the snippets were successfully updated, false otherwise.</returns>
     public static async Task<bool> UpdateSnippetsAsync(User user, ulong guildId, List<UserChatSnippet> snippets, bool onlyCached = false)
     {
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-
-        try
-        {
-            await semaphore.WaitAsync();
-            user.Chat.Snippets[guildId] = snippets;
-            semaphore.Release();
-        }
-        catch
-        {
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
-        }
-
+        user.Chat.Snippets[guildId] = snippets;
         return !onlyCached ? await SaveChatDataAsync(user) : true;
     }
 
@@ -797,39 +557,12 @@ public class UserDataManager
     /// <returns>Returns true if the snippets were successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveSnippetsAsync(User user, ulong guildId, List<UserChatSnippet> snippets, bool onlyCached = false)
     {
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-        List<UserChatSnippet> saveSnippets;
+        List<UserChatSnippet>? saveSnippets = GetSnippetsByGuild(user, guildId);
+        if (saveSnippets == null) return false;
 
-        try
-        {
-            await semaphore.WaitAsync();
+        saveSnippets.AddRange(snippets);
 
-            if (!user.Chat.Snippets.TryGetValue(guildId, out var existingSnippets))
-            {
-                existingSnippets = new List<UserChatSnippet>();
-                user.Chat.Snippets[guildId] = existingSnippets;
-            }
-
-            saveSnippets = new List<UserChatSnippet>(existingSnippets);
-
-            saveSnippets.AddRange(snippets);
-
-            user.Chat.Snippets[guildId] = saveSnippets;
-
-            // Release the lock before making another call that might acquire locks
-            semaphore.Release();
-
-            return !onlyCached ? await SaveChatDataAsync(user) : true;
-        }
-        catch
-        {
-            // Ensure semaphore is released in case of exception
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
-        }
+        return await UpdateSnippetsAsync(user, guildId, saveSnippets, onlyCached: onlyCached);
     }
 
     /// <summary>
@@ -842,41 +575,17 @@ public class UserDataManager
     /// <returns>Returns true if the snippet was successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveSnippetAsync(User user, ulong guildId, UserChatSnippet snippet, bool onlyCached = false)
     {
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-        List<UserChatSnippet> updatedSnippets;
+        user.Chat.Snippets ??= new();
 
-        try
+        if (!user.Chat.Snippets.TryGetValue(guildId, out var snippets))
         {
-            await semaphore.WaitAsync();
-
-            user.Chat.Snippets ??= new();
-
-            if (!user.Chat.Snippets.TryGetValue(guildId, out var snippets))
-            {
-                snippets = new List<UserChatSnippet>();
-                user.Chat.Snippets[guildId] = snippets;
-            }
-
-            updatedSnippets = new List<UserChatSnippet>(snippets);
-
-            updatedSnippets.Add(snippet);
-
-            user.Chat.Snippets[guildId] = updatedSnippets;
-
-            // Release the lock before making another call that might acquire locks
-            semaphore.Release();
-
-            return !onlyCached ? await SaveChatDataAsync(user) : true;
+            snippets = new List<UserChatSnippet>();
+            user.Chat.Snippets[guildId] = snippets;
         }
-        catch
-        {
-            // Ensure semaphore is released in case of exception
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
-        }
+
+        snippets.Add(snippet);
+
+        return await SaveSnippetsAsync(user, guildId, snippets, onlyCached);
     }
 
     /// <summary>
@@ -888,39 +597,11 @@ public class UserDataManager
     /// <returns>Returns true if the snippet was successfully removed, false otherwise.</returns>
     public static async Task<bool> RemoveSnippetByChannelAsync(User user, ulong guildId, ulong channelId)
     {
-        SemaphoreSlim semaphore = GetUserLock(user.Id);
-        List<UserChatSnippet> updatedSnippets;
+        List<UserChatSnippet>? snippets = GetSnippetsByGuild(user, guildId);
+        if (snippets == null) return false;
 
-        try
-        {
-            await semaphore.WaitAsync();
-
-            if (!user.Chat.Snippets.TryGetValue(guildId, out var snippets) || snippets == null)
-            {
-                semaphore.Release();
-                return false;
-            }
-
-            updatedSnippets = new List<UserChatSnippet>(snippets);
-
-            updatedSnippets.RemoveAll(it => it.ChannelId == channelId);
-
-            user.Chat.Snippets[guildId] = updatedSnippets;
-
-            // Release the lock before making another call that might acquire locks
-            semaphore.Release();
-
-            return await SaveChatDataAsync(user);
-        }
-        catch
-        {
-            // Ensure semaphore is released in case of exception
-            if (semaphore.CurrentCount == 0)
-            {
-                semaphore.Release();
-            }
-            throw;
-        }
+        snippets.RemoveAll(it => it.ChannelId == channelId);
+        return await SaveSnippetsAsync(user, guildId, snippets);
     }
 
     /// <summary>
@@ -970,7 +651,6 @@ public class UserDataManager
     /// Get a specific snippet by its index for a specific user and guild.
     /// </summary>
     /// <param name="user">The user to get the snippet for.</param>
-    /// <param name="guildId">The
     /// <param name="guildId">The guild ID to get the snippet from.</param>
     /// <param name="index">The index of the snippet to retrieve.</param>
     /// <returns>The snippet or null if not found.</returns>
@@ -983,18 +663,4 @@ public class UserDataManager
     }
 
     #endregion
-
-    /// <summary>
-    /// Cleanup method to remove unused locks and free memory
-    /// </summary>
-    public static void CleanupLocks(TimeSpan olderThan)
-    {
-        foreach (var key in _userLocks.Keys)
-        {
-            if (_userLocks.TryRemove(key, out SemaphoreSlim semaphore))
-            {
-                semaphore.Dispose();
-            }
-        }
-    }
 }

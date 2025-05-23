@@ -25,11 +25,6 @@ public class MongoDatabase : IDatabase
     private MongoClient? client;
     public IMongoDatabase? mongoDatabase;
 
-    /// <summary>
-    /// Lock for connection operations
-    /// </summary>
-    private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
-
     public MongoDatabase(DatabaseCredentials credential)
     {
         if (credential.Host == null)
@@ -50,84 +45,67 @@ public class MongoDatabase : IDatabase
 
     public async Task ConnectAsync()
     {
-        try
+        long start = TimeUtil.CurrentTimeMillis();
+
+        await AresLogger.LogAsync("DB: Redis", "Starting connection to Mongo...");
+
+        int time = 15;
+
+        int currentTries = 1;
+        int maxTries = 3;
+
+        bool connected = false;
+
+        while (!connected)
         {
-            await _connectionLock.WaitAsync();
-
-            long start = TimeUtil.CurrentTimeMillis();
-
-            await AresLogger.LogAsync("DB: Redis", "Starting connection to Mongo...");
-
-            int time = 15;
-
-            int currentTries = 1;
-            int maxTries = 3;
-
-            bool connected = false;
-
-            while (!connected)
+            try
             {
-                try
-                {
-                    MongoClientSettings settings = MongoClientSettings.FromConnectionString(url);
+                MongoClientSettings settings = MongoClientSettings.FromConnectionString(url);
 
-                    client = new MongoClient(settings);
-                    mongoDatabase = client.GetDatabase(credentials.Database);
+                client = new MongoClient(settings);
+                mongoDatabase = client.GetDatabase(credentials.Database);
 
-                    await AresLogger.LogAsync("DB: Mongo", $"Connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})", severity: Severity.Success);
-                    connected = true;
-                }
-                catch (Exception e)
-                {
-                    await AresLogger.LogAsync("DB: Mongo", "Unable to connect.", severity: Severity.Error, extra: e.Message);
-
-                    connected = false;
-                    currentTries++;
-
-                    if (currentTries > maxTries)
-                    {
-                        await AresLogger.LogAsync("DB: Mongo", "Max tries reached, stopping connection attempts.", severity: Severity.Error);
-                        Environment.Exit(1);
-                        break;
-                    }
-
-                    await AresLogger.LogAsync("DB: Mongo", $"Trying to connect in {time}s...", severity: Severity.Error);
-                    await Task.Delay(time);
-                }
+                await AresLogger.LogAsync("DB: Mongo", $"Connection established. ({currentTries}x/{FormatterUtil.FormatSeconds(start)})", severity: Severity.Success);
+                connected = true;
             }
-        }
-        finally
-        {
-            _connectionLock.Release();
+            catch (Exception e)
+            {
+                await AresLogger.LogAsync("DB: Mongo", "Unable to connect.", severity: Severity.Error, extra: e.Message);
+
+                connected = false;
+                currentTries++;
+
+                if (currentTries > maxTries)
+                {
+                    await AresLogger.LogAsync("DB: Mongo", "Max tries reached, stopping connection attempts.", severity: Severity.Error);
+                    Environment.Exit(1);
+                    break;
+                }
+
+                await AresLogger.LogAsync("DB: Mongo", $"Trying to connect in {time}s...", severity: Severity.Error);
+                await Task.Delay(time);
+            }
         }
     }
 
     public Task CloseAsync()
     {
-        try
-        {
-            _connectionLock.Wait();
 
-            if (client != null)
+        if (client != null)
+        {
+            try
             {
-                try
-                {
-                    client.Dispose();
-                    return Task.CompletedTask;
-                }
-                catch (Exception e)
-                {
-                    AresLogger.Log("DB: Mongo", "Unable to close connection.", severity: Severity.Error, extra: e.Message);
-                    return Task.FromResult(false);
-                }
+                client.Dispose();
+                return Task.CompletedTask;
             }
+            catch (Exception e)
+            {
+                AresLogger.Log("DB: Mongo", "Unable to close connection.", severity: Severity.Error, extra: e.Message);
+                return Task.FromResult(false);
+            }
+        }
 
-            return Task.FromResult(false);
-        }
-        finally
-        {
-            _connectionLock.Release();
-        }
+        return Task.FromResult(false);
     }
 
     public bool IsConnected()

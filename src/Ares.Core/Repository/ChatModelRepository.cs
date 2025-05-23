@@ -1,14 +1,13 @@
 ﻿/*
-* Copyright (C) Rodrigo Ferreira, All Rights Reserved
-* Unauthorized copying of this file, via any medium is strictly prohibited
-* Proprietary and confidential
-*/
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
 
 using Ares.Core.Constants;
 using Ares.Core.Database.Mongo;
 using Ares.Core.Database.Redis;
 using Ares.Core.Models.Chat.Model;
-using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
 using Ares.Core.Util;
 using MongoDB.Bson;
@@ -38,11 +37,6 @@ public class ChatModelRepository
     /// Key prefix used for guild data in Redis.
     /// </summary>
     private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:model:";
-
-    /// <summary>
-    /// Dictionary of locks for concurrent operations on the same model
-    /// </summary>
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _modelLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
 
     #region Constructors and initialization methods.
 
@@ -101,62 +95,51 @@ public class ChatModelRepository
     /// <returns>A <see cref="ChatModel"/> object representing the saved or updated model.</returns>
     public async Task<ChatModel?> SaveAsync(string id, ChatModel? newModel = null)
     {
-        SemaphoreSlim semaphore = _modelLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
-
-        try
+        if (_collection == null)
         {
-            await semaphore.WaitAsync();
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save chat model data.", severity: Severity.Error);
+            return null;
+        }
 
-            if (_collection == null)
+        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+        IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+        BsonDocument element = await cursor.FirstOrDefaultAsync();
+
+        ChatModel model;
+
+        if (element != null)
+        {
+            if (newModel != null)
             {
-                await AresLogger.LogAsync("CollectionNull", "Collection returned null when save chat model data.", severity: Severity.Error);
-                return null;
-            }
-
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
-            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-            BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-            ChatModel model;
-
-            if (element != null)
-            {
-                if (newModel != null)
-                {
-                    model = newModel;
-
-                    BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(model);
-
-                    if (document != null)
-                    {
-                        await _collection.ReplaceOneAsync(filter, document);
-                    }
-                }
-                else
-                {
-                    model = await JsonUtil.BsonDocToObjectAsync<ChatModel>(element) ?? new ChatModel(id);
-                }
-            }
-            else
-            {
-                model = newModel ?? new ChatModel(id);
+                model = newModel;
 
                 BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(model);
 
                 if (document != null)
                 {
-                    await _collection.InsertOneAsync(document);
+                    await _collection.ReplaceOneAsync(filter, document);
                 }
             }
-
-            await _redisDatabase.SaveAsync(GRedisKey + id, model);
-
-            return model;
+            else
+            {
+                model = await JsonUtil.BsonDocToObjectAsync<ChatModel>(element) ?? new ChatModel(id);
+            }
         }
-        finally
+        else
         {
-            semaphore.Release();
+            model = newModel ?? new ChatModel(id);
+
+            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(model);
+
+            if (document != null)
+            {
+                await _collection.InsertOneAsync(document);
+            }
         }
+
+        await _redisDatabase.SaveAsync(GRedisKey + id, model);
+
+        return model;
     }
 
     /// <summary>
@@ -168,36 +151,25 @@ public class ChatModelRepository
     /// <returns>A <see cref="ChatModel"/> object representing the retrieved model, or null if not found.</returns>
     public async Task<ChatModel?> FetchAsync(string id, bool saveInRedis = false)
     {
-        SemaphoreSlim semaphore = _modelLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        ChatModel? model = await _redisDatabase.LoadAsync<ChatModel>(GRedisKey + id);
 
-        try
+        if (model == null)
         {
-            await semaphore.WaitAsync();
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
-            ChatModel? model = await _redisDatabase.LoadAsync<ChatModel>(GRedisKey + id);
+            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+            BsonDocument element = await cursor.FirstOrDefaultAsync();
 
-            if (model == null)
+            if (element != null)
             {
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+                model = await JsonUtil.BsonDocToObjectAsync<ChatModel>(element);
 
-                IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-                BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-                if (element != null)
-                {
-                    model = await JsonUtil.BsonDocToObjectAsync<ChatModel>(element);
-
-                    if (saveInRedis && model != null)
-                        await _redisDatabase.SaveAsync(GRedisKey + id, model);
-                }
+                if (saveInRedis && model != null)
+                    await _redisDatabase.SaveAsync(GRedisKey + id, model);
             }
+        }
 
-            return model;
-        }
-        finally
-        {
-            semaphore.Release();
-        }
+        return model;
     }
 
     /// <summary>
@@ -208,8 +180,8 @@ public class ChatModelRepository
     /// <returns>A <see cref="ChatModel"/> object representing the retrieved model, or null if not found.</returns>
     public async Task<ChatModel?> FetchByNearestModelAsync(string id, bool saveInRedis = false)
     {
-        // Primeiro tenta carregar do Redis usando o ID exato
         ChatModel? model = await _redisDatabase.LoadAsync<ChatModel>(GRedisKey + id);
+
         if (model == null)
         {
             var regexPattern = "^" + Regex.Escape(id);
@@ -227,6 +199,7 @@ public class ChatModelRepository
                     await _redisDatabase.SaveAsync(GRedisKey + model.Id, model);
             }
         }
+
         return model;
     }
 
@@ -238,46 +211,35 @@ public class ChatModelRepository
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(ChatModel model, string field)
     {
-        SemaphoreSlim semaphore = _modelLocks.GetOrAdd(model.Id, _ => new SemaphoreSlim(1, 1));
+        if (_collection == null) return false;
 
         try
         {
-            await semaphore.WaitAsync();
+            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(model);
+            if (tree == null) return false;
 
-            if (_collection == null) return false;
+            if (!tree.TryGetValue(field, out BsonValue? value))
+                value = null;
 
-            try
-            {
-                BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(model);
-                if (tree == null) return false;
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", model.Id);
 
-                if (!tree.TryGetValue(field, out BsonValue? value))
-                    value = null;
+            UpdateDefinition<BsonDocument> update = value != null
+                ? Builders<BsonDocument>.Update.Set(field, value)
+                : Builders<BsonDocument>.Update.Unset(field);
 
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", model.Id);
+            // Update MongoDB
+            await _collection.UpdateOneAsync(filter, update);
 
-                UpdateDefinition<BsonDocument> update = value != null
-                    ? Builders<BsonDocument>.Update.Set(field, value)
-                    : Builders<BsonDocument>.Update.Unset(field);
+            // Update Redis
+            await _redisDatabase.UpdateAsync(GRedisKey + model.Id, model);
 
-                // Update MongoDB
-                await _collection.UpdateOneAsync(filter, update);
-
-                // Update Redis
-                await _redisDatabase.UpdateAsync(GRedisKey + model.Id, model);
-
-                await AresLogger.LogAsync("Repo: Chat Models", $"Updated \"{field}\" for model \"{model.Id}\".", severity: Severity.Debug);
-                return true;
-            }
-            catch (Exception e)
-            {
-                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update model data.", severity: Severity.Error, e.Message);
-                return false;
-            }
+            await AresLogger.LogAsync("Repo: Chat Models", $"Updated \"{field}\" for model \"{model.Id}\".");
+            return true;
         }
-        finally
+        catch (Exception e)
         {
-            semaphore.Release();
+            await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update model data.", severity: Severity.Error, extra: e.Message);
+            return false;
         }
     }
 
@@ -342,20 +304,6 @@ public class ChatModelRepository
         });
 
         return models;
-    }
-
-    /// <summary>
-    /// Cleanup method to remove unused locks and free memory
-    /// </summary>
-    public void CleanupLocks(TimeSpan olderThan)
-    {
-        foreach (var key in _modelLocks.Keys)
-        {
-            if (_modelLocks.TryRemove(key, out SemaphoreSlim semaphore))
-            {
-                semaphore.Dispose();
-            }
-        }
     }
 
     #endregion

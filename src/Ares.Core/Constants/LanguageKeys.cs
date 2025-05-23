@@ -87,4 +87,21 @@ public class LanguageKeys
     public const string OverloadedError = "overloaded-error";
     public const string ModelDevMode = "model-dev-mode";
     public const string PremiumChatLimit = "premium-chat-limit";
+
+    public const string PingDescription = "ping-description";
+    public const string ConfigTokenDescription = "config-token-description";
+    public const string ConfigIdDescription = "config-id-description";
+    public const string ConfigIdRoleMember = "config-id-role-member";
+    public const string ConfigIdRoleUsage = "config-id-role-usage";
+    public const string ConfigIdRoleExclusive = "config-id-role-exclusive";
+    public const string ConfigIdChannelSetup = "config-id-channel-setup";
+    public const string ConfigIdChannelLog = "config-id-channel-log";
+    public const string ConfigIdCategoryChats = "config-id-category-chats";
+    public const string ConfigLangDescription = "config-lang-description";
+    public const string ConfigLangOption = "config-lang-option";
+    public const string SetupDescription = "setup-description";
+    public const string SetupOption = "setup-option";
+    public const string SetupOptionAll = "setup-option-all";
+    public const string SetupOptionWeb = "setup-option-web";
+    public const string SetupOptionLocal = "setup-option-local";
 }

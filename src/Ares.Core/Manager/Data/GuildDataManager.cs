@@ -4,13 +4,14 @@
 * Proprietary and confidential
 */
 
+using Ares.Core.Manager.Lang;
 using Ares.Core.Models.Data;
 using Ares.Core.Models.Language;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using Ares.Core.Objects;
+using Ares.Core.Repository;
 using Ares.Core.Util;
-using System.Collections.Concurrent;
 
 namespace Ares.Core.Manager.Data;
 
@@ -20,27 +21,22 @@ namespace Ares.Core.Manager.Data;
 public class GuildDataManager
 {
     /// <summary>
-    /// Dictionary of locks for concurrent operations on the same guild
+    /// Repository for guild data operations.
     /// </summary>
-    private static readonly ConcurrentDictionary<ulong, SemaphoreSlim> _guildLocks = new ConcurrentDictionary<ulong, SemaphoreSlim>();
+    private static readonly GuildRepository? _repository = AppCore.GuildRepository;
 
     /// <summary>
-    /// Gets an existing lock or creates a new one for the specified guild ID.
+    /// Language manager instance for handling translations.
     /// </summary>
-    /// <param name="guildId">The ID of the guild.</param>
-    /// <returns>The semaphore for the guild.</returns>
-    private static SemaphoreSlim GetGuildLock(ulong guildId)
-    {
-        return _guildLocks.GetOrAdd(guildId, _ => new SemaphoreSlim(1, 1));
-    }
+    private static readonly LanguageManager _langManager = AppCore.LangManager;
 
     /// <summary>
-    /// Internal implementation of SaveAsync that doesn't acquire a lock.
+    /// Saves the specified fields of the guild to the database.
     /// </summary>
     /// <param name="guild">The guild to save.</param>
     /// <param name="fields">List of field names to be saved.</param>
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
-    private static async Task<bool> SaveInternalAsync(Guild guild, params string[] fields)
+    public static async Task<bool> SaveAsync(Guild guild, params string[] fields)
     {
         if (fields == null || fields.Length == 0)
         {
@@ -48,7 +44,7 @@ public class GuildDataManager
             return false;
         }
 
-        if (AppCore.GuildRepository is not { } repository)
+        if (_repository is not { } repository)
         {
             AresLogger.Log(nameof(SaveAsync), "Guild data is null. Unable to save fields.", severity: Severity.Error);
             return false;
@@ -77,27 +73,6 @@ public class GuildDataManager
     }
 
     /// <summary>
-    /// Saves the specified fields of the guild to the database.
-    /// </summary>
-    /// <param name="guild">The guild to save.</param>
-    /// <param name="fields">List of field names to be saved.</param>
-    /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveAsync(Guild guild, params string[] fields)
-    {
-        SemaphoreSlim semaphore = GetGuildLock(guild.Id);
-
-        try
-        {
-            await semaphore.WaitAsync();
-            return await SaveInternalAsync(guild, fields);
-        }
-        finally
-        {
-            semaphore.Release();
-        }
-    }
-
-    /// <summary>
     /// Saves token data about the guild to the database.
     /// </summary>
     /// <param name="guild">The guild to save the config data.</param>
@@ -105,24 +80,13 @@ public class GuildDataManager
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveTokenDataAsync(Guild guild, GToken? token = null)
     {
-        SemaphoreSlim semaphore = GetGuildLock(guild.Id);
-
-        try
+        // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
+        if (token != null)
         {
-            await semaphore.WaitAsync();
-
-            // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
-            if (token != null)
-            {
-                guild.Token = token;
-            }
-
-            return await SaveInternalAsync(guild, "token");
+            guild.Token = token;
         }
-        finally
-        {
-            semaphore.Release();
-        }
+
+        return await SaveAsync(guild, "token");
     }
 
     /// <summary>
@@ -133,24 +97,13 @@ public class GuildDataManager
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
     public static async Task<bool> SavePreferenceDataAsync(Guild guild, GPreference? config = null)
     {
-        SemaphoreSlim semaphore = GetGuildLock(guild.Id);
-
-        try
+        // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
+        if (config != null)
         {
-            await semaphore.WaitAsync();
-
-            // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
-            if (config != null)
-            {
-                guild.Preferences = config;
-            }
-
-            return await SaveInternalAsync(guild, "preference");
+            guild.Preferences = config;
         }
-        finally
-        {
-            semaphore.Release();
-        }
+
+        return await SaveAsync(guild, "preference");
     }
 
     /// <summary>
@@ -168,9 +121,9 @@ public class GuildDataManager
     /// </summary>
     /// <param name="guild">The guild to get the language category for.</param>
     /// <returns>The language category object or null if not found.</returns>
-    public static LanguageCategory? LangCategory(Guild guild)
+    public static LanguageCategory? LanguageCategory(Guild guild)
     {
-        return AppCore.LangManager.GetCategoryByCode(Language(guild));
+        return _langManager.GetCategoryByCode(Language(guild));
     }
 
     /// <summary>
@@ -181,23 +134,9 @@ public class GuildDataManager
     /// <returns>The translated string or the original code if translation was not found.</returns>
     public static string GetTranslation(Guild guild, string code)
     {
-        LanguageCategory? category = LangCategory(guild);
+        LanguageCategory? category = LanguageCategory(guild);
         if (category == null) return code;
 
-        return AppCore.LangManager.GetTranslation(category, code);
-    }
-
-    /// <summary>
-    /// Cleanup method to remove unused locks and free memory
-    /// </summary>
-    public static void CleanupLocks(TimeSpan olderThan)
-    {
-        foreach (var key in _guildLocks.Keys)
-        {
-            if (_guildLocks.TryRemove(key, out var semaphore))
-            {
-                semaphore.Dispose();
-            }
-        }
+        return _langManager.GetTranslation(category, code);
     }
 }

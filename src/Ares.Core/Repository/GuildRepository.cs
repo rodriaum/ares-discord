@@ -1,8 +1,8 @@
 ﻿/*
-* Copyright (C) Rodrigo Ferreira, All Rights Reserved
-* Unauthorized copying of this file, via any medium is strictly prohibited
-* Proprietary and confidential
-*/
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
 
 using Ares.Core.Constants;
 using Ares.Core.Database.Mongo;
@@ -36,11 +36,6 @@ public class GuildRepository
     /// Key prefix used for guild data in Redis.
     /// </summary>
     private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:guild:";
-
-    /// <summary>
-    /// Dictionary of locks for concurrent operations on the same guild
-    /// </summary>
-    private readonly ConcurrentDictionary<ulong, SemaphoreSlim> _guildLocks = new ConcurrentDictionary<ulong, SemaphoreSlim>();
 
     /*
      * Constructors and initialization methods.
@@ -100,48 +95,37 @@ public class GuildRepository
     /// <returns>A <see cref="User"/> object representing the saved or updated guild.</returns>
     public async Task<Guild?> SaveAsync(ulong id)
     {
-        SemaphoreSlim semaphore = _guildLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
-
-        try
+        if (_collection == null)
         {
-            await semaphore.WaitAsync();
-
-            if (_collection == null)
-            {
-                await AresLogger.LogAsync("CollectionNull", "Collection returned null when save guild data.", severity: Severity.Error);
-                return null;
-            }
-
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
-
-            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-            BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-            Guild? guild = new Guild(id);
-
-            if (element != null)
-            {
-                guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element) ?? guild;
-            }
-            else
-            {
-                BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(guild);
-
-                if (document != null)
-                {
-                    // Insert the document in the database if it doesn't exist.
-                    await _collection.InsertOneAsync(document);
-                }
-
-                await _redisDatabase.SaveAsync(GRedisKey + id, guild);
-            }
-
-            return guild;
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save guild data.", severity: Severity.Error);
+            return null;
         }
-        finally
+
+        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+
+        IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+        BsonDocument element = await cursor.FirstOrDefaultAsync();
+
+        Guild? guild = new Guild(id);
+
+        if (element != null)
         {
-            semaphore.Release();
+            guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element) ?? guild;
         }
+        else
+        {
+            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(guild);
+
+            if (document != null)
+            {
+                // Insert the document in the database if it doesn't exist.
+                await _collection.InsertOneAsync(document);
+            }
+
+            await _redisDatabase.SaveAsync(GRedisKey + id, guild);
+        }
+
+        return guild;
     }
 
     /// <summary>
@@ -153,36 +137,25 @@ public class GuildRepository
     /// <seealso cref="FetchAsync(ulong, bool)"/>
     public async Task<Guild?> FetchAsync(ulong id, bool saveInRedis = false)
     {
-        SemaphoreSlim semaphore = _guildLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        Guild? guild = await _redisDatabase.LoadAsync<Guild>(GRedisKey + id);
 
-        try
+        if (guild == null)
         {
-            await semaphore.WaitAsync();
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
-            Guild? guild = await _redisDatabase.LoadAsync<Guild>(GRedisKey + id);
+            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+            BsonDocument element = await cursor.FirstOrDefaultAsync();
 
-            if (guild == null)
+            if (element != null)
             {
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+                guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element);
 
-                IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-                BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-                if (element != null)
-                {
-                    guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element);
-
-                    if (saveInRedis && guild != null)
-                        await _redisDatabase.SaveAsync(GRedisKey + id, guild);
-                }
+                if (saveInRedis && guild != null)
+                    await _redisDatabase.SaveAsync(GRedisKey + id, guild);
             }
+        }
 
-            return guild;
-        }
-        finally
-        {
-            semaphore.Release();
-        }
+        return guild;
     }
 
     /// <summary>
@@ -193,46 +166,35 @@ public class GuildRepository
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(Guild guild, string field)
     {
-        SemaphoreSlim semaphore = _guildLocks.GetOrAdd(guild.Id, _ => new SemaphoreSlim(1, 1));
+        if (_collection == null) return false;
 
         try
         {
-            await semaphore.WaitAsync();
+            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(guild);
+            if (tree == null) return false;
 
-            if (_collection == null) return false;
+            if (!tree.TryGetValue(field, out BsonValue? value))
+                value = null;
 
-            try
-            {
-                BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(guild);
-                if (tree == null) return false;
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", guild.Id);
 
-                if (!tree.TryGetValue(field, out BsonValue? value))
-                    value = null;
+            UpdateDefinition<BsonDocument> update = value != null
+                ? Builders<BsonDocument>.Update.Set(field, value)
+                : Builders<BsonDocument>.Update.Unset(field);
 
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", guild.Id);
+            // Update MongoDB
+            await _collection.UpdateOneAsync(filter, update);
 
-                UpdateDefinition<BsonDocument> update = value != null
-                    ? Builders<BsonDocument>.Update.Set(field, value)
-                    : Builders<BsonDocument>.Update.Unset(field);
+            // Update Redis
+            await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
 
-                // Update MongoDB
-                await _collection.UpdateOneAsync(filter, update);
-
-                // Update Redis
-                await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
-
-                await AresLogger.LogAsync("Repo: Guild", $"Updated \"{field}\" for guild \"{guild.Id}\".", severity: Severity.Debug);
-                return true;
-            }
-            catch (Exception e)
-            {
-                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update guild data.", severity: Severity.Error, extra: e.Message);
-                return false;
-            }
+            await AresLogger.LogAsync("Repo: Guild", $"Updated \"{field}\" for guild \"{guild.Id}\".");
+            return true;
         }
-        finally
+        catch (Exception e)
         {
-            semaphore.Release();
+            await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update guild data.", severity: Severity.Error, extra: e.Message);
+            return false;
         }
     }
 
@@ -297,19 +259,5 @@ public class GuildRepository
         });
 
         return users;
-    }
-
-    /// <summary>
-    /// Cleanup method to remove unused locks and free memory
-    /// </summary>
-    public void CleanupLocks(TimeSpan olderThan)
-    {
-        foreach (var key in _guildLocks.Keys)
-        {
-            if (_guildLocks.TryRemove(key, out SemaphoreSlim semaphore))
-            {
-                semaphore.Dispose();
-            }
-        }
     }
 }

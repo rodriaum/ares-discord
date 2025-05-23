@@ -6,20 +6,18 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
 using Ares.Core.Util;
 using Ares.Discord.Commands;
 using Ares.Discord.Listener;
 using Ares.Discord.Listener.Chat;
+using Ares.Discord.Manager;
 using Ares.Discord.Service;
 using Discord;
 using Discord.Commands;
-using Discord.Net;
 using Discord.WebSocket;
 using DotNetEnv;
 using System.Diagnostics;
-using System.Text.Json;
 
 namespace Ares.Discord;
 
@@ -28,6 +26,11 @@ namespace Ares.Discord;
 /// </summary>
 public class Program
 {
+    /// <summary>
+    /// Slash command manager.
+    /// </summary>
+    public static SlashCommandManager? _commandManager { get; private set; }
+
     /// <summary>
     /// Discord client instance for bot operations.
     /// </summary>
@@ -108,17 +111,16 @@ public class Program
         // Initialize event listeners
         InitListeners();
 
-        // Register commands
-        await RegisterCommands();
+        // Register command manager
+        _commandManager = new SlashCommandManager(_client);
 
         // Configure bot status
         await ConfigureBotStatus();
 
-        _client.Ready += RegisterCommands;
-        _client.Ready += () =>
+        _client.Ready += async () =>
         {
+            await _commandManager.RegisterCommandsForAllGuildsAsync();
             AresLogger.Log("Status", $"Yup! Logged with \"{_client.CurrentUser.Username}\"", severity: Severity.Success);
-            return Task.CompletedTask;
         };
 
         Console.CancelKeyPress += async (sender, e) =>
@@ -171,180 +173,5 @@ public class Program
 
         await _client.SetStatusAsync(UserStatus.DoNotDisturb);
         await _client.SetGameAsync("https://github.com/rodriaum", type: ActivityType.CustomStatus);
-    }
-
-    /// <summary>
-    /// Registers all slash commands with Discord API.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public static async Task RegisterCommands()
-    {
-        // Get available language options
-        var langOptionChoices = AppCore.LangManager.GetLanguages()
-            .Select(category => new ApplicationCommandOptionChoiceProperties
-            {
-                Name = category.Name,
-                Value = category.Code
-            })
-            .ToList();
-
-        var configTokenOptions = Enum.GetValues(typeof(ModelCategory))
-            .Cast<ModelCategory>()
-            // Add all models.
-            .Select(model => new SlashCommandOptionBuilder
-            {
-                Type = ApplicationCommandOptionType.String,
-                Name = model.ToString().ToLower(), // Fix: Name cannot contain any uppercase characters.
-                Description = (model.GetEndpoint() != null ? $"Access: {model.GetEndpoint()}" : "Access the Panel"),
-                IsRequired = false
-            })
-            // Add imgur token to permanent media.
-            .Concat(new[]
-            {
-                new SlashCommandOptionBuilder
-                {
-                    Type = ApplicationCommandOptionType.String,
-                    Name = "imgur",
-                    Description = "Access: https://api.imgur.com/oauth2/addclient",
-                    IsRequired = false
-                }
-            })
-            .ToArray();
-
-
-        // Define all slash commands
-        List<SlashCommandBuilder> commands = new List<SlashCommandBuilder>
-        {
-            // Ping command for latency check
-            new SlashCommandBuilder()
-                .WithName("ping")
-                .WithDescription("Current gateway ping"),
-
-            // Token configuration command
-            new SlashCommandBuilder()
-                .WithName("config-token")
-                .WithDescription("Configure tokens for the current server.")
-                .WithDefaultMemberPermissions(GuildPermission.Administrator)
-                .AddOptions(configTokenOptions),
-
-            // ID configuration command
-            new SlashCommandBuilder()
-                .WithName("config-id")
-                .WithDescription("Configure channels for the current server.")
-                .WithDefaultMemberPermissions(GuildPermission.Administrator)
-                .AddOptions(
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.Role,
-                        Name = "role-member",
-                        Description = "Enter the member role ID.",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.Role,
-                        Name = "role-usage",
-                        Description = "Enter the ID of the role that can use chats.",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.Role,
-                        Name = "role-exclusive",
-                        Description = "Enter the ID of the role that can use exclusive chats.",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.Channel,
-                        Name = "channel-setup",
-                        Description = "Enter the ID of the channel where the chat embed will be.",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.Channel,
-                        Name = "channel-log",
-                        Description = "Enter the ID of the channel where bot logs will be kept.",
-                        IsRequired = false
-                    },
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.Channel,
-                        Name = "category-chats",
-                        Description = "Enter the ID of the category where generated chat channels will be kept.",
-                        IsRequired = false
-                    }
-                ),
-
-            // Language configuration command
-            new SlashCommandBuilder()
-                .WithName("config-lang")
-                .WithDescription("Choose the application language for this server.")
-                .WithDefaultMemberPermissions(GuildPermission.Administrator)
-                .AddOptions(
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.String,
-                        Name = "lang",
-                        Description = "Choose the language.",
-                        IsRequired = true,
-                        Choices = langOptionChoices
-                    }
-                ),
-
-            // Setup command
-            new SlashCommandBuilder()
-                .WithName("setup")
-                .WithDescription("Choose the type of setup to perform in the current channel.")
-                .WithDefaultMemberPermissions(GuildPermission.Administrator)
-                .AddOptions(
-                    new SlashCommandOptionBuilder
-                    {
-                        Type = ApplicationCommandOptionType.String,
-                        Name = "option",
-                        Description = "Choose the type of setup to perform in the current channel.",
-                        IsRequired = true,
-                        Choices = new List<ApplicationCommandOptionChoiceProperties>
-                        {
-                            new ApplicationCommandOptionChoiceProperties { Name = "AI Generation (All)", Value = "setup-ai-menu" },
-                            new ApplicationCommandOptionChoiceProperties { Name = "AI Generation (Web)", Value = "setup-ai-web-menu" },
-                            new ApplicationCommandOptionChoiceProperties { Name = "AI Generation (Local)", Value = "setup-ai-local-menu" }
-                        }
-                    }
-                )
-        };
-
-        try
-        {
-            // Only register commands if client is initialized
-            if (_client == null)
-                return;
-
-            // Register each command with Discord
-            foreach (SlashCommandBuilder command in commands)
-            {
-                SlashCommandProperties build = command.Build();
-                await _client.CreateGlobalApplicationCommandAsync(build);
-                AresLogger.Log("Commands", $"Command \"{build.Name}\" registered.");
-            }
-        }
-        catch (HttpException e)
-        {
-            // Handle and log any errors during command registration
-            string json = await JsonUtil.ObjectToStringAsync<IReadOnlyCollection<DiscordJsonError>>
-                (
-                    e.Errors,
-                    serializerOptions: new JsonSerializerOptions { WriteIndented = true }
-                );
-
-            await AresLogger.LogAsync
-                (
-                    "Commands",
-                    "Unable to register commands.",
-                    extra: (!(string.IsNullOrEmpty(json) || json.Equals("[]")) ? json : e.Message),
-                    severity: Severity.Error
-                );
-        }
     }
 }

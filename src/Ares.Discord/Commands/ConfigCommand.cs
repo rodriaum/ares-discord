@@ -11,6 +11,7 @@ using Ares.Core.Models.Data;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using Ares.Core.Repository;
+using Ares.Discord.Manager;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -234,6 +235,14 @@ public class ConfigCommand
                     case "lang":
                         configData.Lang = optionValueString;
                         configChange = true;
+
+                        SlashCommandManager? command = Program._commandManager;
+
+                        if (command != null)
+                        {
+                            await command.UpdateCommandsAfterLanguageChangeAsync(guild.Id);
+                        }
+
                         break;
 
                     /*

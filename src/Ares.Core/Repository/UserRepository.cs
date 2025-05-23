@@ -1,8 +1,8 @@
 ﻿/*
-* Copyright (C) Rodrigo Ferreira, All Rights Reserved
-* Unauthorized copying of this file, via any medium is strictly prohibited
-* Proprietary and confidential
-*/
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
 
 using Ares.Core.Constants;
 using Ares.Core.Database.Mongo;
@@ -36,11 +36,6 @@ public class UserRepository
     /// Key prefix used for user data in Redis.
     /// </summary>
     private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:user:";
-
-    /// <summary>
-    /// Dictionary of locks for concurrent operations on the same user
-    /// </summary>
-    private readonly ConcurrentDictionary<ulong, SemaphoreSlim> _userLocks = new ConcurrentDictionary<ulong, SemaphoreSlim>();
 
     /*
      * Constructors and initialization methods.
@@ -100,48 +95,37 @@ public class UserRepository
     /// <returns>A <see cref="User"/> object representing the saved or updated user.</returns>
     public async Task<User?> SaveAsync(ulong id)
     {
-        SemaphoreSlim semaphore = _userLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
-
-        try
+        if (_collection == null)
         {
-            await semaphore.WaitAsync();
-
-            if (_collection == null)
-            {
-                await AresLogger.LogAsync("CollectionNull", "Collection returned null when save user data.", severity: Severity.Error);
-                return null;
-            }
-
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
-
-            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-            BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-            User? user = new User(id);
-
-            if (element != null)
-            {
-                user = await JsonUtil.BsonDocToObjectAsync<User>(element) ?? user;
-            }
-            else
-            {
-                BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(user);
-
-                if (document != null)
-                {
-                    // Insert the document in the database if it doesn't exist.
-                    await _collection.InsertOneAsync(document);
-                }
-
-                await _redisDatabase.SaveAsync(GRedisKey + id, user);
-            }
-
-            return user;
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save user data.", severity: Severity.Error);
+            return null;
         }
-        finally
+
+        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+
+        IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+        BsonDocument element = await cursor.FirstOrDefaultAsync();
+
+        User? user = new User(id);
+
+        if (element != null)
         {
-            semaphore.Release();
+            user = await JsonUtil.BsonDocToObjectAsync<User>(element) ?? user;
         }
+        else
+        {
+            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(user);
+
+            if (document != null)
+            {
+                // Insert the document in the database if it doesn't exist.
+                await _collection.InsertOneAsync(document);
+            }
+
+            await _redisDatabase.SaveAsync(GRedisKey + id, user);
+        }
+
+        return user;
     }
 
     /// <summary>
@@ -153,36 +137,25 @@ public class UserRepository
     /// <seealso cref="FetchAsync(ulong, bool)"/>
     public async Task<User?> FetchAsync(ulong id, bool saveInRedis = false)
     {
-        SemaphoreSlim semaphore = _userLocks.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
+        User? user = await _redisDatabase.LoadAsync<User>(GRedisKey + id);
 
-        try
+        if (user == null)
         {
-            await semaphore.WaitAsync();
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
-            User? user = await _redisDatabase.LoadAsync<User>(GRedisKey + id);
+            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+            BsonDocument element = await cursor.FirstOrDefaultAsync();
 
-            if (user == null)
+            if (element != null)
             {
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+                user = await JsonUtil.BsonDocToObjectAsync<User>(element);
 
-                IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-                BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-                if (element != null)
-                {
-                    user = await JsonUtil.BsonDocToObjectAsync<User>(element);
-
-                    if (saveInRedis && user != null)
-                        await _redisDatabase.SaveAsync(GRedisKey + id, user);
-                }
+                if (saveInRedis && user != null)
+                    await _redisDatabase.SaveAsync(GRedisKey + id, user);
             }
+        }
 
-            return user;
-        }
-        finally
-        {
-            semaphore.Release();
-        }
+        return user;
     }
 
     /// <summary>
@@ -193,46 +166,35 @@ public class UserRepository
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(User user, string field)
     {
-        SemaphoreSlim semaphore = _userLocks.GetOrAdd(user.Id, _ => new SemaphoreSlim(1, 1));
+        if (_collection == null) return false;
 
         try
         {
-            await semaphore.WaitAsync();
+            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(user);
+            if (tree == null) return false;
 
-            if (_collection == null) return false;
+            if (!tree.TryGetValue(field, out BsonValue? value))
+                value = null;
 
-            try
-            {
-                BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(user);
-                if (tree == null) return false;
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", user.Id);
 
-                if (!tree.TryGetValue(field, out BsonValue? value))
-                    value = null;
+            UpdateDefinition<BsonDocument> update = value != null
+                ? Builders<BsonDocument>.Update.Set(field, value)
+                : Builders<BsonDocument>.Update.Unset(field);
 
-                FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", user.Id);
+            // Update MongoDB
+            await _collection.UpdateOneAsync(filter, update);
 
-                UpdateDefinition<BsonDocument> update = value != null
-                    ? Builders<BsonDocument>.Update.Set(field, value)
-                    : Builders<BsonDocument>.Update.Unset(field);
+            // Update Redis
+            await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
 
-                // Update MongoDB
-                await _collection.UpdateOneAsync(filter, update);
-
-                // Update Redis
-                await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
-
-                await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\"", severity: Severity.Debug);
-                return true;
-            }
-            catch (Exception e)
-            {
-                await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update user data.", severity: Severity.Error, extra: e.Message);
-                return false;
-            }
+            await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\"");
+            return true;
         }
-        finally
+        catch (Exception e)
         {
-            semaphore.Release();
+            await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update user data.", severity: Severity.Error, extra: e.Message);
+            return false;
         }
     }
 
@@ -297,22 +259,5 @@ public class UserRepository
         });
 
         return users;
-    }
-
-    /// <summary>
-    /// Cleanup method to remove unused locks and free memory
-    /// </summary>
-    public void CleanupLocks(TimeSpan olderThan)
-    {
-        // Implementação para remover locks não utilizados
-        // Esta é uma implementação simples, você pode querer adicionar lógica
-        // para rastrear quando um lock foi usado pela última vez
-        foreach (var key in _userLocks.Keys)
-        {
-            if (_userLocks.TryRemove(key, out SemaphoreSlim semaphore))
-            {
-                semaphore.Dispose();
-            }
-        }
     }
 }

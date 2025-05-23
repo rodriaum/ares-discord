@@ -113,7 +113,7 @@ public class NeuralService
         {
             AresLogger.Log("Generation", "Unable to generate an image.", severity: Severity.Error, extra: e.Message);
 
-            LanguageCategory lang = GuildDataManager.LangCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
+            LanguageCategory lang = GuildDataManager.LanguageCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
         }
     }
@@ -184,7 +184,7 @@ public class NeuralService
         {
             AresLogger.Log("Generation", "Unable to generate TTS.", severity: Severity.Error, extra: e.Message);
 
-            LanguageCategory lang = GuildDataManager.LangCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
+            LanguageCategory lang = GuildDataManager.LanguageCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
         }
     }
@@ -237,7 +237,7 @@ public class NeuralService
         catch (Exception e)
         {
             AresLogger.Log("Generation", "Unable to generate a conversation.", severity: Severity.Error, extra: e.Message);
-            LanguageCategory lang = GuildDataManager.LangCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
+            LanguageCategory lang = GuildDataManager.LanguageCategory(guild) ?? AppCore.LangManager.GetLanguages().First();
             return (GetMessageByErrorKey(lang, e.Message), false);
         }
     }

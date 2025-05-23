@@ -6,8 +6,8 @@
 
 using Ares.Core.Models.Chat.Model;
 using Ares.Core.Objects;
+using Ares.Core.Repository;
 using Ares.Core.Util;
-using System.Collections.Concurrent;
 
 namespace Ares.Core.Manager.Data;
 
@@ -17,9 +17,9 @@ namespace Ares.Core.Manager.Data;
 public class ChatModelDataManager
 {
     /// <summary>
-    /// Dictionary of locks for concurrent operations on the same model
+    /// Repository for chat model data operations.
     /// </summary>
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _modelLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
+    private static readonly ChatModelRepository? _repository = AppCore.ChatModelRepository;
 
     /// <summary>
     /// Saves the specified fields of the user to the database.
@@ -29,62 +29,37 @@ public class ChatModelDataManager
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
     public static async Task<bool> SaveAsync(ChatModel model, params string[] fields)
     {
-        SemaphoreSlim semaphore = _modelLocks.GetOrAdd(model.Id, _ => new SemaphoreSlim(1, 1));
+        if (fields == null || fields.Length == 0)
+        {
+            AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
+            return false;
+        }
+
+        if (_repository is not { } repository)
+        {
+            AresLogger.Log(nameof(SaveAsync), "Chat model data is null. Unable to save fields.", severity: Severity.Error);
+            return false;
+        }
 
         try
         {
-            await semaphore.WaitAsync();
-
-            if (fields == null || fields.Length == 0)
+            foreach (string field in fields)
             {
-                AresLogger.Log(nameof(SaveAsync), "The field list is null or empty.", severity: Severity.Error);
-                return false;
-            }
-
-            if (AppCore.ChatModelRepository is not { } repository)
-            {
-                AresLogger.Log(nameof(SaveAsync), "Chat model data is null. Unable to save fields.", severity: Severity.Error);
-                return false;
-            }
-
-            try
-            {
-                foreach (string field in fields)
+                if (string.IsNullOrWhiteSpace(field))
                 {
-                    if (string.IsNullOrWhiteSpace(field))
-                    {
-                        AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
-                        continue;
-                    }
-
-                    await repository.UpdateAsync(model, field);
+                    AresLogger.Log(nameof(SaveAsync), "The field list contains a null or empty value.", severity: Severity.Error);
+                    continue;
                 }
 
-                return true;
+                await repository.UpdateAsync(model, field);
             }
-            catch (Exception ex)
-            {
-                AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", severity: Severity.Error, extra: ex.Message);
-                return false;
-            }
-        }
-        finally
-        {
-            semaphore.Release();
-        }
-    }
 
-    /// <summary>
-    /// Cleanup method to remove unused locks and free memory
-    /// </summary>
-    public static void CleanupLocks(TimeSpan olderThan)
-    {
-        foreach (var key in _modelLocks.Keys)
+            return true;
+        }
+        catch (Exception ex)
         {
-            if (_modelLocks.TryRemove(key, out SemaphoreSlim semaphore))
-            {
-                semaphore.Dispose();
-            }
+            AresLogger.Log(nameof(SaveAsync), "Error updating one or more fields in the database.", severity: Severity.Error, extra: ex.Message);
+            return false;
         }
     }
 }
