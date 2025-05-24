@@ -534,7 +534,7 @@ public class NeuralService
         User user,
         ulong channel,
         string prompt,
-        string? response = null,
+        List<string>? response = null,
         string? imageUrl = null,
         GeneratedImage? imageOpenAi = null,
         ChatCompletion? responseOpenAi = null,
@@ -560,7 +560,7 @@ public class NeuralService
         }
         else
         {
-            historic = new UserChatHistoric(prompt: prompt, response: response ?? string.Empty, usage: usage);
+            historic = new UserChatHistoric(prompt: prompt, response: response ?? new(), usage: usage);
         }
 
         info.Historics.Add(historic);

@@ -16,7 +16,7 @@ public class AppConstants
 
     public const bool AppDevMode = false;
 
-    public static readonly bool AppDebugMode = false;
+    public static readonly bool AppDebugMode = true;
     public static readonly bool AppMonitorDebugMode = true;
 
     #endregion

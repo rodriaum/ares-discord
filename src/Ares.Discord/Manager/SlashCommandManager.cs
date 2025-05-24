@@ -33,13 +33,18 @@ public class SlashCommandManager
     /// Registers all slash commands for all guilds the bot is a member of.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task RegisterCommandsForAllGuildsAsync()
+    public async Task RegisterCommandsForAllGuildsAsync(bool onlyIfCommandsIsEmpty = true)
     {
         if (_client == null) return;
 
         foreach (SocketGuild guild in _client.Guilds)
         {
-            await RegisterCommandsForGuildAsync(guild.Id);
+            IReadOnlyCollection<SocketApplicationCommand> commands = await guild.GetApplicationCommandsAsync();
+
+            if (!onlyIfCommandsIsEmpty || commands.Count == 0)
+            {
+                await RegisterCommandsForGuildAsync(guild.Id);
+            }
         }
     }
 
@@ -70,6 +75,7 @@ public class SlashCommandManager
             {
                 SlashCommandProperties build = command.Build();
                 await socketGuild.CreateApplicationCommandAsync(build);
+
                 await AresLogger.LogAsync("Commands", $"Command \"{build.Name}\" registered for guild \"{guildId}\"");
             }
         }

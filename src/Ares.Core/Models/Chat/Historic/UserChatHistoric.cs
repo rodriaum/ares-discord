@@ -39,7 +39,7 @@ public class UserChatHistoric
     [JsonInclude]
     [JsonPropertyName("response")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Response { get; set; }
+    public List<string>? Response { get; set; }
 
     /// <summary>
     /// URL de uma imagem gerada na conversa, se aplicável.
@@ -75,7 +75,7 @@ public class UserChatHistoric
     public UserChatHistoric(
             string? system = null,
             string? prompt = null,
-            string? response = null,
+            List<string>? response = null,
             string? imageUrl = null,
             ChatTokenUsage? usage = null,
             long timestamp = -1)
@@ -112,12 +112,14 @@ public class UserChatHistoric
 
         if (responseOpenAi != null)
         {
-            var contentOpenAi = responseOpenAi.Content[0];
+            ChatMessageContentPart contentOpenAi = responseOpenAi.Content[0];
+
+            List<string> response = responseOpenAi.Content.Select(it => it.Text).ToList();
 
             historics.Add(new UserChatHistoric
             (
                 prompt: prompt,
-                response: contentOpenAi.Text,
+                response: response,
                 imageUrl: !string.IsNullOrWhiteSpace(imageUrl) ? contentOpenAi.ImageUri?.OriginalString : imageUrl,
                 usage: new ChatTokenUsage(responseOpenAi.Usage.OutputTokenCount, responseOpenAi.Usage.InputTokenCount),
                 timestamp: responseOpenAi.CreatedAt.Ticks
@@ -129,7 +131,7 @@ public class UserChatHistoric
             historics.Add(new UserChatHistoric
             (
                 prompt: prompt,
-                response: imageOpenAi.RevisedPrompt,
+                response: new List<string> { imageOpenAi.RevisedPrompt },
                 imageUrl: !string.IsNullOrWhiteSpace(imageUrl) ? imageOpenAi.ImageUri.OriginalString : imageUrl
             ));
         }
@@ -145,10 +147,12 @@ public class UserChatHistoric
 
                 if (inputTokens.HasValue && outputTokens.HasValue)
                 {
+                    List<string> response = ollamaResponse.Messages.Select(it => it.Text).ToList();
+
                     historics.Add(new UserChatHistoric
                     (
                         prompt: prompt,
-                        response: ollamaResponse.Text,
+                        response: response,
                         usage: new ChatTokenUsage(outputTokens.Value, inputTokens.Value),
                         timestamp: TimeUtil.CurrentTimeMillis()
                     ));
@@ -184,9 +188,9 @@ public class UserChatHistoric
                 messages.Add(new UserChatMessage(historic.Prompt));
             }
 
-            if (!string.IsNullOrWhiteSpace(historic.Response))
+            if (historic.Response != null && historic.Response.Any() && !string.IsNullOrWhiteSpace(historic.Response[0]))
             {
-                messages.Add(new AssistantChatMessage(historic.Response));
+                messages.Add(new AssistantChatMessage(historic.Response[0]));
             }
         }
 
@@ -218,9 +222,9 @@ public class UserChatHistoric
                 messages.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.User, historic.Prompt));
             }
 
-            if (!string.IsNullOrWhiteSpace(historic.Response))
+            if (historic.Response != null && historic.Response.Any() && !string.IsNullOrWhiteSpace(historic.Response[0]))
             {
-                messages.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, historic.Response));
+                messages.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, historic.Response[0]));
             }
         }
 

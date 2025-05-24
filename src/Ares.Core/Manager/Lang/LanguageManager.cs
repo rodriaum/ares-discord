@@ -29,14 +29,28 @@ namespace Ares.Core.Manager.Lang
             {
                 try
                 {
+                    bool isRunFilePath = true;
+
                     // Run File Path
                     string filePath = Path.Combine("lang", category.Code.ToLower() + ".json");
 
                     if (!File.Exists(filePath))
                     {
+                        isRunFilePath = false;
+
                         // Project File Path
                         filePath = Path.Combine(AppConstants.ProjectPath, filePath);
                         if (!File.Exists(filePath)) continue;
+                    }
+         
+                    if (AppConstants.AppDebugMode)
+                    {
+                        AresLogger.Log(
+                            "Lang",
+                            $"Using lang from:",
+                            severity: Severity.Debug,
+                            extra: [$"Path: {filePath}", $"Run Path: {isRunFilePath}"]
+                        );
                     }
 
                     using FileStream fileStream = File.OpenRead(filePath);
