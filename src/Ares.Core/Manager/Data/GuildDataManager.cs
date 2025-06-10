@@ -30,6 +30,14 @@ public class GuildDataManager
     /// </summary>
     private static readonly LanguageManager _langManager = AppCore.LangManager;
 
+    public GuildDataManager()
+    {
+        if (_repository is null)
+        {
+            AresLogger.Log(nameof(GuildDataManager), "Repository is not initialized.", severity: Severity.Error);
+        }
+    }
+
     /// <summary>
     /// Saves the specified fields of the guild to the database.
     /// </summary>

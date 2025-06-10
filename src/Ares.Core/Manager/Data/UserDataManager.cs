@@ -24,6 +24,14 @@ public class UserDataManager
     /// </summary>
     private static readonly UserRepository? _repository = AppCore.UserRepository;
 
+    public UserDataManager()
+    {
+        if (_repository is null)
+        {
+            AresLogger.Log(nameof(UserDataManager), "Repository is not initialized.", severity: Severity.Error);
+        }
+    }
+
     /// <summary>
     /// Saves the specified fields of the user to the database.
     /// </summary>

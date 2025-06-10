@@ -21,6 +21,14 @@ public class ChatModelDataManager
     /// </summary>
     private static readonly ChatModelRepository? _repository = AppCore.ChatModelRepository;
 
+    public ChatModelDataManager()
+    {
+        if (_repository is null)
+        {
+            AresLogger.Log(nameof(ChatModelDataManager), "Repository is not initialized.", severity: Severity.Error);
+        }
+    }
+
     /// <summary>
     /// Saves the specified fields of the user to the database.
     /// </summary>
