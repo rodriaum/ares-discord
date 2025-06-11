@@ -90,12 +90,10 @@ public class ReceivedContentListener
                 // Check if the channel belongs to the user
                 if (!channel.Name.Contains(iuser.GlobalName.ToLower()))
                     return;
-
-                // Create initial embed
+                 
                 EmbedBuilder embed = CreateInitialEmbed(guild);
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
 
-                // Search for necessary information
                 UserChatInfo? info = UserDataManager.ChatInfoByChannel(user, guild.Id, channel.Id);
                 if (info == null)
                 {

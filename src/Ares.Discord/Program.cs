@@ -6,7 +6,6 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Models.Data;
 using Ares.Core.Objects;
 using Ares.Core.Util;
 using Ares.Discord.Commands;
