@@ -9,7 +9,6 @@ using Ares.Core.Constants;
 using Ares.Core.Manager.Data;
 using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Chat.Image;
-using Ares.Core.Models.Chat.Model;
 using Ares.Core.Models.Data;
 using Ares.Core.Objects;
 using Ares.Core.Objects.Image;

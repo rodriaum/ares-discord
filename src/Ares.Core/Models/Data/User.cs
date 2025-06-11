@@ -1,6 +1,4 @@
 ﻿using Ares.Core.Models.Chat;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json.Serialization;
 
 namespace Ares.Core.Models.Data;
@@ -11,17 +9,24 @@ namespace Ares.Core.Models.Data;
 public class User
 {
     /// <summary>
-    /// The unique identifier of the guild.
+    /// The unique identifier of the user.
     /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
     [JsonInclude]
     [JsonPropertyName("id")]
-    public readonly ulong Id;
+    public ulong Id { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("chat")]
     public UserChat Chat { get; set; }
+
+    /// <summary>
+    /// Parameterless constructor for JSON deserialization.
+    /// </summary>
+    public User()
+    {
+        this.Id = 0;
+        this.Chat = new();
+    }
 
     /// <summary>
     /// Initializes a new instance of the User class.

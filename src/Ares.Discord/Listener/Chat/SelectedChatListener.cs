@@ -8,8 +8,6 @@ using Ares.Core;
 using Ares.Core.Constants;
 using Ares.Core.Manager.Data;
 using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Chat.Image;
-using Ares.Core.Models.Chat.Model;
 using Ares.Core.Models.Data;
 using Ares.Core.Models.Preference;
 using Ares.Core.Objects;
@@ -20,7 +18,6 @@ using Ares.Discord.Util;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using MongoDB.Driver;
 
 namespace Ares.Discord.Listener.Chat;
 

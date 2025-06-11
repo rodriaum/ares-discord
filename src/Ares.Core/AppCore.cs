@@ -5,7 +5,7 @@
  */
 
 using Ares.Core.Constants;
-using Ares.Core.Database.Mongo;
+using Ares.Core.Database.Postgres;
 using Ares.Core.Database.Redis;
 using Ares.Core.Manager.Lang;
 using Ares.Core.Models.Database;
@@ -23,19 +23,19 @@ namespace Ares.Core;
 public class AppCore
 {
     /// <summary>
-    /// Gets or sets the Ollama client instance.
+    /// Gets or sets the ollama client instance.
     /// </summary>
     public static IChatClient? OllamaClient { get; private set; }
 
     /// <summary>
-    /// Gets or sets the MongoDB database instance.
+    /// Gets or sets the postgres database instance.
     /// </summary>
-    public static MongoDatabase? MongoService { get; private set; }
+    public static PostgresDatabase? PostgresDatabase { get; private set; }
 
     /// <summary>
-    /// Gets or sets the Redis database instance.
+    /// Gets or sets the redis database instance.
     /// </summary>
-    public static RedisDatabase? RedisService { get; private set; }
+    public static RedisDatabase? RedisDatabase { get; private set; }
 
     /// <summary>
     /// Gets or sets the guild collection for database operations.
@@ -78,11 +78,11 @@ public class AppCore
 
     public static async Task Close()
     {
-        if (MongoService == null || RedisService == null)
+        if (PostgresDatabase == null || RedisDatabase == null)
             return;
 
-        await MongoService.CloseAsync();
-        await RedisService.CloseAsync();
+        await PostgresDatabase.CloseAsync();
+        await RedisDatabase.CloseAsync();
     }
 
     public static bool IsDeveloper(ulong userId)
@@ -100,23 +100,23 @@ public class AppCore
          * MongoDB connection 
          */
 
-        MongoDatabase mongoDatabase = new MongoDatabase(new DatabaseCredentials
+        PostgresDatabase postgresDatabase = new(new DatabaseCredentials
         {
-            Host = Env.GetString("MONGO_HOST"),
-            User = Env.GetString("MONGO_USERNAME"),
-            Database = Env.GetString("MONGO_DATABASE"),
-            Password = Env.GetString("MONGO_PASSWORD"),
-            Port = Env.GetInt("MONGO_PORT"),
+            Host = Env.GetString("POSTGRES_HOST"),
+            User = Env.GetString("POSTGRES_USER"),
+            Database = Env.GetString("POSTGRES_DATABASE"),
+            Password = Env.GetString("POSTGRES_PASSWORD"),
+            Port = Env.GetInt("POSTGRES_PORT"),
         });
 
-        await mongoDatabase.ConnectAsync();
-        MongoService = mongoDatabase;
+        await postgresDatabase.ConnectAsync();
+        PostgresDatabase = postgresDatabase;
 
         /*
          * Redis connection
          */
 
-        RedisDatabase redisDatabase = new RedisDatabase(new DatabaseCredentials
+        RedisDatabase redisDatabase = new(new DatabaseCredentials
         {
             Host = Env.GetString("REDIS_HOST"),
             Password = Env.GetString("REDIS_PASSWORD"),
@@ -124,16 +124,16 @@ public class AppCore
         });
 
         await redisDatabase.ConnectAsync();
-        RedisService = redisDatabase;
+        RedisDatabase = redisDatabase;
 
         /*
          * Database collections
          */
 
-        GuildRepository = new(mongoDatabase, redisDatabase);
-        UserRepository = new(mongoDatabase, redisDatabase);
-        ChatModelRepository = new(mongoDatabase, redisDatabase);
+        GuildRepository = new(postgresDatabase, redisDatabase);
+        UserRepository = new(postgresDatabase, redisDatabase);
+        ChatModelRepository = new(postgresDatabase, redisDatabase);
 
-        return mongoDatabase != null && redisDatabase != null;
+        return postgresDatabase != null && redisDatabase != null;
     }
 }

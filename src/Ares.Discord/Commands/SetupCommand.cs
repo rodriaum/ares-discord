@@ -6,7 +6,7 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Models.Chat.Model;
+using Ares.Core.Models.Data;
 using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
 using Ares.Core.Repository;

@@ -7,7 +7,6 @@
 using Ares.Core.Models.Database;
 using Ares.Core.Objects;
 using Ares.Core.Util;
-using MongoDB.Driver.Linq;
 using StackExchange.Redis;
 using System.Text.Json;
 
@@ -93,7 +92,7 @@ public class RedisDatabase : Interfaces.IDatabase
             }
             catch (Exception ex)
             {
-                await AresLogger.LogAsync("DB: Redis", "Could not connect to Redis.", extra: ex.Message, severity: Severity.Error);
+                await AresLogger.LogAsync("DB: Redis", $"Unable to connect. ({currentTries}x)", extra: ex.Message, severity: Severity.Error);
 
                 connected = false;
                 currentTries++;

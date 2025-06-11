@@ -1,7 +1,5 @@
 ﻿using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json.Serialization;
 
 namespace Ares.Core.Models.Data;
@@ -21,25 +19,32 @@ public class Guild
     /// <summary>
     /// The unique identifier of the guild.
     /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    [JsonInclude]
     [JsonPropertyName("id")]
-    public readonly ulong Id;
+    public ulong Id { get; set; }
 
     /// <summary>
     /// Token data for the guild.
     /// </summary>
     [JsonInclude]
     [JsonPropertyName("token")]
-    public GToken Token;
+    public GToken Token { get; set; }
 
     /// <summary>
     /// Config data for the guild.
     /// </summary>
     [JsonInclude]
     [JsonPropertyName("preference")]
-    public GPreference Preferences;
+    public GPreference Preferences { get; set; }
+
+    /// <summary>
+    /// Parameterless constructor for JSON deserialization.
+    /// </summary>
+    public Guild()
+    {
+        this.Id = 0;
+        this.Token = new GToken();
+        this.Preferences = new GPreference();
+    }
 
     /// <summary>
     /// Initializes a new instance of the Guild class.
@@ -48,7 +53,6 @@ public class Guild
     public Guild(ulong id)
     {
         this.Id = id;
-
         this.Token = new GToken();
         this.Preferences = new GPreference();
     }

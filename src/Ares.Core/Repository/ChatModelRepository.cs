@@ -5,28 +5,28 @@
  */
 
 using Ares.Core.Constants;
-using Ares.Core.Database.Mongo;
+using Ares.Core.Database.Postgres;
 using Ares.Core.Database.Redis;
-using Ares.Core.Models.Chat.Model;
+using Ares.Core.Models.Data;
 using Ares.Core.Objects;
 using Ares.Core.Util;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using Npgsql;
+using NpgsqlTypes;
 using System.Collections.Concurrent;
+using System.Data;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace Ares.Core.Repository;
 
 /// <summary>
-/// Class responsible for managing chat models in MongoDB database.
+/// Class responsible for managing chat models in PostgreSQL database.
 /// </summary>
 public class ChatModelRepository
 {
     /// <summary>
-    /// Represents the "chat_models" collection in MongoDB database.
+    /// Reference to the PostgreSQL database connection.
     /// </summary>
-    private readonly IMongoCollection<BsonDocument>? _collection;
+    private readonly PostgresDatabase _postgresDatabase;
 
     /// <summary>
     /// Reference to the Redis database used for caching operations and related logic.
@@ -34,52 +34,70 @@ public class ChatModelRepository
     private readonly RedisDatabase _redisDatabase;
 
     /// <summary>
-    /// Key prefix used for guild data in Redis.
+    /// Key prefix used for model data in Redis.
     /// </summary>
     private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:model:";
+
+    /// <summary>
+    /// Table name for chat models in PostgreSQL.
+    /// </summary>
+    private const string TableName = "chat_models";
 
     #region Constructors and initialization methods.
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ChatModelRepository"/> class with the models collection.
+    /// Initializes a new instance of the <see cref="ChatModelRepository"/> class with the PostgreSQL database.
     /// </summary>
-    /// <param name="mongoDatabase">MongoDB database instance that contains the "chat_models" collection.</param>
+    /// <param name="postgresDatabase">PostgreSQL database instance.</param>
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
-    public ChatModelRepository(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
+    public ChatModelRepository(PostgresDatabase postgresDatabase, RedisDatabase redisDatabase)
     {
-        _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("chat_models");
+        _postgresDatabase = postgresDatabase;
         _redisDatabase = redisDatabase;
 
-        // Create indexes in the collection to optimize queries.
-        CreateIndexesAsync();
+        // Create table and indexes to optimize queries.
+        CreateTableAndIndexesAsync();
     }
 
     /// <summary>
-    /// Creates indexes in the "guilds" collection to improve query performance.
+    /// Creates the chat_models table and indexes to improve query performance.
     /// </summary>
-    public async void CreateIndexesAsync()
+    public async void CreateTableAndIndexesAsync()
     {
-        await AresLogger.LogAsync("Repo: Chat Models", "Creating indexes in the database...");
+        await AresLogger.LogAsync("Repo: Chat Models", "Creating table and indexes in the database...");
 
-        // Check if the collection was initialized before trying to create indexes.
-        if (_collection == null)
+        if (!_postgresDatabase.IsConnected())
         {
-            await AresLogger.LogAsync("CollectionNull", "Collection returned null when creating guild data indexes.", severity: Severity.Error);
+            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not open when creating chat models table.", severity: Severity.Error);
             return;
         }
 
         try
         {
-            IndexKeysDefinition<BsonDocument> indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("id");
-            CreateIndexModel<BsonDocument> indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+            string[] indexSqls = {
+                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_id ON {TableName} (id)",
+                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_updated_at ON {TableName} (updated_at)",
+                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_data_gin ON {TableName} USING GIN (data)"
+            };
 
-            await _collection.Indexes.CreateOneAsync(indexModel);
+            foreach (string indexSql in indexSqls)
+            {
+                try
+                {
+                    await _postgresDatabase.ExecuteNonQueryAsync(indexSql);
+                }
+                catch (Exception ex)
+                {
+                    // Index might already exist, log but continue
+                    await AresLogger.LogAsync("IndexCreation", $"Index creation info: {ex.Message}");
+                }
+            }
 
-            await AresLogger.LogAsync("Repo: Chat Models", "Indexes created.");
+            await AresLogger.LogAsync("Repo: Chat Models", "Table and indexes created/verified.");
         }
         catch (Exception ex)
         {
-            await AresLogger.LogAsync("IndexCreationError", $"Error creating indexes: {ex.Message}", severity: Severity.Error);
+            await AresLogger.LogAsync("TableCreationError", $"Error creating table and indexes: {ex.Message}", severity: Severity.Error);
         }
     }
 
@@ -95,51 +113,59 @@ public class ChatModelRepository
     /// <returns>A <see cref="ChatModel"/> object representing the saved or updated model.</returns>
     public async Task<ChatModel?> SaveAsync(string id, ChatModel? newModel = null)
     {
-        if (_collection == null)
+        if (!_postgresDatabase.IsConnected())
         {
-            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save chat model data.", severity: Severity.Error);
+            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not open when saving chat model data.", severity: Severity.Error);
             return null;
         }
 
-        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
-        IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-        BsonDocument element = await cursor.FirstOrDefaultAsync();
-
         ChatModel model;
+        string selectSql = $"SELECT data FROM {TableName} WHERE id = @id";
 
-        if (element != null)
+        try
         {
-            if (newModel != null)
+            string? existingData = await _postgresDatabase.ExecuteScalarAsync<string>(selectSql,
+                new NpgsqlParameter("@id", id));
+
+            if (existingData != null)
             {
-                model = newModel;
-
-                BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(model);
-
-                if (document != null)
+                if (newModel != null)
                 {
-                    await _collection.ReplaceOneAsync(filter, document);
+                    model = newModel;
+                    string modelJson = JsonSerializer.Serialize(model);
+
+                    string updateSql = $"UPDATE {TableName} SET data = @data, updated_at = CURRENT_TIMESTAMP WHERE id = @id";
+                    await _postgresDatabase.ExecuteNonQueryAsync(updateSql,
+                        new NpgsqlParameter("@data", NpgsqlDbType.Jsonb) { Value = modelJson },
+                        new NpgsqlParameter("@id", id));
+                }
+                else
+                {
+                    model = JsonSerializer.Deserialize<ChatModel>(existingData) ?? new ChatModel(id);
+
+                    // Alert: Always set the id in case of security, if not set when deserialize
+                    model.Id = id;
                 }
             }
             else
             {
-                model = await JsonUtil.BsonDocToObjectAsync<ChatModel>(element) ?? new ChatModel(id);
+                model = newModel ?? new ChatModel(id);
+                string modelJson = JsonSerializer.Serialize(model);
+
+                string insertSql = $"INSERT INTO {TableName} (id, data) VALUES (@id, @data)";
+                await _postgresDatabase.ExecuteNonQueryAsync(insertSql,
+                    new NpgsqlParameter("@id", id),
+                    new NpgsqlParameter("@data", NpgsqlDbType.Jsonb) { Value = modelJson });
             }
+
+            await _redisDatabase.SaveAsync(GRedisKey + id, model);
+            return model;
         }
-        else
+        catch (Exception ex)
         {
-            model = newModel ?? new ChatModel(id);
-
-            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(model);
-
-            if (document != null)
-            {
-                await _collection.InsertOneAsync(document);
-            }
+            await AresLogger.LogAsync("SaveError", $"Error saving chat model: {ex.Message}", severity: Severity.Error);
+            return null;
         }
-
-        await _redisDatabase.SaveAsync(GRedisKey + id, model);
-
-        return model;
     }
 
     /// <summary>
@@ -147,7 +173,6 @@ public class ChatModelRepository
     /// </summary>
     /// <param name="id">Unique ID of the model.</param>
     /// <param name="saveInRedis">Indicates whether to save the retrieved model in Redis cache.</param>
-    /// <param name="deleteFromRedis">Indicates whether to delete the model from Redis cache.</param>
     /// <returns>A <see cref="ChatModel"/> object representing the retrieved model, or null if not found.</returns>
     public async Task<ChatModel?> FetchAsync(string id, bool saveInRedis = false)
     {
@@ -155,17 +180,31 @@ public class ChatModelRepository
 
         if (model == null)
         {
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
-
-            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-            BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-            if (element != null)
+            try
             {
-                model = await JsonUtil.BsonDocToObjectAsync<ChatModel>(element);
+                string selectSql = $"SELECT data FROM {TableName} WHERE id = @id";
+                string? modelData = await _postgresDatabase.ExecuteScalarAsync<string>(selectSql,
+                    new NpgsqlParameter("@id", id));
 
-                if (saveInRedis && model != null)
-                    await _redisDatabase.SaveAsync(GRedisKey + id, model);
+                if (modelData != null)
+                {
+                    model = JsonSerializer.Deserialize<ChatModel>(modelData);
+
+                    if (model != null)
+                    {
+                        // Alert: Always set the id in case of security, if not set when deserialize
+                        model.Id = id;
+
+                        if (saveInRedis)
+                        {
+                            await _redisDatabase.SaveAsync(GRedisKey + id, model);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await AresLogger.LogAsync("FetchError", $"Error fetching chat model: {ex.Message}", severity: Severity.Error);
             }
         }
 
@@ -184,19 +223,27 @@ public class ChatModelRepository
 
         if (model == null)
         {
-            var regexPattern = "^" + Regex.Escape(id);
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Regex("id", new BsonRegularExpression(regexPattern));
-
-            var options = new FindOptions<BsonDocument> { Sort = Builders<BsonDocument>.Sort.Ascending("id") };
-
-            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter, options);
-            BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-            if (element != null)
+            try
             {
-                model = await JsonUtil.BsonDocToObjectAsync<ChatModel>(element);
-                if (saveInRedis && model != null)
-                    await _redisDatabase.SaveAsync(GRedisKey + model.Id, model);
+                string selectSql = $"SELECT id, data FROM {TableName} WHERE id LIKE @pattern ORDER BY id LIMIT 1";
+
+                using var reader = await _postgresDatabase.ExecuteReaderAsync(selectSql,
+                    new NpgsqlParameter("@pattern", $"{id}%"));
+
+                if (await reader.ReadAsync())
+                {
+                    string actualId = reader.GetString("id");
+                    string modelData = reader.GetString("data");
+
+                    model = JsonSerializer.Deserialize<ChatModel>(modelData);
+
+                    if (saveInRedis && model != null)
+                        await _redisDatabase.SaveAsync(GRedisKey + actualId, model);
+                }
+            }
+            catch (Exception ex)
+            {
+                await AresLogger.LogAsync("FetchNearestError", $"Error fetching nearest chat model: {ex.Message}", severity: Severity.Error);
             }
         }
 
@@ -211,30 +258,59 @@ public class ChatModelRepository
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(ChatModel model, string field)
     {
-        if (_collection == null) return false;
+        if (!_postgresDatabase.IsConnected())
+        {
+            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not open when updating chat model.", severity: Severity.Error);
+            return false;
+        }
 
         try
         {
-            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(model);
-            if (tree == null) return false;
+            // Get the field value using reflection
+            var property = typeof(ChatModel).GetProperty(field);
+            if (property == null)
+            {
+                await AresLogger.LogAsync("PropertyNotFound", $"Property '{field}' not found in ChatModel.", severity: Severity.Error);
+                return false;
+            }
 
-            if (!tree.TryGetValue(field, out BsonValue? value))
-                value = null;
+            object? fieldValue = property.GetValue(model);
 
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", model.Id);
+            // Update the specific field in the JSONB data
+            string updateSql;
+            NpgsqlParameter[] parameters;
 
-            UpdateDefinition<BsonDocument> update = value != null
-                ? Builders<BsonDocument>.Update.Set(field, value)
-                : Builders<BsonDocument>.Update.Unset(field);
+            if (fieldValue != null)
+            {
+                string fieldValueJson = JsonSerializer.Serialize(fieldValue);
+                updateSql = $"UPDATE {TableName} SET data = jsonb_set(data, '{{{field}}}', @value), updated_at = CURRENT_TIMESTAMP WHERE id = @id";
+                parameters = new[]
+                {
+                    new NpgsqlParameter("@value", NpgsqlDbType.Jsonb) { Value = fieldValueJson },
+                    new NpgsqlParameter("@id", model.Id)
+                };
+            }
+            else
+            {
+                updateSql = $"UPDATE {TableName} SET data = data - @field, updated_at = CURRENT_TIMESTAMP WHERE id = @id";
+                parameters = new[]
+                {
+                    new NpgsqlParameter("@field", field),
+                    new NpgsqlParameter("@id", model.Id)
+                };
+            }
 
-            // Update MongoDB
-            await _collection.UpdateOneAsync(filter, update);
+            int rowsAffected = await _postgresDatabase.ExecuteNonQueryAsync(updateSql, parameters);
 
-            // Update Redis
-            await _redisDatabase.UpdateAsync(GRedisKey + model.Id, model);
+            if (rowsAffected > 0)
+            {
+                // Update Redis
+                await _redisDatabase.UpdateAsync(GRedisKey + model.Id, model);
+                await AresLogger.LogAsync("Repo: Chat Models", $"Updated \"{field}\" for model \"{model.Id}\".");
+                return true;
+            }
 
-            await AresLogger.LogAsync("Repo: Chat Models", $"Updated \"{field}\" for model \"{model.Id}\".");
-            return true;
+            return false;
         }
         catch (Exception e)
         {
@@ -279,31 +355,82 @@ public class ChatModelRepository
     {
         ConcurrentBag<ChatModel> models = new ConcurrentBag<ChatModel>();
 
-        if (_collection == null)
+        if (!_postgresDatabase.IsConnected())
         {
-            await AresLogger.LogAsync("CollectionNull", "Collection returned null when get all models.", severity: Severity.Error);
+            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not open when getting all models.", severity: Severity.Error);
             return models;
         }
 
-        FindOptions<BsonDocument> options = new FindOptions<BsonDocument> { Limit = limit };
-        IAsyncCursor<BsonDocument> documents = await _collection.FindAsync(new BsonDocument(), options);
-
-        await documents.ForEachAsync(async document =>
+        try
         {
-            try
-            {
-                ChatModel? model = await JsonUtil.BsonDocToObjectAsync<ChatModel>(document);
+            string selectSql = limit > 0
+                ? $"SELECT data FROM {TableName} ORDER BY created_at LIMIT @limit"
+                : $"SELECT data FROM {TableName} ORDER BY created_at";
 
-                if (model != null)
-                    models.Add(model);
-            }
-            catch (JsonException ex)
+            NpgsqlParameter[] parameters = limit > 0
+                ? new[] { new NpgsqlParameter("@limit", limit) }
+                : Array.Empty<NpgsqlParameter>();
+
+            using var reader = await _postgresDatabase.ExecuteReaderAsync(selectSql, parameters);
+
+            while (await reader.ReadAsync())
             {
-                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", severity: Severity.Error, extra: ex.Message);
+                try
+                {
+                    string modelData = reader.GetString("data");
+                    ChatModel? model = JsonSerializer.Deserialize<ChatModel>(modelData);
+
+                    if (model != null)
+                        models.Add(model);
+                }
+                catch (JsonException ex)
+                {
+                    await AresLogger.LogAsync("JsonDeserializationError", "Error deserializing model data.", severity: Severity.Error, extra: ex.Message);
+                }
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync("GetAllError", $"Error retrieving all models: {ex.Message}", severity: Severity.Error);
+        }
 
         return models;
+    }
+
+    /// <summary>
+    /// Permanently deletes a model from the database.
+    /// </summary>
+    /// <param name="id">Unique ID of the model to be deleted.</param>
+    /// <returns>True if the deletion was successful, false otherwise.</returns>
+    public async Task<bool> DeleteAsync(string id)
+    {
+        if (!_postgresDatabase.IsConnected())
+        {
+            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not open when deleting chat model.", severity: Severity.Error);
+            return false;
+        }
+
+        try
+        {
+            string deleteSql = $"DELETE FROM {TableName} WHERE id = @id";
+            int rowsAffected = await _postgresDatabase.ExecuteNonQueryAsync(deleteSql,
+                new NpgsqlParameter("@id", id));
+
+            if (rowsAffected > 0)
+            {
+                // Remove from Redis cache
+                await _redisDatabase.DeleteAsync(GRedisKey + id);
+                await AresLogger.LogAsync("Repo: Chat Models", $"Deleted model \"{id}\" from database.");
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync("DeleteError", $"Error deleting chat model: {ex.Message}", severity: Severity.Error);
+            return false;
+        }
     }
 
     #endregion

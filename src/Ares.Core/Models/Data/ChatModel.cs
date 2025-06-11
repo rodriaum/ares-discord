@@ -3,66 +3,77 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */
-
 using Ares.Core.Models.Chat.Price;
 using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json.Serialization;
 
-namespace Ares.Core.Models.Chat.Model;
+namespace Ares.Core.Models.Data;
 
 public class ChatModel
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
     [JsonInclude]
     [JsonPropertyName("id")]
-    public string Id;
+    public string Id { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("displayName")]
-    public string DisplayName;
+    public string DisplayName { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("descriptionKey")]
-    public string DescriptionKey;
+    public string DescriptionKey { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("requestType")]
-    public ChatRequestType RequestType;
+    public ChatRequestType RequestType { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("category")]
-    public ModelCategory Category;
+    public ModelCategory Category { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("type")]
-    public ModelType Type;
+    public ModelType Type { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("price")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ChatPriceUsage? Price;
+    public ChatPriceUsage? Price { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("exclusive")]
-
-    public bool Exclusive;
+    public bool Exclusive { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("available")]
-    public bool Available;
+    public bool Available { get; set; }
 
     [JsonInclude]
     [JsonPropertyName("dev")]
-    public bool Dev;
+    public bool Dev { get; set; }
+
+    /// <summary>
+    /// Parameterless constructor for JSON deserialization.
+    /// </summary>
+    public ChatModel()
+    {
+        Id = string.Empty;
+        DisplayName = "Unavailable";
+        DescriptionKey = string.Empty;
+        RequestType = ChatRequestType.None;
+        Category = ModelCategory.Other;
+        Type = ModelType.None;
+        Price = null;
+        Exclusive = false;
+        Available = true;
+        Dev = false;
+    }
 
     public ChatModel
         (
             string id,
-            string displayName = "Unavalable",
+            string displayName = "Unavailable",
             string descriptionKey = "",
             ChatRequestType requestType = ChatRequestType.None,
             ModelCategory category = ModelCategory.Other,

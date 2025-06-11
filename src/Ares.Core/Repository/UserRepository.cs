@@ -5,27 +5,27 @@
  */
 
 using Ares.Core.Constants;
-using Ares.Core.Database.Mongo;
+using Ares.Core.Database.Postgres;
 using Ares.Core.Database.Redis;
 using Ares.Core.Models.Data;
 using Ares.Core.Objects;
 using Ares.Core.Util;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using Npgsql;
 using System.Collections.Concurrent;
+using System.Data;
 using System.Text.Json;
 
 namespace Ares.Core.Repository;
 
 /// <summary>
-/// Class responsible for managing user data in MongoDB database.
+/// Class responsible for managing user data in PostgreSQL database.
 /// </summary>
 public class UserRepository
 {
     /// <summary>
-    /// Represents the "users" collection in MongoDB database.
+    /// Reference to the PostgreSQL database connection.
     /// </summary>
-    private readonly IMongoCollection<BsonDocument>? _collection;
+    private readonly PostgresDatabase _database;
 
     /// <summary>
     /// Reference to the Redis database used for caching operations and related logic.
@@ -37,50 +37,55 @@ public class UserRepository
     /// </summary>
     private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:user:";
 
+    /// <summary>
+    /// Table name for users in PostgreSQL.
+    /// </summary>
+    private const string UsersTable = "users";
+
     /*
      * Constructors and initialization methods.
      */
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="UserRepository"/> class with the users collection.
+    /// Initializes a new instance of the <see cref="UserRepository"/> class with the PostgreSQL database.
     /// </summary>
-    /// <param name="mongoDatabase">MongoDB database instance that contains the "users" collection.</param>
+    /// <param name="postgresDatabase">PostgreSQL database instance.</param>
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
-    public UserRepository(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
+    public UserRepository(PostgresDatabase postgresDatabase, RedisDatabase redisDatabase)
     {
-        _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("users");
+        _database = postgresDatabase;
         _redisDatabase = redisDatabase;
 
-        // Create indexes in the collection to optimize queries.
-        CreateIndexesAsync();
+        // Create table and indexes to optimize queries.
+        CreateTableAndIndexesAsync();
     }
 
     /// <summary>
-    /// Creates indexes in the "users" collection to improve query performance.
+    /// Creates the users table and indexes to improve query performance.
     /// </summary>
-    public async void CreateIndexesAsync()
+    public async void CreateTableAndIndexesAsync()
     {
-        await AresLogger.LogAsync("Repo: User", "Creating indexes in the database...");
+        await AresLogger.LogAsync("Repo: User", "Creating table and indexes in the database...");
 
-        // Check if the collection was initialized before trying to create indexes.
-        if (_collection == null)
+        if (!_database.IsConnected())
         {
-            await AresLogger.LogAsync("CollectionNull", "Collection returned null when creating user data indexes.", severity: Severity.Error);
+            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when creating user table.", severity: Severity.Error);
             return;
         }
 
         try
         {
-            IndexKeysDefinition<BsonDocument> indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("id");
-            CreateIndexModel<BsonDocument> indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
+            string createIndexSql = $@"
+                CREATE INDEX IF NOT EXISTS idx_{UsersTable}_id ON {UsersTable} (id);
+                CREATE INDEX IF NOT EXISTS idx_{UsersTable}_data_gin ON {UsersTable} USING GIN (data);";
 
-            await _collection.Indexes.CreateOneAsync(indexModel);
+            await _database.ExecuteNonQueryAsync(createIndexSql);
 
-            await AresLogger.LogAsync("Repo: User", "Indexes created.");
+            await AresLogger.LogAsync("Repo: User", "Table and indexes created.");
         }
         catch (Exception ex)
         {
-            await AresLogger.LogAsync("IndexCreationError", $"Error creating indexes: {ex.Message}", severity: Severity.Error);
+            await AresLogger.LogAsync("TableCreationError", $"Error creating table and indexes: {ex.Message}", severity: Severity.Error);
         }
     }
 
@@ -95,63 +100,101 @@ public class UserRepository
     /// <returns>A <see cref="User"/> object representing the saved or updated user.</returns>
     public async Task<User?> SaveAsync(ulong id)
     {
-        if (_collection == null)
+        if (!_database.IsConnected())
         {
-            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save user data.", severity: Severity.Error);
+            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when saving user data.", severity: Severity.Error);
             return null;
         }
 
-        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+        string selectSql = $"SELECT data FROM {UsersTable} WHERE id = @id";
+        var selectParam = new NpgsqlParameter("@id", (long)id);
 
-        IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-        BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-        User? user = new User(id);
-
-        if (element != null)
+        try
         {
-            user = await JsonUtil.BsonDocToObjectAsync<User>(element) ?? user;
-        }
-        else
-        {
-            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(user);
+            string? userData = await _database.ExecuteScalarAsync<string>(selectSql, selectParam);
+            User? user = new User(id);
 
-            if (document != null)
+            if (!string.IsNullOrEmpty(userData))
             {
-                // Insert the document in the database if it doesn't exist.
-                await _collection.InsertOneAsync(document);
+                // User exists, deserialize from JSON
+                user = JsonSerializer.Deserialize<User>(userData) ?? user;
+
+                // Alert: Always set the id in case of security, if not set when deserialize
+                user.Id = id;
+            }
+            else
+            {
+                // User doesn't exist, insert new user
+                string userJson = JsonSerializer.Serialize(user);
+                string insertSql = $@"
+                    INSERT INTO {UsersTable} (id, data) 
+                    VALUES (@id, @data::jsonb)";
+
+                var insertParams = new NpgsqlParameter[]
+                {
+                    new("@id", (long)id),
+                    new("@data", userJson)
+                };
+
+                await _database.ExecuteNonQueryAsync(insertSql, insertParams);
+                await _redisDatabase.SaveAsync(GRedisKey + id, user);
             }
 
-            await _redisDatabase.SaveAsync(GRedisKey + id, user);
+            return user;
         }
-
-        return user;
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync("SaveUserError", $"Error saving user {id}: {ex.Message}", severity: Severity.Error);
+            return null;
+        }
     }
 
     /// <summary>
     /// Retrieves a user from the cache or database using its ID.
     /// </summary>
     /// <param name="id">Unique ID of the user.</param>
+    /// <param name="saveInRedis">Whether to save the data in Redis if fetched from database.</param>
     /// <returns>A <see cref="User"/> object representing the retrieved user, or null if not found.</returns>
-    /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
-    /// <seealso cref="FetchAsync(ulong, bool)"/>
     public async Task<User?> FetchAsync(ulong id, bool saveInRedis = false)
     {
+        // Try to get from Redis cache first
         User? user = await _redisDatabase.LoadAsync<User>(GRedisKey + id);
 
         if (user == null)
         {
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
-
-            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
-            BsonDocument element = await cursor.FirstOrDefaultAsync();
-
-            if (element != null)
+            // Not in cache, fetch from database
+            if (!_database.IsConnected())
             {
-                user = await JsonUtil.BsonDocToObjectAsync<User>(element);
+                await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when fetching user data.", severity: Severity.Error);
+                return null;
+            }
 
-                if (saveInRedis && user != null)
-                    await _redisDatabase.SaveAsync(GRedisKey + id, user);
+            try
+            {
+                string selectSql = $"SELECT data FROM {UsersTable} WHERE id = @id";
+                var param = new NpgsqlParameter("@id", (long)id);
+
+                string? userData = await _database.ExecuteScalarAsync<string>(selectSql, param);
+
+                if (!string.IsNullOrEmpty(userData))
+                {
+                    user = JsonSerializer.Deserialize<User>(userData);
+
+                    if (user != null)
+                    {
+                        // Alert: Always set the id in case of security, if not set when deserialize
+                        user.Id = id;
+
+                        if (saveInRedis)
+                        {
+                            await _redisDatabase.SaveAsync(GRedisKey + id, user);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await AresLogger.LogAsync("FetchUserError", $"Error fetching user {id}: {ex.Message}", severity: Severity.Error);
             }
         }
 
@@ -162,34 +205,37 @@ public class UserRepository
     /// Updates a specific field of a user in the database.
     /// </summary>
     /// <param name="user">A <see cref="User"/> object representing the user to be updated.</param>
-    /// <param name="field">Name of the field to be updated.</param>
+    /// <param name="field">Name of the field to be updated (used for logging purposes).</param>
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(User user, string field)
     {
-        if (_collection == null) return false;
+        if (!_database.IsConnected()) return false;
 
         try
         {
-            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(user);
-            if (tree == null) return false;
+            string userJson = JsonSerializer.Serialize(user);
+            string updateSql = $@"
+                UPDATE {UsersTable} 
+                SET data = @data::jsonb, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = @id";
 
-            if (!tree.TryGetValue(field, out BsonValue? value))
-                value = null;
+            var parameters = new NpgsqlParameter[]
+            {
+                new("@id", (long)user.Id),
+                new("@data", userJson)
+            };
 
-            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", user.Id);
+            int rowsAffected = await _database.ExecuteNonQueryAsync(updateSql, parameters);
 
-            UpdateDefinition<BsonDocument> update = value != null
-                ? Builders<BsonDocument>.Update.Set(field, value)
-                : Builders<BsonDocument>.Update.Unset(field);
+            if (rowsAffected > 0)
+            {
+                // Update Redis
+                await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
+                await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\"");
+                return true;
+            }
 
-            // Update MongoDB
-            await _collection.UpdateOneAsync(filter, update);
-
-            // Update Redis
-            await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
-
-            await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\"");
-            return true;
+            return false;
         }
         catch (Exception e)
         {
@@ -234,30 +280,76 @@ public class UserRepository
     {
         ConcurrentBag<User> users = new ConcurrentBag<User>();
 
-        if (_collection == null)
+        if (!_database.IsConnected())
         {
-            await AresLogger.LogAsync("CollectionNull", "Collection returned null when get all users.", severity: Severity.Error);
+            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when getting all users.", severity: Severity.Error);
             return users;
         }
 
-        FindOptions<BsonDocument> options = new FindOptions<BsonDocument> { Limit = limit };
-        IAsyncCursor<BsonDocument> documents = await _collection.FindAsync(new BsonDocument(), options);
-
-        await documents.ForEachAsync(async document =>
+        try
         {
-            try
-            {
-                User? user = await JsonUtil.BsonDocToObjectAsync<User>(document);
+            string selectSql = limit > 0
+                ? $"SELECT data FROM {UsersTable} LIMIT @limit"
+                : $"SELECT data FROM {UsersTable}";
 
-                if (user != null)
-                    users.Add(user);
-            }
-            catch (JsonException ex)
+            using var reader = limit > 0
+                ? await _database.ExecuteReaderAsync(selectSql, new NpgsqlParameter("@limit", limit))
+                : await _database.ExecuteReaderAsync(selectSql);
+
+            while (await reader.ReadAsync())
             {
-                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", severity: Severity.Error, extra: ex.Message);
+                try
+                {
+                    string userData = reader.GetString("data");
+                    User? user = JsonSerializer.Deserialize<User>(userData);
+
+                    if (user != null)
+                        users.Add(user);
+                }
+                catch (JsonException ex)
+                {
+                    await AresLogger.LogAsync("JsonDeserializationError", "Error deserializing user data.", severity: Severity.Error, extra: ex.Message);
+                }
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync("GetAllUsersError", $"Error retrieving all users: {ex.Message}", severity: Severity.Error);
+        }
 
         return users;
+    }
+
+    /// <summary>
+    /// Deletes a user from the database permanently.
+    /// </summary>
+    /// <param name="id">Unique ID of the user to be deleted.</param>
+    /// <returns>True if the deletion was successful, false otherwise.</returns>
+    public async Task<bool> DeleteAsync(ulong id)
+    {
+        if (!_database.IsConnected()) return false;
+
+        try
+        {
+            string deleteSql = $"DELETE FROM {UsersTable} WHERE id = @id";
+            var param = new NpgsqlParameter("@id", (long)id);
+
+            int rowsAffected = await _database.ExecuteNonQueryAsync(deleteSql, param);
+
+            if (rowsAffected > 0)
+            {
+                // Also remove from Redis cache
+                await DeleteCache(id);
+                await AresLogger.LogAsync("Repo: User", $"Deleted user \"{id}\" from database");
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync("DeleteUserError", $"Error deleting user {id}: {ex.Message}", severity: Severity.Error);
+            return false;
+        }
     }
 }
