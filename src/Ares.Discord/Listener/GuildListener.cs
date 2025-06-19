@@ -4,10 +4,9 @@
  * Proprietary and confidential
  */
 
-using Ares.Core;
 using Ares.Core.Models.Data;
-using Ares.Core.Repository;
 using Ares.Core.Util;
+using Ares.Discord.Services.Api;
 using Discord.WebSocket;
 
 namespace Ares.Discord.Listener;
@@ -33,17 +32,17 @@ class GuildListener
         {
             if (sguild == null) return;
 
-            GuildRepository? repository = AppCore.GuildRepository;
-            if (repository == null) return;
+            GuildService? guildService = Program.GuildService;
+            if (guildService == null) return;
 
             await AresLogger.LogAsync("DB", $"Searching in database and caching guild \"{sguild.Id}\" in redis.");
 
-            Guild? guild = await repository.FetchAsync(sguild.Id, saveInRedis: true);
+            Guild? guild = await guildService.GetGuild(sguild.Id, useCache: true);
             if (guild != null) return;
 
             await AresLogger.LogAsync("DB", $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
 
-            await repository.SaveAsync(sguild.Id);
+            await guildService.CreateOrGetGuild(sguild.Id);
         });
 
         return Task.CompletedTask;
@@ -55,11 +54,11 @@ class GuildListener
         {
             if (guild == null) return;
 
-            GuildRepository? repository = AppCore.GuildRepository;
-            if (repository == null) return;
+            GuildService? guildService = Program.GuildService;
+            if (guildService == null) return;
 
             await AresLogger.LogAsync("DB: Redis", $"Guild \"{guild.Id}\" is not available, cache will be deleted.");
-            await repository.DeleteCache(guild.Id);
+            await guildService.DeleteGuildCache(guild.Id);
         });
 
         return Task.CompletedTask;

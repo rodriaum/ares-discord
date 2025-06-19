@@ -6,12 +6,12 @@
 
 using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Data;
+using Ares.Core.Manager;
 using Ares.Core.Models.Data;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
-using Ares.Core.Repository;
 using Ares.Discord.Manager;
+using Ares.Discord.Services.Api;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -45,9 +45,11 @@ public class ConfigCommand
             await command.RespondAsync(ephemeral: true, embed: embed.Build());
             RestInteractionMessage message = await command.GetOriginalResponseAsync();
 
-            GuildRepository? repository = AppCore.GuildRepository;
 
-            if (repository == null)
+
+            GuildService? guildService = Program.GuildService;
+
+            if (guildService == null)
             {
                 await message.ModifyAsync(msg =>
                     msg.Embed = embed
@@ -71,7 +73,7 @@ public class ConfigCommand
                 return;
             }
 
-            Guild? guild = await repository.FetchAsync(guildId.Value);
+            Guild? guild = await guildService.GetGuild(guildId.Value);
             const int maxAttempts = 3;
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
@@ -83,7 +85,7 @@ public class ConfigCommand
                         .Build());
 
                 await Task.Delay(1500);
-                guild = await repository.SaveAsync(guildId.Value);
+                guild = await guildService.CreateOrGetGuild(guildId.Value);
             }
 
             if (guild == null)
@@ -111,7 +113,7 @@ public class ConfigCommand
                 {
                     await message.ModifyAsync(msg =>
                         msg.Embed = embed
-                            .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidOptions))
+                            .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.InvalidOptions))
                             .WithColor(Color.Red)
                             .Build()
                     );
@@ -125,7 +127,7 @@ public class ConfigCommand
                 {
                     await message.ModifyAsync(msg =>
                         msg.Embed = embed
-                            .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidOptionValue))
+                            .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.InvalidOptionValue))
                             .WithColor(Color.Red)
                             .Build()
                     );
@@ -252,14 +254,14 @@ public class ConfigCommand
                     default:
                         await message.ModifyAsync(msg =>
                             msg.Embed = embed
-                                .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.InvalidOption))
+                                .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.InvalidOption))
                                 .WithColor(Color.Red)
                                 .Build()
                         );
                         return;
                 }
 
-                sb.AppendLine(GuildDataManager
+                sb.AppendLine(Program.LangManager
                     .GetTranslation(guild, LanguageKeys.ConfigUpdateSuccess)
                     .Replace("{0}", optionName ?? "N/A")
                     .Replace("{1}", (!string.IsNullOrWhiteSpace(optionValueString) ? optionValueString : "N/A")));
@@ -270,12 +272,12 @@ public class ConfigCommand
 
             if (tokenChange)
             {
-                success = await GuildDataManager.SaveTokenDataAsync(guild, tokenData);
+                success = await guildService.SaveTokenData(guild.Id, tokenData);
             }
 
             if (configChange)
             {
-                success = await GuildDataManager.SavePreferenceDataAsync(guild, configData);
+                success = await guildService.SavePreferenceData(guild.Id, configData);
             }
 
             if (success)
@@ -291,7 +293,7 @@ public class ConfigCommand
             {
                 await message.ModifyAsync(msg =>
                     msg.Embed = embed
-                        .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigUpdateUnSuccess))
+                        .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigUpdateUnSuccess))
                         .WithColor(Color.Gold)
                         .Build()
                     );

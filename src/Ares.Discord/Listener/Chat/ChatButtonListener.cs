@@ -4,14 +4,13 @@
  * Proprietary and confidential
  */
 
-using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Data;
 using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Data;
 using Ares.Core.Objects;
-using Ares.Core.Repository;
 using Ares.Core.Util;
+using Ares.Discord.Service.Neural;
+using Ares.Discord.Services.Api;
 using Discord.Rest;
 using Discord.WebSocket;
 
@@ -19,9 +18,21 @@ namespace Ares.Discord.Listener.Chat;
 
 public class ChatButtonListener
 {
+    private static GuildService? _guildService { get; set; }
+    private static UserService? _userService { get; set; }
+
     public ChatButtonListener(DiscordSocketClient client)
     {
         client.ButtonExecuted += ButtonExecutedHandler;
+
+        _guildService = Program.GuildService;
+        _userService = Program.UserService;
+
+        if (_guildService == null || _userService == null)
+        {
+            AresLogger.Log(nameof(NeuralService), "Guild or User service is not initialized.", severity: Severity.Error);
+            throw new InvalidOperationException("Guild or User service is not initialized.");
+        }
     }
 
     private Task ButtonExecutedHandler(SocketMessageComponent args)
@@ -45,15 +56,8 @@ public class ChatButtonListener
 
                 #region Check if guild is in database
 
-                GuildRepository? guildRepository = AppCore.GuildRepository;
 
-                if (guildRepository == null)
-                {
-                    await message.ModifyAsync(it => it.Content = $"{AppConstants.UnablePerformTask} (#g_repo_null)");
-                    return;
-                }
-
-                Guild? guild = await guildRepository.FetchAsync(guildId.Value);
+                Guild? guild = await _guildService!.GetGuild(guildId.Value);
 
                 const int maxAttempts = 3;
 
@@ -61,7 +65,7 @@ public class ChatButtonListener
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    guild = await guildRepository.SaveAsync(guildId.Value);
+                    guild = await _guildService!.CreateOrGetGuild(guildId.Value);
                 }
 
                 if (guild == null)
@@ -74,21 +78,13 @@ public class ChatButtonListener
 
                 #region Check if user is in database
 
-                UserRepository? userRepository = AppCore.UserRepository;
-
-                if (userRepository == null)
-                {
-                    await message.ModifyAsync(it => it.Content = $"{AppConstants.UnablePerformTask} (#u_repo_null)");
-                    return;
-                }
-
-                User? user = await userRepository.FetchAsync(args.User.Id, saveInRedis: true);
+                User? user = await _userService!.GetUser(args.User.Id, useCache: true);
 
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    user = await userRepository.SaveAsync(args.User.Id);
+                    user = await _userService.CreateOrGetUser(args.User.Id);
                 }
 
                 if (user == null)
@@ -103,38 +99,38 @@ public class ChatButtonListener
 
                 if (channel == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.UnablePerformTask));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.UnablePerformTask));
                     return;
                 }
 
                 SocketUser socketUser = args.User;
 
-                if (!UserDataManager.IsChatOwner(user, guild.Id, channel.Id))
+                if ((!await _userService!.IsChatOwner(user.Id, guild.Id, channel.Id)) ?? false)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.NotChatOwner));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.NotChatOwner));
                     return;
                 }
 
-                if (!await UserDataManager.ToggleChatInfo(user, guild.Id, channel.Id, false))
+                if (!await _userService!.ToggleChatStatus(user.Id, guild.Id, channel.Id, false))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (toggle_chat_info)");
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (toggle_chat_info)");
                     return;
                 }
 
-                UserChatInfo? info = UserDataManager.ChatInfoByChannel(user, guild.Id, channel.Id);
+                UserChatInfo? info = await _userService.GetChatInfoByChannel(user.Id, guild.Id, channel.Id);
 
                 if (info == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (info_null)");
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (info_null)");
                     return;
                 }
 
                 // Removes the generated conversation snippets as they will no longer be used in that channel.
-                await UserDataManager.RemoveSnippetByChannelAsync(user, guild.Id, channel.Id);
+                await _userService!.RemoveSnippetsByChannel(user.Id, guild.Id, channel.Id);
 
                 AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Id}\"", severity: Severity.Info);
 
-                await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.CloseChat));
+                await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.CloseChat));
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await channel.DeleteAsync();

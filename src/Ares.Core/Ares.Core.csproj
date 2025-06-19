@@ -1,17 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
-    <PackageReference Include="Npgsql" Version="9.0.3" />
-    <PackageReference Include="OpenAI" Version="2.1.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.8.31" />
+	<PackageReference Include="OpenAI" Version="2.1.0" />
 	<PackageReference Include="Microsoft.Extensions.AI.Ollama" Version="9.3.0-preview.1.25161.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Service\Database\" />
   </ItemGroup>
 
   <PropertyGroup>

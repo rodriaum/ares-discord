@@ -36,21 +36,6 @@ public class RedisDatabase : Interfaces.IDatabase
     }
 
     /// <summary>
-    /// Initializes a new instance of the RedisDatabase with default localhost configuration.
-    /// </summary>
-    /// <remarks>
-    /// Uses default host "localhost" and port 6379.
-    /// </remarks>
-    public RedisDatabase()
-    {
-        _credentials = new DatabaseCredentials
-        {
-            Host = "127.0.0.1",
-            Port = 6379
-        };
-    }
-
-    /// <summary>
     /// Establishes a connection to the Redis server using the provided credentials.
     /// </summary>
     /// <remarks>

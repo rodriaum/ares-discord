@@ -9,7 +9,7 @@ using Ares.Core.Objects;
 using Ares.Core.Repository;
 using Ares.Core.Util;
 
-namespace Ares.Core.Manager.Data;
+namespace Ares.Core.Manager;
 
 /// <summary>
 /// User service to manage data and operations.
@@ -19,10 +19,12 @@ public class ChatModelDataManager
     /// <summary>
     /// Repository for chat model data operations.
     /// </summary>
-    private static readonly ChatModelRepository? _repository = AppCore.ChatModelRepository;
+    private readonly ChatModelRepository? _repository;
 
-    public ChatModelDataManager()
+    public ChatModelDataManager(ChatModelRepository chatModelRepository)
     {
+        _repository = chatModelRepository;
+
         if (_repository is null)
         {
             AresLogger.Log(nameof(ChatModelDataManager), "Repository is not initialized.", severity: Severity.Error);
@@ -35,7 +37,7 @@ public class ChatModelDataManager
     /// <param name="model">The user to save.</param>
     /// <param name="fields">List of field names to be saved.</param>
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveAsync(ChatModel model, params string[] fields)
+    public async Task<bool> SaveAsync(ChatModel model, params string[] fields)
     {
         if (fields == null || fields.Length == 0)
         {

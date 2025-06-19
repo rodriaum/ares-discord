@@ -4,14 +4,13 @@
  * Proprietary and confidential
  */
 
-using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Data;
 using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Data;
 using Ares.Core.Objects;
-using Ares.Core.Repository;
 using Ares.Core.Util;
+using Ares.Discord.Service.Neural;
+using Ares.Discord.Services.Api;
 using Discord;
 using Discord.WebSocket;
 
@@ -21,10 +20,22 @@ public class ChatCodeSnippetListener
 {
     private static DiscordSocketClient? _client { get; set; }
 
+    private static GuildService? _guildService { get; set; }
+    private static UserService? _userService { get; set; }
+
     public ChatCodeSnippetListener(DiscordSocketClient client)
     {
         client.SelectMenuExecuted += SelectMenuHandler;
         _client = client;
+
+        _guildService = Program.GuildService;
+        _userService = Program.UserService;
+
+        if (_guildService == null || _userService == null)
+        {
+            AresLogger.Log(nameof(NeuralService), "Guild or User service is not initialized.", severity: Severity.Error);
+            throw new InvalidOperationException("Guild or User service is not initialized.");
+        }
     }
 
     private Task SelectMenuHandler(SocketMessageComponent args)
@@ -46,21 +57,13 @@ public class ChatCodeSnippetListener
 
                 #region Check if user is in database
 
-                UserRepository? userRepository = AppCore.UserRepository;
-
                 int maxAttempts = 3;
 
-                if (userRepository == null)
-                {
-                    await args.RespondAsync(ephemeral: true, text: $"{AppConstants.UnablePerformTask} (#u_repo_null)");
-                    return;
-                }
-
-                User? user = await userRepository.FetchAsync(args.User.Id, saveInRedis: true);
+                User? user = await _userService!.GetUser(args.User.Id, useCache: true);
 
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
-                    user = await userRepository.SaveAsync(args.User.Id);
+                    user = await _userService!.CreateOrGetUser(args.User.Id);
                 }
 
                 if (user == null)
@@ -73,7 +76,7 @@ public class ChatCodeSnippetListener
 
                 string id = args.Data.Values.FirstOrDefault("");
 
-                UserChatSnippet? snippet = UserDataManager.GetSnippetById(user, guildId, id);
+                UserChatSnippet? snippet = await _userService!.GetSnippetById(user.Id, guildId, id);
 
                 if (snippet == null)
                 {

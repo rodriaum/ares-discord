@@ -4,16 +4,15 @@
  * Proprietary and confidential
  */
 
-using Ares.Core;
 using Ares.Core.Constants;
-using Ares.Core.Manager.Data;
 using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Data;
 using Ares.Core.Models.Preference;
 using Ares.Core.Objects;
 using Ares.Core.Objects.Image;
-using Ares.Core.Repository;
 using Ares.Core.Util;
+using Ares.Discord.Service.Neural;
+using Ares.Discord.Services.Api;
 using Ares.Discord.Util;
 using Discord;
 using Discord.Rest;
@@ -25,10 +24,24 @@ public class SelectedChatListener
 {
     private static DiscordSocketClient? _client { get; set; }
 
+    private static GuildService? _guildService { get; set; }
+    private static UserService? _userService { get; set; }
+    private static ChatModelService? _chatModelService { get; set; }
+
     public SelectedChatListener(DiscordSocketClient client)
     {
         client.SelectMenuExecuted += SelectMenuHandler;
         _client = client;
+
+        _guildService = Program.GuildService;
+        _userService = Program.UserService;
+        _chatModelService = Program.ChatModelService;
+
+        if (_guildService == null || _userService == null || _chatModelService == null)
+        {
+            AresLogger.Log(nameof(NeuralService), "Guild, User or ChatModel service is not initialized.", severity: Severity.Error);
+            throw new InvalidOperationException("Guild, User or ChatModel service is not initialized.");
+        }
     }
 
     private Task SelectMenuHandler(SocketMessageComponent args)
@@ -53,15 +66,7 @@ public class SelectedChatListener
 
                 #region Check if guild is in database
 
-                GuildRepository? guildRepository = AppCore.GuildRepository;
-
-                if (guildRepository == null)
-                {
-                    await message.ModifyAsync(it => it.Content = $"{AppConstants.UnablePerformTask} (#g_repo_null)");
-                    return;
-                }
-
-                Guild? guild = await guildRepository.FetchAsync(guildId);
+                Guild? guild = await _guildService!.GetGuild(guildId);
 
                 const int maxAttempts = 3;
 
@@ -69,7 +74,7 @@ public class SelectedChatListener
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    guild = await guildRepository.SaveAsync(guildId);
+                    guild = await _guildService!.CreateOrGetGuild(guildId);
                 }
 
                 if (guild == null)
@@ -82,21 +87,13 @@ public class SelectedChatListener
 
                 #region Check if user is in database
 
-                UserRepository? userRepository = AppCore.UserRepository;
-
-                if (userRepository == null)
-                {
-                    await message.ModifyAsync(it => it.Content = $"{AppConstants.UnablePerformTask} (#u_repo_null)");
-                    return;
-                }
-
-                User? user = await userRepository.FetchAsync(args.User.Id, saveInRedis: true);
+                User? user = await _userService!.GetUser(args.User.Id, useCache: true);
 
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    user = await userRepository.SaveAsync(args.User.Id);
+                    user = await _userService!.CreateOrGetUser(args.User.Id);
                 }
 
                 if (user == null)
@@ -119,7 +116,7 @@ public class SelectedChatListener
 
                 if (gid == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfoID));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfoID));
                     return;
                 }
 
@@ -127,7 +124,7 @@ public class SelectedChatListener
 
                 if (usageRole == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.RoleEliminated));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.RoleEliminated));
                     return;
                 }
 
@@ -135,7 +132,7 @@ public class SelectedChatListener
 
                 if (!member.Roles.Contains(usageRole))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.RoleMissing).Replace("{0}", usageRole.Mention));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.RoleMissing).Replace("{0}", usageRole.Mention));
                     return;
                 }
 
@@ -143,20 +140,34 @@ public class SelectedChatListener
 
                 if (exclusiveRole == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.RoleEliminated));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.RoleEliminated));
                     return;
                 }
 
-                if (UserDataManager.HasActiveUserConversation(user, guildId))
+                bool? hasActiveConversation = await _userService!.HasActiveConversation(user.Id, guildId);
+
+                if (hasActiveConversation == null)
+                {
+                    await message.ModifyAsync(it => it.Content = "Ops! Não foi possível verificar se você tem uma conversa ativa.");
+                    return;
+                }
+
+                if (hasActiveConversation.Value)
                 {
                     bool isPremium = member.Roles.Contains(exclusiveRole);
-                    int conversations = UserDataManager.GetConversationsCount(user, guildId, active: true);
+                    int? conversations = await _userService.GetConversationCount(user.Id, guildId, activeOnly: true);
+
+                    if (conversations == null)
+                    {
+                        await message.ModifyAsync(it => it.Content = "Ops! Não foi possível verificar o número de conversas ativas.");
+                        return;
+                    }
 
                     if (!isPremium)
                     {
                         if (conversations >= AppConstants.MaxFreeConversations)
                         {
-                            await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.ActiveConversation));
+                            await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.ActiveConversation));
                             return;
                         }
                     }
@@ -164,43 +175,35 @@ public class SelectedChatListener
                     {
                         if (conversations >= AppConstants.MaxPremiumConversations)
                         {
-                            await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.PremiumChatLimit));
+                            await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.PremiumChatLimit));
                             return;
                         }
                     }
                 }
 
-                ChatModelRepository? repository = AppCore.ChatModelRepository;
-
-                if (repository == null)
-                {
-                    await message.ModifyAsync(it => it.Content = "Não foi possível encontrar os dados dos modelos.");
-                    return;
-                }
-
-                ChatModel? model = await repository.FetchAsync(args.Data.Values.First(), saveInRedis: true);
+                ChatModel? model = await _chatModelService!.GetModel(args.Data.Values.First(), saveInRedis: true);
 
                 if (model == null)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.ModelNotFound));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.ModelNotFound));
                     return;
                 }
 
-                if (model.Dev && !AppCore.IsDeveloper(socketUser.Id))
+                if (model.Dev && !Program.IsDeveloper(socketUser.Id))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.ModelDevMode));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.ModelDevMode));
                     return;
                 }
 
                 if (!model.Available)
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.ModelUnavailable));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.ModelUnavailable));
                     return;
                 }
 
                 if (model.Exclusive && !member.Roles.Contains(exclusiveRole))
                 {
-                    await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
+                    await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.RoleMissing).Replace("{0}", exclusiveRole.Mention));
                     return;
                 }
 
@@ -224,12 +227,13 @@ public class SelectedChatListener
                       (time.Hour >= 12 && time.Hour < 18) ? LanguageKeys.GoodAfternoon :
                       LanguageKeys.GoodNight;
 
-                string helloMessage = string.Format(GuildDataManager.GetTranslation(guild, LanguageKeys.HelloMessage), GuildDataManager.GetTranslation(guild, greetingKey), socketUser.GlobalName);
+                string helloMessage = string.Format(Program.LangManager.GetTranslation(guild, LanguageKeys.HelloMessage), Program.LangManager.GetTranslation(guild, greetingKey), socketUser.GlobalName);
 
                 UserChatHistoric historic = new UserChatHistoric(system: helloMessage);
                 info.Historics.Add(historic);
 
-                if (!await UserDataManager.CreateChatData(user, guildId, info))
+#error Erro ao tentar converter resultado de "message" para string.
+                if (!await _userService.CreateChatData(user.Id, guildId, info))
                 {
                     await channel.DeleteAsync();
                     await Task.Delay(500);
@@ -241,13 +245,13 @@ public class SelectedChatListener
                     .WithColor(Color.Green)
                     .WithFooter(footer => footer.WithText($"{time.Year} - {AppConstants.AppName}"));
 
-                infoEmbed.AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.FieldModel), model.DisplayName);
-                infoEmbed.AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.FieldRules), GuildDataManager.GetTranslation(guild, LanguageKeys.ChatDescriptionRules));
-                infoEmbed.AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.FieldTime), GuildDataManager.GetTranslation(guild, LanguageKeys.ChatDescriptionTime));
+                infoEmbed.AddField(Program.LangManager.GetTranslation(guild, LanguageKeys.FieldModel), model.DisplayName);
+                infoEmbed.AddField(Program.LangManager.GetTranslation(guild, LanguageKeys.FieldRules), Program.LangManager.GetTranslation(guild, LanguageKeys.ChatDescriptionRules));
+                infoEmbed.AddField(Program.LangManager.GetTranslation(guild, LanguageKeys.FieldTime), Program.LangManager.GetTranslation(guild, LanguageKeys.ChatDescriptionTime));
 
                 if (!string.IsNullOrWhiteSpace(model.DescriptionKey))
                 {
-                    infoEmbed.AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.FieldDescription), GuildDataManager.GetTranslation(guild, model.DescriptionKey));
+                    infoEmbed.AddField(Program.LangManager.GetTranslation(guild, LanguageKeys.FieldDescription), Program.LangManager.GetTranslation(guild, model.DescriptionKey));
                 }
 
                 ComponentBuilder component = new ComponentBuilder();
@@ -255,13 +259,13 @@ public class SelectedChatListener
                 switch (model.Type)
                 {
                     case ModelType.Chat:
-                        infoEmbed.AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.FieldHistory), GuildDataManager.GetTranslation(guild, LanguageKeys.HistoryChatDesc));
-                        infoEmbed.WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ChatDescriptionDefault));
+                        infoEmbed.AddField(Program.LangManager.GetTranslation(guild, LanguageKeys.FieldHistory), Program.LangManager.GetTranslation(guild, LanguageKeys.HistoryChatDesc));
+                        infoEmbed.WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.ChatDescriptionDefault));
                         break;
 
                     case ModelType.Image:
-                        infoEmbed.AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.FieldHistory), GuildDataManager.GetTranslation(guild, LanguageKeys.HistoryImageDesc));
-                        infoEmbed.WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ChatDescriptionImage));
+                        infoEmbed.AddField(Program.LangManager.GetTranslation(guild, LanguageKeys.FieldHistory), Program.LangManager.GetTranslation(guild, LanguageKeys.HistoryImageDesc));
+                        infoEmbed.WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.ChatDescriptionImage));
 
                         #region Quality Menu
 
@@ -325,19 +329,19 @@ public class SelectedChatListener
                         break;
 
                     case ModelType.TTS:
-                        infoEmbed.AddField(GuildDataManager.GetTranslation(guild, LanguageKeys.FieldHistory), GuildDataManager.GetTranslation(guild, LanguageKeys.HistoryTTSDesc));
-                        infoEmbed.WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ChatDescriptionTTS));
+                        infoEmbed.AddField(Program.LangManager.GetTranslation(guild, LanguageKeys.FieldHistory), Program.LangManager.GetTranslation(guild, LanguageKeys.HistoryTTSDesc));
+                        infoEmbed.WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.ChatDescriptionTTS));
                         break;
 
                     default:
-                        infoEmbed.WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ChatDescriptionDefault));
+                        infoEmbed.WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.ChatDescriptionDefault));
                         break;
                 }
 
                 #region Close Chat Button
 
                 component.WithButton(new ButtonBuilder()
-                   .WithLabel(GuildDataManager.GetTranslation(guild, LanguageKeys.ButtonEndChat))
+                   .WithLabel(Program.LangManager.GetTranslation(guild, LanguageKeys.ButtonEndChat))
                    .WithStyle(ButtonStyle.Danger)
                    .WithCustomId("close-chat"));
 
@@ -389,7 +393,7 @@ public class SelectedChatListener
 
                 await channel.AddPermissionOverwriteAsync(socketUser, permissions);
 
-                await message.ModifyAsync(it => it.Content = GuildDataManager.GetTranslation(guild, LanguageKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
+                await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.SuccessChatCreated).Replace("{0}", channel.Mention));
                 await Task.Delay(TimeSpan.FromSeconds(5));
                 await message.DeleteAsync();
             }

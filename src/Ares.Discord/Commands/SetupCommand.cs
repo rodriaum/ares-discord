@@ -4,12 +4,13 @@
  * Proprietary and confidential
  */
 
-using Ares.Core;
 using Ares.Core.Constants;
 using Ares.Core.Models.Data;
 using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
-using Ares.Core.Repository;
+using Ares.Core.Util;
+using Ares.Discord.Service.Neural;
+using Ares.Discord.Services.Api;
 using Ares.Discord.Util;
 using Discord;
 using Discord.Rest;
@@ -22,10 +23,20 @@ public class SetupCommand
 {
     private static DiscordSocketClient? _client;
 
+    private static ChatModelService? _chatModelService { get; set; }
+
     public SetupCommand(DiscordSocketClient client)
     {
         client.SlashCommandExecuted += SlashCommandHandler;
         _client = client;
+
+        _chatModelService = Program.ChatModelService;
+
+        if (_chatModelService == null)
+        {
+            AresLogger.Log(nameof(NeuralService), "ChatModel service is not initialized.", severity: Severity.Error);
+            throw new InvalidOperationException("ChatModel service is not initialized.");
+        }
     }
 
     private Task SlashCommandHandler(SocketSlashCommand command)
@@ -87,15 +98,7 @@ public class SetupCommand
         if (requestType != null)
             embed.WithFooter($"Modelos {requestType}");
 
-        ChatModelRepository? repository = AppCore.ChatModelRepository;
-
-        if (repository == null)
-        {
-            await message.ModifyAsync(it => it.Embed = embed.WithDescription("Não foi possível encontrar os dados dos modelos.").Build());
-            return;
-        }
-
-        ConcurrentBag<ChatModel> models = await repository.GetAllAsync();
+        ConcurrentBag<ChatModel>? models = await _chatModelService!.GetAllModels();
 
         if (models == null || !models.Any())
         {

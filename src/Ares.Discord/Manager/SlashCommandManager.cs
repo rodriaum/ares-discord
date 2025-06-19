@@ -1,11 +1,9 @@
-﻿using Ares.Core;
-using Ares.Core.Constants;
-using Ares.Core.Manager.Data;
+﻿using Ares.Core.Constants;
 using Ares.Core.Models.Data;
 using Ares.Core.Models.Data.Chat.Model;
 using Ares.Core.Objects;
-using Ares.Core.Repository;
 using Ares.Core.Util;
+using Ares.Discord.Services.Api;
 using Discord;
 using Discord.Net;
 using Discord.WebSocket;
@@ -57,10 +55,10 @@ public class SlashCommandManager
     {
         if (_client == null) return;
 
-        GuildRepository? repository = AppCore.GuildRepository;
-        if (repository == null) return;
+        GuildService? guildService = Program.GuildService;
+        if (guildService == null) return;
 
-        Guild? guild = await repository.FetchAsync(guildId);
+        Guild? guild = await guildService.GetGuild(guildId);
         if (guild == null) return;
 
         SocketGuild? socketGuild = _client.GetGuild(guildId);
@@ -137,7 +135,7 @@ public class SlashCommandManager
     /// <returns>A list of slash command builders.</returns>
     private List<SlashCommandBuilder> BuildCommandsForGuild(Guild guild)
     {
-        List<ApplicationCommandOptionChoiceProperties> langOptionChoices = AppCore.LangManager.GetLanguages()
+        List<ApplicationCommandOptionChoiceProperties> langOptionChoices = Program.LangManager.GetLanguages()
             .Select(category => new ApplicationCommandOptionChoiceProperties
             {
                 Name = category.Name,
@@ -172,73 +170,73 @@ public class SlashCommandManager
             {
                 new SlashCommandBuilder()
                     .WithName("ping")
-                    .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.PingDescription)),
+                    .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.PingDescription)),
 
                 new SlashCommandBuilder()
                     .WithName("config-token")
-                    .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigTokenDescription))
+                    .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigTokenDescription))
                     .WithDefaultMemberPermissions(GuildPermission.Administrator)
                     .AddOptions(configTokenOptions),
 
                 new SlashCommandBuilder()
                     .WithName("config-id")
-                    .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigIdDescription))
+                    .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigIdDescription))
                     .WithDefaultMemberPermissions(GuildPermission.Administrator)
                     .AddOptions(
                         new SlashCommandOptionBuilder
                         {
                             Type = ApplicationCommandOptionType.Role,
                             Name = "role-member",
-                            Description = GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigIdRoleMember),
+                            Description = Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigIdRoleMember),
                             IsRequired = false
                         },
                         new SlashCommandOptionBuilder
                         {
                             Type = ApplicationCommandOptionType.Role,
                             Name = "role-usage",
-                            Description = GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigIdRoleUsage),
+                            Description = Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigIdRoleUsage),
                             IsRequired = false
                         },
                         new SlashCommandOptionBuilder
                         {
                             Type = ApplicationCommandOptionType.Role,
                             Name = "role-exclusive",
-                            Description = GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigIdRoleExclusive),
+                            Description = Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigIdRoleExclusive),
                             IsRequired = false
                         },
                         new SlashCommandOptionBuilder
                         {
                             Type = ApplicationCommandOptionType.Channel,
                             Name = "channel-setup",
-                            Description = GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigIdChannelSetup),
+                            Description = Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigIdChannelSetup),
                             IsRequired = false
                         },
                         new SlashCommandOptionBuilder
                         {
                             Type = ApplicationCommandOptionType.Channel,
                             Name = "channel-log",
-                            Description = GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigIdChannelLog),
+                            Description = Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigIdChannelLog),
                             IsRequired = false
                         },
                         new SlashCommandOptionBuilder
                         {
                             Type = ApplicationCommandOptionType.Channel,
                             Name = "category-chats",
-                            Description = GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigIdCategoryChats),
+                            Description = Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigIdCategoryChats),
                             IsRequired = false
                         }
                     ),
 
                 new SlashCommandBuilder()
                     .WithName("config-lang")
-                    .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigLangDescription))
+                    .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigLangDescription))
                     .WithDefaultMemberPermissions(GuildPermission.Administrator)
                     .AddOptions(
                         new SlashCommandOptionBuilder
                         {
                             Type = ApplicationCommandOptionType.String,
                             Name = "lang",
-                            Description = GuildDataManager.GetTranslation(guild, LanguageKeys.ConfigLangOption),
+                            Description = Program.LangManager.GetTranslation(guild, LanguageKeys.ConfigLangOption),
                             IsRequired = true,
                             Choices = langOptionChoices
                         }
@@ -246,30 +244,30 @@ public class SlashCommandManager
 
                 new SlashCommandBuilder()
                     .WithName("setup")
-                    .WithDescription(GuildDataManager.GetTranslation(guild, LanguageKeys.SetupDescription))
+                    .WithDescription(Program.LangManager.GetTranslation(guild, LanguageKeys.SetupDescription))
                     .WithDefaultMemberPermissions(GuildPermission.Administrator)
                     .AddOptions(
                         new SlashCommandOptionBuilder
                         {
                             Type = ApplicationCommandOptionType.String,
                             Name = "option",
-                            Description = GuildDataManager.GetTranslation(guild, LanguageKeys.SetupOption),
+                            Description = Program.LangManager.GetTranslation(guild, LanguageKeys.SetupOption),
                             IsRequired = true,
                             Choices = new List<ApplicationCommandOptionChoiceProperties>
                             {
                                 new ApplicationCommandOptionChoiceProperties
                                 {
-                                    Name = GuildDataManager.GetTranslation(guild, LanguageKeys.SetupOptionAll),
+                                    Name = Program.LangManager.GetTranslation(guild, LanguageKeys.SetupOptionAll),
                                     Value = "setup-ai-menu"
                                 },
                                 new ApplicationCommandOptionChoiceProperties
                                 {
-                                    Name = GuildDataManager.GetTranslation(guild, LanguageKeys.SetupOptionWeb),
+                                    Name = Program.LangManager.GetTranslation(guild, LanguageKeys.SetupOptionWeb),
                                     Value = "setup-ai-web-menu"
                                 },
                                 new ApplicationCommandOptionChoiceProperties
                                 {
-                                    Name = GuildDataManager.GetTranslation(guild, LanguageKeys.SetupOptionLocal),
+                                    Name = Program.LangManager.GetTranslation(guild, LanguageKeys.SetupOptionLocal),
                                     Value = "setup-ai-local-menu"
                                 }
                             }

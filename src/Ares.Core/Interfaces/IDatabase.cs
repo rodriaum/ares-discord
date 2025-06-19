@@ -6,7 +6,7 @@
 
 namespace Ares.Core.Interfaces;
 
-internal interface IDatabase
+public interface IDatabase
 {
     Task ConnectAsync();
     Task CloseAsync();

@@ -17,24 +17,26 @@ public class PostgresDatabase : IDatabase
 {
     private static readonly string _pattern = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
     private static readonly Regex _ipPattern = new Regex(_pattern + "\\." + _pattern + "\\." + _pattern + "\\." + _pattern);
-    private readonly DatabaseCredentials credentials;
+    private readonly DatabaseCredentials _credentials;
     private readonly string connectionString;
     private readonly string defaultConnectionString;
     private NpgsqlConnection? connection;
 
-    public PostgresDatabase(DatabaseCredentials credential)
+    public PostgresDatabase(DatabaseCredentials credentials)
     {
-        if (credential.Host == null)
+        _credentials = credentials;
+
+        if (_credentials.Host == null)
         {
             throw new ArgumentException($"Host cannot be null ({nameof(PostgresDatabase)})");
         }
 
         NpgsqlConnectionStringBuilder builder = new NpgsqlConnectionStringBuilder
         {
-            Host = credential.Host,
-            Username = credential.User,
-            Password = credential.Password,
-            Port = credential.Port,
+            Host = _credentials.Host,
+            Username = _credentials.User,
+            Password = _credentials.Password,
+            Port = _credentials.Port,
             Pooling = true,
             MaxPoolSize = 20,
             MinPoolSize = 5,
@@ -45,10 +47,8 @@ public class PostgresDatabase : IDatabase
 
         defaultConnectionString = builder.ToString();
 
-        builder.Database = credential.Database;
+        builder.Database = _credentials.Database;
         connectionString = builder.ToString();
-
-        credentials = credential;
     }
 
     public async Task ConnectAsync()
@@ -69,9 +69,9 @@ public class PostgresDatabase : IDatabase
 
                 if (!databaseExists)
                 {
-                    await AresLogger.LogAsync("DB: Postgres", $"Database '{credentials.Database}' does not exist. Creating...");
+                    await AresLogger.LogAsync("DB: Postgres", $"Database '{_credentials.Database}' does not exist. Creating...");
                     await CreateDatabaseAsync();
-                    await AresLogger.LogAsync("DB: Postgres", $"Database '{credentials.Database}' created successfully.", severity: Severity.Success);
+                    await AresLogger.LogAsync("DB: Postgres", $"Database '{_credentials.Database}' created successfully.", severity: Severity.Success);
                 }
 
                 connection = new NpgsqlConnection(connectionString);
@@ -106,7 +106,7 @@ public class PostgresDatabase : IDatabase
     {
         try
         {
-            string? databaseName = credentials.Database;
+            string? databaseName = _credentials.Database;
 
             if (string.IsNullOrWhiteSpace(databaseName))
                 return false;
@@ -135,7 +135,7 @@ public class PostgresDatabase : IDatabase
     {
         try
         {
-            string? databaseName = credentials.Database;
+            string? databaseName = _credentials.Database;
 
             if (string.IsNullOrWhiteSpace(databaseName))
                 return;

@@ -5,14 +5,13 @@
  */
 
 using Ares.Core.Objects;
-
 namespace Ares.Core.Util;
 
 public class AresLogger
 {
     private static DateTime time = DateTime.UtcNow;
 
-    /* Functions */
+    #region Public Methods
 
     public static void Log(string prefix, string message, Severity severity = Severity.Info, params string[] extra)
     {
@@ -54,7 +53,9 @@ public class AresLogger
         Console.ResetColor();
     }
 
-    /* Helpers */
+    #endregion
+
+    #region Private Methods
 
     private static ConsoleColor GetColorBySeverity(Severity severity)
     {
@@ -77,4 +78,6 @@ public class AresLogger
 
         return $"[{date} - {severity.ToString()}] {(!string.IsNullOrEmpty(prefix) ? $"[{prefix}] " : "")}{message}";
     }
+
+    #endregion
 }

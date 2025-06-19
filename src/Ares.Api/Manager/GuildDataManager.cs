@@ -4,16 +4,14 @@
 * Proprietary and confidential
 */
 
-using Ares.Core.Manager.Lang;
 using Ares.Core.Models.Data;
-using Ares.Core.Models.Language;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
 using Ares.Core.Objects;
 using Ares.Core.Repository;
 using Ares.Core.Util;
 
-namespace Ares.Core.Manager.Data;
+namespace Ares.Core.Manager;
 
 /// <summary>
 /// Guild service to manage data and operations of an guild.
@@ -23,15 +21,12 @@ public class GuildDataManager
     /// <summary>
     /// Repository for guild data operations.
     /// </summary>
-    private static readonly GuildRepository? _repository = AppCore.GuildRepository;
+    private readonly GuildRepository? _repository;
 
-    /// <summary>
-    /// Language manager instance for handling translations.
-    /// </summary>
-    private static readonly LanguageManager _langManager = AppCore.LangManager;
-
-    public GuildDataManager()
+    public GuildDataManager(GuildRepository guildRepository)
     {
+        _repository = guildRepository;
+
         if (_repository is null)
         {
             AresLogger.Log(nameof(GuildDataManager), "Repository is not initialized.", severity: Severity.Error);
@@ -44,7 +39,7 @@ public class GuildDataManager
     /// <param name="guild">The guild to save.</param>
     /// <param name="fields">List of field names to be saved.</param>
     /// <returns>Returns true if fields were successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveAsync(Guild guild, params string[] fields)
+    public async Task<bool> SaveAsync(Guild guild, params string[] fields)
     {
         if (fields == null || fields.Length == 0)
         {
@@ -86,7 +81,7 @@ public class GuildDataManager
     /// <param name="guild">The guild to save the config data.</param>
     /// <param name="token">Object containing guild token data.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public static async Task<bool> SaveTokenDataAsync(Guild guild, GToken? token = null)
+    public async Task<bool> SaveTokenDataAsync(Guild guild, GToken? token = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (token != null)
@@ -103,7 +98,7 @@ public class GuildDataManager
     /// <param name="guild">The guild to save the config data.</param>
     /// <param name="config">Object containing guild preference data.</param>
     /// <returns>Returns true if information was successfully saved, false otherwise.</returns>
-    public static async Task<bool> SavePreferenceDataAsync(Guild guild, GPreference? config = null)
+    public async Task<bool> SavePreferenceDataAsync(Guild guild, GPreference? config = null)
     {
         // If is null, maybe it was probably modified in the variable itself, so it will save anyway.
         if (config != null)
@@ -119,32 +114,8 @@ public class GuildDataManager
     /// </summary>
     /// <param name="guild">The guild to get the language for.</param>
     /// <returns>The language code string.</returns>
-    public static string Language(Guild guild)
+    public string Language(Guild guild)
     {
         return guild.Preferences.Lang;
-    }
-
-    /// <summary>
-    /// Gets the language category object based on the guild's configured language.
-    /// </summary>
-    /// <param name="guild">The guild to get the language category for.</param>
-    /// <returns>The language category object or null if not found.</returns>
-    public static LanguageCategory? LanguageCategory(Guild guild)
-    {
-        return _langManager.GetCategoryByCode(Language(guild));
-    }
-
-    /// <summary>
-    /// Gets a translated string based on the guild's configured language.
-    /// </summary>
-    /// <param name="guild">The guild to get the translation for.</param>
-    /// <param name="code">The translation code to look up.</param>
-    /// <returns>The translated string or the original code if translation was not found.</returns>
-    public static string GetTranslation(Guild guild, string code)
-    {
-        LanguageCategory? category = LanguageCategory(guild);
-        if (category == null) return code;
-
-        return _langManager.GetTranslation(category, code);
     }
 }
