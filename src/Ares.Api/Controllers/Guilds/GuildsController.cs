@@ -1,4 +1,5 @@
-﻿using Ares.Core.Manager;
+﻿using Ares.Core.DTOs;
+using Ares.Core.Manager;
 using Ares.Core.Models.Data;
 using Ares.Core.Models.Preference;
 using Ares.Core.Models.Token;
@@ -36,15 +37,15 @@ public class GuildsController : ControllerBase
 
             if (guild == null)
             {
-                return StatusCode(500, new { message = "Failed to create or retrieve guild" });
+                return StatusCode(500, ApiResult<Guild>.Fail("Failed to create or retrieve guild"));
             }
 
-            return Ok(guild);
+            return Ok(ApiResult<Guild>.Ok(guild));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error creating/getting guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<Guild>.Fail("Internal server error"));
         }
     }
 
@@ -63,15 +64,15 @@ public class GuildsController : ControllerBase
 
             if (guild == null)
             {
-                return NotFound(new { message = $"Guild with ID {id} not found" });
+                return NotFound(ApiResult<Guild>.Fail($"Guild with ID {id} not found"));
             }
 
-            return Ok(guild);
+            return Ok(ApiResult<Guild>.Ok(guild));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error fetching guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<Guild>.Fail("Internal server error"));
         }
     }
 
@@ -89,22 +90,22 @@ public class GuildsController : ControllerBase
         {
             if (guild.Id != id)
             {
-                return BadRequest(new { message = "Guild ID in URL doesn't match guild object ID" });
+                return BadRequest(ApiResult<object>.Fail("Guild ID in URL doesn't match guild object ID"));
             }
 
             bool success = await _guildRepository.UpdateAsync(guild, field);
 
             if (!success)
             {
-                return StatusCode(500, new { message = "Failed to update guild" });
+                return StatusCode(500, ApiResult<object>.Fail("Failed to update guild"));
             }
 
-            return Ok(new { message = "Guild updated successfully" });
+            return Ok(ApiResult<object>.Ok("Guild updated successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error updating guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -123,22 +124,22 @@ public class GuildsController : ControllerBase
 
             if (guild == null)
             {
-                return NotFound(new { message = $"Guild with ID {id} not found" });
+                return NotFound(ApiResult<object>.Fail($"Guild with ID {id} not found"));
             }
 
             bool success = await _guildDataManager.SaveTokenDataAsync(guild, token);
 
             if (!success)
             {
-                return StatusCode(500, new { message = "Failed to save token data" });
+                return StatusCode(500, ApiResult<object>.Fail("Failed to save token data"));
             }
 
-            return Ok(new { message = "Token data saved successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Token data saved successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error saving token data for guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -157,22 +158,22 @@ public class GuildsController : ControllerBase
 
             if (guild == null)
             {
-                return NotFound(new { message = $"Guild with ID {id} not found" });
+                return NotFound(ApiResult<object>.Fail($"Guild with ID {id} not found"));
             }
 
             bool success = await _guildDataManager.SavePreferenceDataAsync(guild, preferences);
 
             if (!success)
             {
-                return StatusCode(500, new { message = "Failed to save preferences" });
+                return StatusCode(500, ApiResult<object>.Fail("Failed to save preferences"));
             }
 
-            return Ok(new { message = "Preferences saved successfully" });
+            return Ok(ApiResult<object>.Fail("Preferences saved successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error saving preferences for guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -187,12 +188,12 @@ public class GuildsController : ControllerBase
         try
         {
             System.Collections.Concurrent.ConcurrentBag<Guild> guilds = await _guildRepository.GetAllAsync(limit);
-            return Ok(guilds.ToList());
+            return Ok(ApiResult<IEnumerable<Guild>>.Ok(guilds.ToList()));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error retrieving all guilds: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<IEnumerable<Guild>>.Fail("Internal server error"));
         }
     }
 
@@ -210,15 +211,15 @@ public class GuildsController : ControllerBase
 
             if (!success)
             {
-                return NotFound(new { message = $"Guild with ID {id} not found or could not be deleted" });
+                return NotFound(ApiResult<object>.Fail($"Guild with ID {id} not found or could not be deleted"));
             }
 
-            return Ok(new { message = "Guild deleted successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Guild deleted successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error deleting guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -233,12 +234,12 @@ public class GuildsController : ControllerBase
         try
         {
             await _guildRepository.DeleteCache(id);
-            return Ok(new { message = "Guild cache cleared successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Guild cache cleared successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error clearing cache for guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -256,15 +257,15 @@ public class GuildsController : ControllerBase
 
             if (!success)
             {
-                return StatusCode(500, new { message = "Failed to persist guild data" });
+                return StatusCode(500, ApiResult<object>.Fail("Failed to persist guild data"));
             }
 
-            return Ok(new { message = "Guild data persisted successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Guild data persisted successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error persisting guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -282,16 +283,16 @@ public class GuildsController : ControllerBase
 
             if (guild == null)
             {
-                return NotFound(new { message = $"Guild with ID {id} not found" });
+                return NotFound(ApiResult<string>.Fail($"Guild with ID {id} not found"));
             }
 
             string language = _guildDataManager.Language(guild);
-            return Ok(new { language });
+            return Ok(ApiResult<string>.Ok(language));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error getting language for guild {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<string>.Fail("Internal server error"));
         }
     }
 
@@ -308,12 +309,12 @@ public class GuildsController : ControllerBase
         try
         {
             System.Collections.Concurrent.ConcurrentBag<Guild> guilds = await _guildRepository.GetByFieldAsync(fieldPath, value, limit);
-            return Ok(guilds.ToList());
+            return Ok(ApiResult<IEnumerable<Guild>>.Ok(guilds.ToList()));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error retrieving guilds by field {fieldPath}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<IEnumerable<Guild>>.Fail("Internal server error"));
         }
     }
 }

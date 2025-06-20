@@ -223,7 +223,7 @@ public class ReceivedContentListener
 
                 menu.AddOption(new SelectMenuOptionBuilder
                 {
-                    Label = $"Trecho n.º {index + 1}",
+                    Label = $"Trecho n.º {snippet.getFormattedIndex()}",
                     Value = snippet.Id,
                 });
 

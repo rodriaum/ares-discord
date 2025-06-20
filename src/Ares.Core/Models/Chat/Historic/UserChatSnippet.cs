@@ -33,4 +33,9 @@ public class UserChatSnippet
         Index = index;
         Text = text;
     }
+
+    public string getFormattedIndex()
+    {
+        return (this.Index + 1).ToString();
+    }
 }

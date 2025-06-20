@@ -1,4 +1,5 @@
-﻿using Ares.Core.Manager;
+﻿using Ares.Core.DTOs;
+using Ares.Core.Manager;
 using Ares.Core.Models.Chat;
 using Ares.Core.Models.Chat.Historic;
 using Ares.Core.Models.Data;
@@ -36,22 +37,22 @@ public class UserChatController : ControllerBase
             var user = await _userRepository.FetchAsync(userId);
             if (user == null)
             {
-                return NotFound(new { message = $"User with ID {userId} not found" });
+                return NotFound(ApiResult<object>.Fail($"User with ID {userId} not found"));
             }
 
             var success = await _userDataManager.SaveChatDataAsync(user, chat);
 
             if (!success)
             {
-                return StatusCode(500, new { message = "Failed to save chat data" });
+                return StatusCode(500, ApiResult<object>.Fail("Failed to save chat data"));
             }
 
-            return Ok(new { message = "Chat data saved successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Chat data saved successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("UserChatController", $"Error saving chat data for user {userId}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -70,22 +71,22 @@ public class UserChatController : ControllerBase
             var user = await _userRepository.FetchAsync(userId);
             if (user == null)
             {
-                return NotFound(new { message = $"User with ID {userId} not found" });
+                return NotFound(ApiResult<object>.Fail($"User with ID {userId} not found"));
             }
 
             var success = await _userDataManager.CreateChatData(user, guildId, info);
 
             if (!success)
             {
-                return StatusCode(500, new { message = "Failed to create chat data" });
+                return StatusCode(500, ApiResult<object>.Fail("Failed to create chat data"));
             }
 
-            return Ok(new { message = "Chat data created successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Chat data created successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("UserChatController", $"Error creating chat data for user {userId} in guild {guildId}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -103,14 +104,14 @@ public class UserChatController : ControllerBase
             var user = await _userRepository.FetchAsync(userId);
             if (user == null)
             {
-                return NotFound(new { message = $"User with ID {userId} not found" });
+                return NotFound(ApiResult<IEnumerable<UserChatInfo>>.Fail($"User with ID {userId} not found"));
             }
 
             List<UserChatInfo>? chatInfos = _userDataManager.ChatInfos(user, guildId);
 
             if (chatInfos == null)
             {
-                return Ok(new List<UserChatInfo>());
+                return Ok(ApiResult<IEnumerable<UserChatInfo>>.Ok(new List<UserChatInfo>(), "Chat infos is null or empty, returned a empty list."));
             }
 
             return Ok(chatInfos);

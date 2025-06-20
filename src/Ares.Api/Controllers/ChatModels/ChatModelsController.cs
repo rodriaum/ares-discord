@@ -1,3 +1,4 @@
+using Ares.Core.DTOs;
 using Ares.Core.Manager;
 using Ares.Core.Models.Data;
 using Ares.Core.Objects;
@@ -65,22 +66,22 @@ public class ChatModelsController : ControllerBase
         {
             if (model.Id != id)
             {
-                return BadRequest(new { message = "Model ID in URL doesn't match model object ID" });
+                return BadRequest(ApiResult<ChatModel>.Fail("Model ID in URL doesn't match model object ID"));
             }
 
             ChatModel? savedModel = await _chatModelRepository.SaveAsync(id, model);
 
             if (savedModel == null)
             {
-                return StatusCode(500, new { message = "Failed to save chat model" });
+                return StatusCode(500, ApiResult<ChatModel>.Fail("Failed to save chat model"));
             }
 
-            return Ok(savedModel);
+            return Ok(ApiResult<ChatModel>.Ok(savedModel));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error saving model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<ChatModel>.Fail("Internal server error"));
         }
     }
 
@@ -99,15 +100,15 @@ public class ChatModelsController : ControllerBase
 
             if (model == null)
             {
-                return NotFound(new { message = $"Chat model with ID {id} not found" });
+                return NotFound(ApiResult<ChatModel>.Fail($"Chat model with ID {id} not found"));
             }
 
-            return Ok(model);
+            return Ok(ApiResult<ChatModel>.Ok(model));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error fetching model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<ChatModel>.Fail("Internal server error"));
         }
     }
 
@@ -126,15 +127,15 @@ public class ChatModelsController : ControllerBase
 
             if (model == null)
             {
-                return NotFound(new { message = $"No chat model found with ID similar to {id}" });
+                return NotFound(ApiResult<ChatModel>.Fail($"No chat model found with ID similar to {id}"));
             }
 
-            return Ok(model);
+            return Ok(ApiResult<ChatModel>.Ok(model));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error fetching nearest model for {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<ChatModel>.Fail("Internal server error"));
         }
     }
 
@@ -152,27 +153,27 @@ public class ChatModelsController : ControllerBase
         {
             if (model.Id != id)
             {
-                return BadRequest(new { message = "Model ID in URL doesn't match model object ID" });
+                return BadRequest(ApiResult<object>.Fail("Model ID in URL doesn't match model object ID"));
             }
 
             if (string.IsNullOrWhiteSpace(field))
             {
-                return BadRequest(new { message = "Field name is required" });
+                return BadRequest(ApiResult<object>.Fail("Field name is required"));
             }
 
             bool success = await _chatModelRepository.UpdateAsync(model, field);
 
             if (!success)
             {
-                return StatusCode(500, new { message = $"Failed to update field '{field}'" });
+                return StatusCode(500, ApiResult<object>.Fail($"Failed to update field '{field}'"));
             }
 
-            return Ok(new { message = $"Field '{field}' updated successfully" });
+            return Ok(ApiResult<object>.Ok(null, $"Field '{field}' updated successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error updating field '{field}' for model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -190,34 +191,34 @@ public class ChatModelsController : ControllerBase
         {
             if (model.Id != id)
             {
-                return BadRequest(new { message = "Model ID in URL doesn't match model object ID" });
+                return BadRequest(ApiResult<object>.Fail("Model ID in URL doesn't match model object ID"));
             }
 
             if (string.IsNullOrWhiteSpace(fields))
             {
-                return BadRequest(new { message = "Fields list is required" });
+                return BadRequest(ApiResult<object>.Fail("Fields list is required"));
             }
 
             string[] fieldArray = fields.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            
+
             if (fieldArray.Length == 0)
             {
-                return BadRequest(new { message = "At least one valid field must be specified" });
+                return BadRequest(ApiResult<object>.Fail("At least one valid field must be specified"));
             }
 
             bool success = await _chatModelDataManager.SaveAsync(model, fieldArray);
 
             if (!success)
             {
-                return StatusCode(500, new { message = "Failed to update fields" });
+                return StatusCode(500, ApiResult<object>.Fail("Failed to update fields"));
             }
 
-            return Ok(new { message = "Fields updated successfully", updatedFields = fieldArray });
+            return Ok(ApiResult<object>.Ok(fieldArray, "Fields updated successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error updating fields for model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -232,12 +233,12 @@ public class ChatModelsController : ControllerBase
         try
         {
             ConcurrentBag<ChatModel> models = await _chatModelRepository.GetAllAsync(limit);
-            return Ok(models.ToList());
+            return Ok(ApiResult<IEnumerable<ChatModel>>.Ok(models.ToList()));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error retrieving all models: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<IEnumerable<ChatModel>>.Fail("Internal server error"));
         }
     }
 
@@ -255,15 +256,15 @@ public class ChatModelsController : ControllerBase
 
             if (!success)
             {
-                return NotFound(new { message = $"Chat model with ID {id} not found or could not be deleted" });
+                return NotFound(ApiResult<object>.Fail($"Chat model with ID {id} not found or could not be deleted"));
             }
 
-            return Ok(new { message = "Chat model deleted successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Chat model deleted successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error deleting model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
@@ -278,12 +279,12 @@ public class ChatModelsController : ControllerBase
         try
         {
             await _chatModelRepository.DeleteCache(id);
-            return Ok(new { message = "Chat model cache cleared successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Chat model cache cleared successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error clearing cache for model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<ChatModel>.Fail("Internal server error"));
         }
     }
 
@@ -301,15 +302,15 @@ public class ChatModelsController : ControllerBase
 
             if (!success)
             {
-                return StatusCode(500, new { message = "Failed to persist chat model data" });
+                return StatusCode(500, ApiResult<object>.Fail("Failed to persist chat model data"));
             }
 
-            return Ok(new { message = "Chat model data persisted successfully" });
+            return Ok(ApiResult<object>.Ok(null, "Chat model data persisted successfully"));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error persisting model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 }

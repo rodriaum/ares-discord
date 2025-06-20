@@ -232,7 +232,7 @@ public class SelectedChatListener
                 UserChatHistoric historic = new UserChatHistoric(system: helloMessage);
                 info.Historics.Add(historic);
 
-#error Erro ao tentar converter resultado de "message" para string.
+//#error Erro ao tentar converter resultado de "message" para string.
                 if (!await _userService.CreateChatData(user.Id, guildId, info))
                 {
                     await channel.DeleteAsync();

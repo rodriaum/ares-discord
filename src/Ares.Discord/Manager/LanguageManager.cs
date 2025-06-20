@@ -47,9 +47,8 @@ public class LanguageManager
                 {
                     AresLogger.Log(
                         "Lang",
-                        $"Using lang from:",
-                        severity: Severity.Debug,
-                        extra: [$"Path: {filePath}", $"Run Path: {isRunFilePath}"]
+                        $"Detected language file at '{filePath}' (Run Path: {isRunFilePath})",
+                        severity: Severity.Debug
                     );
                 }
 
