@@ -4,12 +4,12 @@
 * Proprietary and confidential
 */
 
-namespace Ares.Core.Database.Postgres;
+namespace Ares.Common.Database.Postgres;
 
-using Ares.Core.Interfaces;
-using Ares.Core.Models.Database;
-using Ares.Core.Objects;
-using Ares.Core.Util;
+using Ares.Common.Interfaces;
+using Ares.Common.Models.Database;
+using Ares.Common.Objects;
+using Ares.Common.Util;
 using Npgsql;
 using System.Text.RegularExpressions;
 

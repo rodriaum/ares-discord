@@ -1,7 +1,7 @@
-﻿using Ares.Core.Constants;
-using Ares.Core.Database.Postgres;
-using Ares.Core.Database.Redis;
-using Ares.Core.Monitor;
+﻿using Ares.Common.Constants;
+using Ares.Common.Database.Postgres;
+using Ares.Common.Database.Redis;
+using Ares.Common.Monitor;
 
 namespace Ares.Api.Services.Core;
 

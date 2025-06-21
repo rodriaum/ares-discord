@@ -4,13 +4,13 @@
 * Proprietary and confidential
 */
 
-using Ares.Core.Models.Database;
-using Ares.Core.Objects;
-using Ares.Core.Util;
+using Ares.Common.Models.Database;
+using Ares.Common.Objects;
+using Ares.Common.Util;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace Ares.Core.Database.Redis;
+namespace Ares.Common.Database.Redis;
 
 /// <summary>
 /// Represents a Redis database connection and provides methods for interacting with Redis.

@@ -1,5 +1,5 @@
-﻿using Ares.Core.Models.Data;
-using Ares.Core.Util;
+﻿using Ares.Common.Models.Data;
+using Ares.Common.Util;
 using System.Collections.Concurrent;
 
 namespace Ares.Discord.Services.Api;

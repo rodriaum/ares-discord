@@ -4,11 +4,11 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Constants;
-using Ares.Core.Models.Data;
-using Ares.Core.Models.Data.Chat.Model;
-using Ares.Core.Objects;
-using Ares.Core.Util;
+using Ares.Common.Constants;
+using Ares.Common.Models.Data;
+using Ares.Common.Models.Data.Chat.Model;
+using Ares.Common.Objects;
+using Ares.Common.Util;
 using Ares.Discord.Service.Neural;
 using Ares.Discord.Services.Api;
 using Ares.Discord.Util;

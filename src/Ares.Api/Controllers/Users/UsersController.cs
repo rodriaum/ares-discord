@@ -1,7 +1,7 @@
-﻿using Ares.Core.Models.Data;
-using Ares.Core.Objects;
-using Ares.Core.Repository;
-using Ares.Core.Util;
+﻿using Ares.Common.Models.Data;
+using Ares.Common.Objects;
+using Ares.Common.Repository;
+using Ares.Common.Util;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ares.Api.Controllers.Users;

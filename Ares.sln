@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ares.Discord", "src\Ares.Discord\Ares.Discord.csproj", "{9FB5D2CA-B323-4DA0-BC93-B13AF44CBF6E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ares.Core", "src\Ares.Core\Ares.Core.csproj", "{D445560A-DED3-4511-AB08-15E0C229B095}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ares.Common", "src\Ares.Common\Ares.Common.csproj", "{D445560A-DED3-4511-AB08-15E0C229B095}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ares.Api", "src\Ares.Api\Ares.Api.csproj", "{D7687C1E-634E-443D-B8D0-D32B005BBA23}"
 EndProject

@@ -1,5 +1,5 @@
-﻿using Ares.Core.Models.Data.Chat.Model;
-using Ares.Core.Objects;
+﻿using Ares.Common.Models.Data.Chat.Model;
+using Ares.Common.Objects;
 using Discord;
 
 namespace Ares.Discord.Util;

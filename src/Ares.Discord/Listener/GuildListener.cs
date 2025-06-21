@@ -4,8 +4,8 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Models.Data;
-using Ares.Core.Util;
+using Ares.Common.Models.Data;
+using Ares.Common.Util;
 using Ares.Discord.Services.Api;
 using Discord.WebSocket;
 

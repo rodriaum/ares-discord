@@ -1,12 +1,12 @@
-﻿using Ares.Core.Constants;
-using Ares.Core.Models.Data;
-using Ares.Core.Models.Language;
-using Ares.Core.Objects;
-using Ares.Core.Util;
+﻿using Ares.Common.Constants;
+using Ares.Common.Models.Data;
+using Ares.Common.Models.Language;
+using Ares.Common.Objects;
+using Ares.Common.Util;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Ares.Core.Manager;
+namespace Ares.Common.Manager;
 
 /// <summary>
 /// Inspired by a legacy, complex Minecraft network design.

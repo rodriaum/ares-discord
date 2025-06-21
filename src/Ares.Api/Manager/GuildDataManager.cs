@@ -4,14 +4,14 @@
 * Proprietary and confidential
 */
 
-using Ares.Core.Models.Data;
-using Ares.Core.Models.Preference;
-using Ares.Core.Models.Token;
-using Ares.Core.Objects;
-using Ares.Core.Repository;
-using Ares.Core.Util;
+using Ares.Common.Models.Data;
+using Ares.Common.Models.Preference;
+using Ares.Common.Models.Token;
+using Ares.Common.Objects;
+using Ares.Common.Repository;
+using Ares.Common.Util;
 
-namespace Ares.Core.Manager;
+namespace Ares.Common.Manager;
 
 /// <summary>
 /// Guild service to manage data and operations of an guild.

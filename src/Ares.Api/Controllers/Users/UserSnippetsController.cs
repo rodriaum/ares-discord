@@ -1,8 +1,8 @@
-﻿using Ares.Core.Manager;
-using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Objects;
-using Ares.Core.Repository;
-using Ares.Core.Util;
+﻿using Ares.Common.Manager;
+using Ares.Common.Models.Chat.Historic;
+using Ares.Common.Objects;
+using Ares.Common.Repository;
+using Ares.Common.Util;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ares.Api.Controllers.Users;

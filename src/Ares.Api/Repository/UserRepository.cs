@@ -4,18 +4,18 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Constants;
-using Ares.Core.Database.Postgres;
-using Ares.Core.Database.Redis;
-using Ares.Core.Models.Data;
-using Ares.Core.Objects;
-using Ares.Core.Util;
+using Ares.Common.Constants;
+using Ares.Common.Database.Postgres;
+using Ares.Common.Database.Redis;
+using Ares.Common.Models.Data;
+using Ares.Common.Objects;
+using Ares.Common.Util;
 using Npgsql;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Text.Json;
 
-namespace Ares.Core.Repository;
+namespace Ares.Common.Repository;
 
 /// <summary>
 /// Class responsible for managing user data in PostgreSQL database.

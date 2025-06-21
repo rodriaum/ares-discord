@@ -4,8 +4,8 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Objects;
-using Ares.Core.Util;
+using Ares.Common.Objects;
+using Ares.Common.Util;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;

@@ -4,14 +4,14 @@
 * Proprietary and confidential
 */
 
-using Ares.Core.Models.Chat;
-using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Data;
-using Ares.Core.Objects;
-using Ares.Core.Repository;
-using Ares.Core.Util;
+using Ares.Common.Models.Chat;
+using Ares.Common.Models.Chat.Historic;
+using Ares.Common.Models.Data;
+using Ares.Common.Objects;
+using Ares.Common.Repository;
+using Ares.Common.Util;
 
-namespace Ares.Core.Manager;
+namespace Ares.Common.Manager;
 
 /// <summary>
 /// User service to manage data and operations.

@@ -1,0 +1,49 @@
+﻿/*
+ * Copyright (C) Rodrigo Ferreira, All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+
+using Ares.Common.Models.Chat.Image;
+using System.Text.Json.Serialization;
+
+namespace Ares.Common.Models.Chat.Historic;
+
+public class UserChatInfo
+{
+    [JsonInclude]
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("active")]
+    public bool Active { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("channelId")]
+    public ulong ChannelId { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("modelId")]
+    public string ModelId { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("imageGenOptions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ImageGenOptions? ImageGenOptions { get; set; }
+
+    [JsonInclude]
+    [JsonPropertyName("historics")]
+    public List<UserChatHistoric> Historics { get; set; }
+
+    public UserChatInfo(ulong channelId, string modelId, bool active = false, ImageGenOptions? imageGenOptions = null, List<UserChatHistoric>? historics = null)
+    {
+        Id = Guid.NewGuid().ToString();
+        ChannelId = channelId;
+        ModelId = modelId;
+        Active = active;
+        ImageGenOptions = imageGenOptions;
+
+        Historics = historics ?? new List<UserChatHistoric>();
+    }
+}

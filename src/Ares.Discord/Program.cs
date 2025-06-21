@@ -4,10 +4,10 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Constants;
-using Ares.Core.Manager;
-using Ares.Core.Objects;
-using Ares.Core.Util;
+using Ares.Common.Constants;
+using Ares.Common.Manager;
+using Ares.Common.Objects;
+using Ares.Common.Util;
 using Ares.Discord.Commands;
 using Ares.Discord.Listener;
 using Ares.Discord.Listener.Chat;

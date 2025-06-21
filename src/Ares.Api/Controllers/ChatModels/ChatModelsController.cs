@@ -1,9 +1,9 @@
-using Ares.Core.DTOs;
-using Ares.Core.Manager;
-using Ares.Core.Models.Data;
-using Ares.Core.Objects;
-using Ares.Core.Repository;
-using Ares.Core.Util;
+using Ares.Common.DTOs;
+using Ares.Common.Manager;
+using Ares.Common.Models.Data;
+using Ares.Common.Objects;
+using Ares.Common.Repository;
+using Ares.Common.Util;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
 

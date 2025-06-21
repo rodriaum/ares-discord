@@ -4,13 +4,13 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Constants;
-using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Data;
-using Ares.Core.Models.Preference;
-using Ares.Core.Objects;
-using Ares.Core.Objects.Image;
-using Ares.Core.Util;
+using Ares.Common.Constants;
+using Ares.Common.Models.Chat.Historic;
+using Ares.Common.Models.Data;
+using Ares.Common.Models.Preference;
+using Ares.Common.Objects;
+using Ares.Common.Objects.Image;
+using Ares.Common.Util;
 using Ares.Discord.Service.Neural;
 using Ares.Discord.Services.Api;
 using Ares.Discord.Util;

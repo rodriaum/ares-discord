@@ -4,12 +4,12 @@
  * Proprietary and confidential
  */
 
-using Ares.Core;
-using Ares.Core.Constants;
-using Ares.Core.Manager;
-using Ares.Core.Models.Data;
-using Ares.Core.Models.Preference;
-using Ares.Core.Models.Token;
+using Ares.Common;
+using Ares.Common.Constants;
+using Ares.Common.Manager;
+using Ares.Common.Models.Data;
+using Ares.Common.Models.Preference;
+using Ares.Common.Models.Token;
 using Ares.Discord.Manager;
 using Ares.Discord.Services.Api;
 using Discord;

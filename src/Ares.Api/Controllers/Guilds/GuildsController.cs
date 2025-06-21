@@ -1,11 +1,11 @@
-﻿using Ares.Core.DTOs;
-using Ares.Core.Manager;
-using Ares.Core.Models.Data;
-using Ares.Core.Models.Preference;
-using Ares.Core.Models.Token;
-using Ares.Core.Objects;
-using Ares.Core.Repository;
-using Ares.Core.Util;
+﻿using Ares.Common.DTOs;
+using Ares.Common.Manager;
+using Ares.Common.Models.Data;
+using Ares.Common.Models.Preference;
+using Ares.Common.Models.Token;
+using Ares.Common.Objects;
+using Ares.Common.Repository;
+using Ares.Common.Util;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ares.Api.Controllers.Guilds;

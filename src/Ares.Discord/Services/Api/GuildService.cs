@@ -1,7 +1,7 @@
-﻿using Ares.Core.Models.Data;
-using Ares.Core.Models.Preference;
-using Ares.Core.Models.Token;
-using Ares.Core.Util;
+﻿using Ares.Common.Models.Data;
+using Ares.Common.Models.Preference;
+using Ares.Common.Models.Token;
+using Ares.Common.Util;
 
 namespace Ares.Discord.Services.Api;
 

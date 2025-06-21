@@ -4,16 +4,16 @@
  * Proprietary and confidential
  */
 
-using Ares.Core.Constants;
-using Ares.Core.Manager;
-using Ares.Core.Models.Chat.Historic;
-using Ares.Core.Models.Chat.Image;
-using Ares.Core.Models.Data;
-using Ares.Core.Models.Data.Chat.Model;
-using Ares.Core.Models.Language;
-using Ares.Core.Models.Token;
-using Ares.Core.Objects;
-using Ares.Core.Util;
+using Ares.Common.Constants;
+using Ares.Common.Manager;
+using Ares.Common.Models.Chat.Historic;
+using Ares.Common.Models.Chat.Image;
+using Ares.Common.Models.Data;
+using Ares.Common.Models.Data.Chat.Model;
+using Ares.Common.Models.Language;
+using Ares.Common.Models.Token;
+using Ares.Common.Objects;
+using Ares.Common.Util;
 using Ares.Discord.Services.Api;
 using Microsoft.Extensions.AI;
 using OpenAI;
@@ -574,9 +574,9 @@ public class NeuralService
         }
         else
         {
-            Core.Models.Chat.ChatTokenUsage? convertedUsage = (usage != null
-                    ? new Core.Models.Chat.ChatTokenUsage(usage.OutputTokenCount, usage.InputTokenCount, usage.TotalTokenCount)
-                    : new Core.Models.Chat.ChatTokenUsage());
+            Common.Models.Chat.ChatTokenUsage? convertedUsage = (usage != null
+                    ? new Common.Models.Chat.ChatTokenUsage(usage.OutputTokenCount, usage.InputTokenCount, usage.TotalTokenCount)
+                    : new Common.Models.Chat.ChatTokenUsage());
 
             historic = new UserChatHistoric(prompt: prompt, response: response ?? new(), usage: convertedUsage);
         }
