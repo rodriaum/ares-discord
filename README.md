@@ -1,7 +1,7 @@
 # Ares
 
 > [!CAUTION]
-> Esta é uma versão "dev", ou seja, uma branch de desenvolvimento. Tudo aqui pode ser lançado oficialmente no futuro, mas, até lá, pode conter bugs.
+> Esta é uma versão **dev**, ou seja, uma branch de desenvolvimento. Tudo aqui pode ser lançado oficialmente no futuro, mas, até lá, pode conter bugs.
 
 Ares é uma plataforma de chat privado poderosa e flexível projetada para aprimorar sua experiência no Discord com interações inteligentes. Esta plataforma utiliza tecnologias de IA de ponta para gerar texto, imagens e mais, tudo isso mantendo armazenamento de dados seguro e em conformidade.
 
@@ -23,9 +23,8 @@ https://github.com/user-attachments/assets/4adcdaf8-8a5a-4a45-ac0b-68eb1518bc1f
 - **Gerenciamento de Modelos**: Acesse e alterne entre diferentes modelos de IA sem problemas.
 
 ### Armazenamento de Dados
-- **Local Storage**: Funciona como um cache primário à frente do Redis, proporcionando armazenamento temporário de acesso rápido para guardar, recuperar e eliminar dados com eficiência.
 - **MongoDB**: Armazene extenso histórico de conversas, URLs de imagens e usos de tokens com segurança no MongoDB.
-- **Redis**: Atua como um cache intermediário de alta velocidade, otimizando a recuperação de dados persistidos no MongoDB e reduzindo a latência nas interações.
+- **Redis**: Atua como cache de alta velocidade, otimizando a recuperação de dados persistidos no MongoDB e reduzindo a latência nas interações.
 
 ## Pré-requisitos
 Para usar o Ares, certifique-se de ter o seguinte configurado:
