@@ -1,4 +1,7 @@
-﻿namespace Ares.Core.Util;
+﻿using System.Security.Cryptography;
+using System.Text;
+
+namespace Ares.Core.Util;
 
 public class StringUtil
 {
@@ -10,6 +13,7 @@ public class StringUtil
             /* symbols */ + "#$%*&_+=^?/";
     static readonly string ExclusiveChars = "abcdefghijklmnopqrstuvwxyz"
             /* numeric */ + "0123456789";
+    static readonly string Separator  = "|";
 
     private static readonly Random _random = new Random();
 
@@ -39,5 +43,16 @@ public class StringUtil
         return new string(Enumerable.Range(0, length)
             .Select(_ => SymbolsChars[_random.Next(SymbolsChars.Length)])
             .ToArray());
+    }
+
+    public static string GenerateKey(string prefix, params string[] parts)
+    {
+        var keyData = string.Join(Separator, parts);
+        using SHA256 sha256 = SHA256.Create();
+
+        byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(keyData));
+        string hashString = Convert.ToBase64String(hash);
+
+        return $"{prefix}:{hashString}";
     }
 }
