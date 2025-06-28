@@ -1,4 +1,7 @@
-﻿namespace Ares.Core.Util;
+﻿using System.Security.Cryptography;
+using System.Text;
+
+namespace Ares.Common.Util;
 
 public class StringUtil
 {
@@ -10,7 +13,7 @@ public class StringUtil
             /* symbols */ + "#$%*&_+=^?/";
     static readonly string ExclusiveChars = "abcdefghijklmnopqrstuvwxyz"
             /* numeric */ + "0123456789";
-    static readonly string Separator  = "|";
+    static readonly string Separator = "|";
 
     private static readonly Random _random = new Random();
 
