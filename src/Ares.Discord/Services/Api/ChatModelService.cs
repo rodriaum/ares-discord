@@ -1,4 +1,5 @@
-﻿using Ares.Common.Models.Data;
+﻿using Ares.Common.DTOs;
+using Ares.Common.Models.Data;
 using Ares.Common.Util;
 using System.Collections.Concurrent;
 
@@ -15,53 +16,53 @@ public class ChatModelService
         _baseUrl = baseUrl.TrimEnd('/');
     }
 
-    public Task<ChatModel?> CreateOrGetModel(string id)
+    public Task<ApiResult<ChatModel>?> CreateOrGetModel(string id)
     {
-        return HttpUtil.PostAsync<ChatModel>(_client, $"{_baseUrl}/api/chat-models/{id}/create-or-get", new { });
+        return HttpUtil.PostAsync<ApiResult<ChatModel>>(_client, $"{_baseUrl}/api/chat-models/{id}/create-or-get", new { });
     }
 
-    public Task<ChatModel?> SaveModel(string id, ChatModel model)
+    public Task<ApiResult<ChatModel>?> SaveModel(string id, ChatModel model)
     {
-        return HttpUtil.PutAsync<ChatModel>(_client, $"{_baseUrl}/api/chat-models/{id}", model);
+        return HttpUtil.PutAsync<ApiResult<ChatModel>>(_client, $"{_baseUrl}/api/chat-models/{id}", model);
     }
 
-    public Task<ChatModel?> GetModel(string id, bool saveInRedis = false)
+    public Task<ApiResult<ChatModel>?> GetModel(string id, bool saveInRedis = false)
     {
-        return HttpUtil.GetAsync<ChatModel>(_client, $"{_baseUrl}/api/chat-models/{id}?saveInRedis={saveInRedis.ToString().ToLower()}");
+        return HttpUtil.GetAsync<ApiResult<ChatModel>>(_client, $"{_baseUrl}/api/chat-models/{id}?saveInRedis={saveInRedis.ToString().ToLower()}");
     }
 
-    public Task<ChatModel?> GetNearestModel(string id, bool saveInRedis = false)
+    public Task<ApiResult<ChatModel>?> GetNearestModel(string id, bool saveInRedis = false)
     {
-        return HttpUtil.GetAsync<ChatModel>(_client, $"{_baseUrl}/api/chat-models/{id}/nearest?saveInRedis={saveInRedis.ToString().ToLower()}");
+        return HttpUtil.GetAsync<ApiResult<ChatModel>>(_client, $"{_baseUrl}/api/chat-models/{id}/nearest?saveInRedis={saveInRedis.ToString().ToLower()}");
     }
 
-    public Task<bool> UpdateModelField(string id, ChatModel model, string field)
+    public Task<ApiResult<bool>?> UpdateModelField(string id, ChatModel model, string field)
     {
-        return HttpUtil.PutAsync<bool>(_client, $"{_baseUrl}/api/chat-models/{id}/update-field?field={field}", model);
+        return HttpUtil.PutAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/chat-models/{id}/update-field?field={field}", model);
     }
 
-    public Task<bool> UpdateModelFields(string id, ChatModel model, string fields)
+    public Task<ApiResult<bool>?> UpdateModelFields(string id, ChatModel model, string fields)
     {
-        return HttpUtil.PutAsync<bool>(_client, $"{_baseUrl}/api/chat-models/{id}/update-fields?fields={fields}", model);
+        return HttpUtil.PutAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/chat-models/{id}/update-fields?fields={fields}", model);
     }
 
-    public Task<ConcurrentBag<ChatModel>?> GetAllModels(int limit = 0)
+    public Task<ApiResult<ConcurrentBag<ChatModel>>?> GetAllModels(int limit = 0)
     {
-        return HttpUtil.GetAsync<ConcurrentBag<ChatModel>>(_client, $"{_baseUrl}/api/chat-models/all?limit={limit}");
+        return HttpUtil.GetAsync<ApiResult<ConcurrentBag<ChatModel>>>(_client, $"{_baseUrl}/api/chat-models/all?limit={limit}");
     }
 
-    public Task<bool> DeleteModel(string id)
+    public Task<ApiResult<object>?> DeleteModel(string id)
     {
-        return HttpUtil.DeleteAsync(_client, $"{_baseUrl}/api/chat-models/{id}");
+        return HttpUtil.DeleteAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/chat-models/{id}");
     }
 
-    public Task<bool> DeleteModelCache(string id)
+    public Task<ApiResult<object>?> DeleteModelCache(string id)
     {
-        return HttpUtil.DeleteAsync(_client, $"{_baseUrl}/api/chat-models/{id}/remove-cache");
+        return HttpUtil.DeleteAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/chat-models/{id}/remove-cache");
     }
 
-    public Task<bool> PersistModel(string id)
+    public Task<ApiResult<bool>?> PersistModel(string id)
     {
-        return HttpUtil.PostAsync<bool>(_client, $"{_baseUrl}/api/chat-models/{id}/persist-cache", new { });
+        return HttpUtil.PostAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/chat-models/{id}/persist-cache", new { });
     }
 }

@@ -27,9 +27,9 @@ public class GuildsController : ControllerBase
     /// Creates or retrieves a guild by ID
     /// </summary>
     /// <param name="id">Guild ID</param>
-    /// <returns>Guild object or error</returns>
+    /// <returns>Guild object ou erro</returns>
     [HttpPost("{id}/create-or-get")]
-    public async Task<ActionResult<Guild>> CreateOrGetGuild(ulong id)
+    public async Task<ActionResult<ApiResult<Guild>>> CreateOrGetGuild(ulong id)
     {
         try
         {
@@ -42,7 +42,7 @@ public class GuildsController : ControllerBase
 
             return Ok(ApiResult<Guild>.Ok(guild));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error creating/getting guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<Guild>.Fail("Internal server error"));
@@ -54,9 +54,9 @@ public class GuildsController : ControllerBase
     /// </summary>
     /// <param name="id">Guild ID</param>
     /// <param name="useCache">Whether to save in Redis cache if fetched from database</param>
-    /// <returns>Guild object or not found</returns>
+    /// <returns>Guild object ou not found</returns>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Guild>> GetGuild(ulong id, [FromQuery] bool useCache = true)
+    public async Task<ActionResult<ApiResult<Guild>>> GetGuild(ulong id, [FromQuery] bool useCache = true)
     {
         try
         {
@@ -69,7 +69,7 @@ public class GuildsController : ControllerBase
 
             return Ok(ApiResult<Guild>.Ok(guild));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error fetching guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<Guild>.Fail("Internal server error"));
@@ -82,9 +82,9 @@ public class GuildsController : ControllerBase
     /// <param name="id">Guild ID</param>
     /// <param name="guild">Updated guild object</param>
     /// <param name="field">Field name being updated (for logging)</param>
-    /// <returns>Success or error response</returns>
+    /// <returns>Success ou erro</returns>
     [HttpPut("{id}/update")]
-    public async Task<ActionResult> UpdateGuild(ulong id, [FromBody] Guild guild, [FromQuery] string field = "data")
+    public async Task<ActionResult<ApiResult<object>>> UpdateGuild(ulong id, [FromBody] Guild guild, [FromQuery] string field = "data")
     {
         try
         {
@@ -102,7 +102,7 @@ public class GuildsController : ControllerBase
 
             return Ok(ApiResult<object>.Ok("Guild updated successfully"));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error updating guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
@@ -114,9 +114,9 @@ public class GuildsController : ControllerBase
     /// </summary>
     /// <param name="id">Guild ID</param>
     /// <param name="token">Token data</param>
-    /// <returns>Success or error response</returns>
+    /// <returns>Success ou erro</returns>
     [HttpPut("{id}/token")]
-    public async Task<ActionResult> SaveTokenData(ulong id, [FromBody] GToken token)
+    public async Task<ActionResult<ApiResult<object>>> SaveTokenData(ulong id, [FromBody] GToken token)
     {
         try
         {
@@ -136,7 +136,7 @@ public class GuildsController : ControllerBase
 
             return Ok(ApiResult<object>.Ok(null, "Token data saved successfully"));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error saving token data for guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
@@ -148,9 +148,9 @@ public class GuildsController : ControllerBase
     /// </summary>
     /// <param name="id">Guild ID</param>
     /// <param name="preferences">Preference data</param>
-    /// <returns>Success or error response</returns>
+    /// <returns>Success ou erro</returns>
     [HttpPut("{id}/preferences")]
-    public async Task<ActionResult> SavePreferenceData(ulong id, [FromBody] GPreference preferences)
+    public async Task<ActionResult<ApiResult<object>>> SavePreferenceData(ulong id, [FromBody] GPreference preferences)
     {
         try
         {
@@ -168,9 +168,9 @@ public class GuildsController : ControllerBase
                 return StatusCode(500, ApiResult<object>.Fail("Failed to save preferences"));
             }
 
-            return Ok(ApiResult<object>.Fail("Preferences saved successfully"));
+            return Ok(ApiResult<object>.Ok(null, "Preferences saved successfully"));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error saving preferences for guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
@@ -181,16 +181,16 @@ public class GuildsController : ControllerBase
     /// Retrieves all guilds with optional limit
     /// </summary>
     /// <param name="limit">Maximum number of guilds to retrieve (0 for no limit)</param>
-    /// <returns>List of guilds</returns>
+    /// <returns>Lista de guilds</returns>
     [HttpGet("all")]
-    public async Task<ActionResult<IEnumerable<Guild>>> GetAllGuilds([FromQuery] int limit = 0)
+    public async Task<ActionResult<ApiResult<IEnumerable<Guild>>>> GetAllGuilds([FromQuery] int limit = 0)
     {
         try
         {
             System.Collections.Concurrent.ConcurrentBag<Guild> guilds = await _guildRepository.GetAllAsync(limit);
             return Ok(ApiResult<IEnumerable<Guild>>.Ok(guilds.ToList()));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error retrieving all guilds: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<IEnumerable<Guild>>.Fail("Internal server error"));
@@ -201,9 +201,9 @@ public class GuildsController : ControllerBase
     /// Deletes a guild permanently
     /// </summary>
     /// <param name="id">Guild ID</param>
-    /// <returns>Success or error response</returns>
+    /// <returns>Success ou erro</returns>
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteGuild(ulong id)
+    public async Task<ActionResult<ApiResult<object>>> DeleteGuild(ulong id)
     {
         try
         {
@@ -216,7 +216,7 @@ public class GuildsController : ControllerBase
 
             return Ok(ApiResult<object>.Ok(null, "Guild deleted successfully"));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error deleting guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
@@ -227,16 +227,16 @@ public class GuildsController : ControllerBase
     /// Removes guild from cache
     /// </summary>
     /// <param name="id">Guild ID</param>
-    /// <returns>Success response</returns>
+    /// <returns>Success</returns>
     [HttpDelete("{id}/remove-cache")]
-    public async Task<ActionResult> DeleteGuildCache(ulong id)
+    public async Task<ActionResult<ApiResult<object>>> DeleteGuildCache(ulong id)
     {
         try
         {
             await _guildRepository.DeleteCache(id);
             return Ok(ApiResult<object>.Ok(null, "Guild cache cleared successfully"));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error clearing cache for guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
@@ -247,9 +247,9 @@ public class GuildsController : ControllerBase
     /// Makes guild data persistent in cache (removes expiration)
     /// </summary>
     /// <param name="id">Guild ID</param>
-    /// <returns>Success or error response</returns>
+    /// <returns>Success ou erro</returns>
     [HttpPost("{id}/persist-cache")]
-    public async Task<ActionResult> PersistGuild(ulong id)
+    public async Task<ActionResult<ApiResult<object>>> PersistGuild(ulong id)
     {
         try
         {
@@ -262,7 +262,7 @@ public class GuildsController : ControllerBase
 
             return Ok(ApiResult<object>.Ok(null, "Guild data persisted successfully"));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error persisting guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
@@ -273,9 +273,9 @@ public class GuildsController : ControllerBase
     /// Gets the language code configured for this guild
     /// </summary>
     /// <param name="id">Guild ID</param>
-    /// <returns>The language code</returns>
+    /// <returns>Código de idioma</returns>
     [HttpGet("{id}/language")]
-    public async Task<ActionResult<string>> GetLanguage(ulong id)
+    public async Task<ActionResult<ApiResult<string>>> GetLanguage(ulong id)
     {
         try
         {
@@ -289,7 +289,7 @@ public class GuildsController : ControllerBase
             string language = _guildDataManager.Language(guild);
             return Ok(ApiResult<string>.Ok(language));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error getting language for guild {id}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<string>.Fail("Internal server error"));
@@ -302,16 +302,16 @@ public class GuildsController : ControllerBase
     /// <param name="fieldPath">JSON path to the field (e.g., "preference.lang")</param>
     /// <param name="value">Value to search for</param>
     /// <param name="limit">Maximum number of guilds to return (0 for no limit)</param>
-    /// <returns>List of matching guilds</returns>
+    /// <returns>Lista de guilds</returns>
     [HttpGet("by-field")]
-    public async Task<ActionResult<IEnumerable<Guild>>> GetByField([FromQuery] string fieldPath, [FromQuery] string value, [FromQuery] int limit = 0)
+    public async Task<ActionResult<ApiResult<IEnumerable<Guild>>>> GetByField([FromQuery] string fieldPath, [FromQuery] string value, [FromQuery] int limit = 0)
     {
         try
         {
             System.Collections.Concurrent.ConcurrentBag<Guild> guilds = await _guildRepository.GetByFieldAsync(fieldPath, value, limit);
             return Ok(ApiResult<IEnumerable<Guild>>.Ok(guilds.ToList()));
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             await AresLogger.LogAsync("GuildsController", $"Error retrieving guilds by field {fieldPath}: {ex.Message}", severity: Severity.Error);
             return StatusCode(500, ApiResult<IEnumerable<Guild>>.Fail("Internal server error"));

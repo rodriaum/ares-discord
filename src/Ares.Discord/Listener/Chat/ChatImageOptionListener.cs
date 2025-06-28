@@ -5,6 +5,7 @@
  */
 
 using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Models.Chat.Historic;
 using Ares.Common.Models.Chat.Image;
 using Ares.Common.Models.Data;
@@ -64,7 +65,15 @@ public class ChatImageOptionListener
 
                 #region Check if guild is in database
 
-                Guild? guild = await _guildService!.GetGuild(guildId.Value);
+                ApiResult<Guild>? guildResult = await _guildService!.GetGuild(guildId.Value);
+
+                if (guildResult == null || !guildResult.Success)
+                {
+                    await message.ModifyAsync(it => it.Content = "Não foi possível acessar as informações do servidor atual.");
+                    return;
+                }
+
+                Guild? guild = guildResult.Data;
 
                 const int maxAttempts = 3;
 
@@ -72,7 +81,9 @@ public class ChatImageOptionListener
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    guild = await _guildService!.CreateOrGetGuild(guildId.Value);
+                    ApiResult<Guild>? createResult = await _guildService!.CreateOrGetGuild(guildId.Value);
+                    if (createResult != null && createResult.Success)
+                        guild = createResult.Data;
                 }
 
                 if (guild == null)
@@ -85,13 +96,16 @@ public class ChatImageOptionListener
 
                 #region Check if user is in database
 
-                User? user = await _userService!.GetUser(args.User.Id, useCache: true);
+                ApiResult<User>? userResult = await _userService!.GetUser(args.User.Id, useCache: true);
+                User? user = (userResult != null && userResult.Success) ? userResult.Data : null;
 
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    user = await _userService!.CreateOrGetUser(args.User.Id);
+                    ApiResult<User>? createUserResult = await _userService!.CreateOrGetUser(args.User.Id);
+                    if (createUserResult != null && createUserResult.Success)
+                        user = createUserResult.Data;
                 }
 
                 if (user == null)
@@ -112,21 +126,25 @@ public class ChatImageOptionListener
 
                 SocketUser socketUser = args.User;
 
-                UserChatInfo? chat = await _userService!.GetChatInfoByChannel(user.Id, guildId.Value, channelId.Value);
+                ApiResult<UserChatInfo>? chatResult = await _userService!.GetChatInfoByChannel(user.Id, guildId.Value, channelId.Value);
 
-                if (chat == null)
+                if (chatResult == null || !chatResult.Success || chatResult.Data == null)
                 {
                     await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindChat));
                     return;
                 }
 
-                ChatModel? model = await _chatModelService!.GetModel(chat.ModelId, saveInRedis: true);
+                UserChatInfo chat = chatResult.Data;
 
-                if (model == null || model != null && model.Type != ModelType.Image)
+                ApiResult<ChatModel>? modelResult = await _chatModelService!.GetModel(chat.ModelId, saveInRedis: true);
+
+                if (modelResult == null || !modelResult.Success || modelResult.Data == null || modelResult.Data.Type != ModelType.Image)
                 {
                     await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.ChatIncompatibleOption));
                     return;
                 }
+
+                ChatModel model = modelResult.Data;
 
                 ImageGenOptions options = chat.ImageGenOptions ?? new ImageGenOptions();
 
@@ -136,7 +154,8 @@ public class ChatImageOptionListener
                 switch (args.Data.CustomId)
                 {
                     case "quality-menu":
-                        if (Enum.TryParse(optionValue, true, out ImageQuality quality))
+                        ImageQuality quality;
+                        if (Enum.TryParse(optionValue, true, out quality))
                         {
                             options.Quality = quality;
                             success = true;
@@ -144,7 +163,8 @@ public class ChatImageOptionListener
                         break;
 
                     case "style-menu":
-                        if (Enum.TryParse(optionValue, true, out ImageStyle style))
+                        ImageStyle style;
+                        if (Enum.TryParse(optionValue, true, out style))
                         {
                             options.Style = style;
                             success = true;
@@ -152,7 +172,8 @@ public class ChatImageOptionListener
                         break;
 
                     case "size-menu":
-                        if (Enum.TryParse(optionValue, true, out ImageSize size))
+                        ImageSize size;
+                        if (Enum.TryParse(optionValue, true, out size))
                         {
                             options.Size = size;
                             success = true;

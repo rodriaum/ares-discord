@@ -5,6 +5,7 @@
  */
 
 using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Models.Data;
 using Ares.Common.Models.Data.Chat.Model;
 using Ares.Common.Objects;
@@ -98,7 +99,21 @@ public class SetupCommand
         if (requestType != null)
             embed.WithFooter($"Modelos {requestType}");
 
-        ConcurrentBag<ChatModel>? models = await _chatModelService!.GetAllModels();
+
+        ApiResult<ConcurrentBag<ChatModel>>? modelsResult = await _chatModelService!.GetAllModels();
+
+        if (modelsResult == null || !modelsResult.Success)
+        {
+            await message.ModifyAsync(msg =>
+                msg.Embed = embed
+                    .WithDescription("Não foi possível acessar as informações dos modelos.")
+                    .WithColor(Color.Red)
+                    .Build()
+            );
+            return;
+        }
+
+        ConcurrentBag<ChatModel>? models = modelsResult.Data;
 
         if (models == null || !models.Any())
         {

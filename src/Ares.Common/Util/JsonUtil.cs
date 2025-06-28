@@ -133,19 +133,20 @@ public static class JsonUtil
         }
     }
 
-    public static async Task<T?> StringToObjectAsync<T>(string jsonString)
+    public static async Task<T?> StringToObjectAsync<T>(string jsonString, JsonSerializerOptions? serializerOptions = null)
     {
         try
         {
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonString));
-            return await JsonSerializer.DeserializeAsync<T>(stream);
+            return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions);
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to deserialize string to object.", severity: Severity.Error, extra: ex.Message);
+            AresLogger.Log("JsonUtil", "Failed to deserialize string to object.", severity: Severity.Error, extra: ex.ToString());
             return default;
         }
     }
+
 
     public static async Task<T?> BytesToObjectAsync<T>(byte[] bytes)
     {

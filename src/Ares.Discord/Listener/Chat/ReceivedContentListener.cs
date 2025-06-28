@@ -5,6 +5,7 @@
  */
 
 using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Models.Chat;
 using Ares.Common.Models.Chat.Historic;
 using Ares.Common.Models.Chat.Image;
@@ -74,51 +75,51 @@ public class ReceivedContentListener
                     return;
                 }
 
-                Guild? guild = await _guildService!.GetGuild(socketGuild.Id);
-                if (guild == null)
+                ApiResult<Guild>? guildResult = await _guildService!.GetGuild(socketGuild.Id);
+                if (guildResult == null || !guildResult.Success || guildResult.Data == null)
                     return;
+                Guild guild = guildResult.Data;
 
-                User? user = await _userService!.GetUser(iuser.Id, useCache: true);
-                if (user == null)
+                ApiResult<User>? userResult = await _userService!.GetUser(iuser.Id, useCache: true);
+                if (userResult == null || !userResult.Success || userResult.Data == null)
                     return;
+                User user = userResult.Data;
 
-                bool? hasActiveConversation = await _userService!.HasActiveConversation(user.Id, guild.Id, channelId: channel.Id);
-
-                if (hasActiveConversation == null)
+                ApiResult<bool>? hasActiveConversationResult = await _userService!.HasActiveConversation(user.Id, guild.Id, channelId: channel.Id);
+                if (hasActiveConversationResult == null || !hasActiveConversationResult.Success)
                 {
                     await channel.SendMessageAsync(AppConstants.UnableGetMember);
                     return;
                 }
+                bool hasActiveConversation = hasActiveConversationResult.Data;
 
-                // Check if the channel is in the correct category and the user has an active conversation
-                // Alert: This code must be right here, if you move it to another place there may be problems.
-                if (!(channel.CategoryId.Equals(guild.Preferences?.ChatsCategoryId) && hasActiveConversation.Value))
+                if (!(channel.CategoryId.Equals(guild.Preferences?.ChatsCategoryId) && hasActiveConversation))
                     return;
 
-                // Check if the channel belongs to the user
                 if (!channel.Name.Contains(iuser.GlobalName.ToLower()))
                     return;
 
                 EmbedBuilder embed = CreateInitialEmbed(guild);
                 RestUserMessage botMessage = await channel.SendMessageAsync(embed: embed.Build());
 
-                UserChatInfo? info = await _userService.GetChatInfoByChannel(user.Id, guild.Id, channel.Id);
-                if (info == null)
+                ApiResult<UserChatInfo>? infoResult = await _userService.GetChatInfoByChannel(user.Id, guild.Id, channel.Id);
+                if (infoResult == null || !infoResult.Success || infoResult.Data == null)
                 {
                     await ModifyMessageWithError(botMessage, embed, Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $" ({nameof(MessageReceivedHandler)})");
                     return;
                 }
+                UserChatInfo info = infoResult.Data;
 
-                ChatModel? model = await _userService.GetLastModel(user.Id, guild.Id, channelId: channel.Id);
-                if (model == null)
+                ApiResult<ChatModel>? modelResult = await _userService.GetLastModel(user.Id, guild.Id, channelId: channel.Id);
+                if (modelResult == null || !modelResult.Success || modelResult.Data == null)
                 {
                     await ModifyMessageWithError(botMessage, embed, Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindLastModel));
                     return;
                 }
+                ChatModel model = modelResult.Data;
 
                 string prompt = message.Content;
 
-                // Future: Compatibility with files, etc.
                 if (string.IsNullOrWhiteSpace(prompt))
                 {
                     await ModifyMessageWithError(
@@ -130,9 +131,10 @@ public class ReceivedContentListener
                 }
 
                 SocketGuildUser guildUser = socketGuild.GetUser(iuser.Id);
-                List<UserChatHistoric>? historics = await _userService!.GetChatHistory(user.Id, guild.Id, channel.Id);
 
-                // Process message based on template type
+                ApiResult<List<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channel.Id);
+                List<UserChatHistoric>? historics = historicsResult != null && historicsResult.Success ? historicsResult.Data : null;
+
                 switch (model.Type)
                 {
                     case ModelType.Chat:
@@ -251,11 +253,22 @@ public class ReceivedContentListener
                     .WithFooter($"{date.Year} - {AppConstants.AppName} | {model.DisplayName}");
             }
 
-            // Atualiza o historico de chat após a geracão.
-            historics = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channelId);
+            ApiResult<List<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channelId);
 
-            // Process pricing information
-            priceEmbed = CreatePriceEmbedForChat(guild, model, historics);
+            if (historicsResult == null || !historicsResult.Success)
+            {
+                embed.WithDescription(result)
+                    .WithColor(Color.Red)
+                    .WithFooter("Não foi possível acessar as informações do servidor atual");
+            }
+            else
+            {
+                // Atualiza o historico de chat após a geracão.
+                historics = historicsResult?.Data;
+
+                // Process pricing information
+                priceEmbed = CreatePriceEmbedForChat(guild, model, historics);
+            }
         }
         else
         {

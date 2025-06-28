@@ -4,6 +4,7 @@
  * Proprietary and confidential
  */
 
+using Ares.Common.DTOs;
 using Ares.Common.Models.Data;
 using Ares.Common.Util;
 using Ares.Discord.Services.Api;
@@ -37,11 +38,12 @@ class GuildListener
 
             await AresLogger.LogAsync("DB", $"Searching in database and caching guild \"{sguild.Id}\" in redis.");
 
-            Guild? guild = await guildService.GetGuild(sguild.Id, useCache: true);
-            if (guild != null) return;
+            ApiResult<Guild>? guildResult = await guildService.GetGuild(sguild.Id, useCache: true);
+            if (guildResult != null && guildResult.Success && guildResult.Data != null) return;
 
             await AresLogger.LogAsync("DB", $"New guild \"{sguild.Id}\" found, it will be saved in the database.");
 
+            // There is no need to handle the return here as it is just to ensure creation/caching.
             await guildService.CreateOrGetGuild(sguild.Id);
         });
 

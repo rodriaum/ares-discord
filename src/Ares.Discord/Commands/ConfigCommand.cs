@@ -4,9 +4,8 @@
  * Proprietary and confidential
  */
 
-using Ares.Common;
 using Ares.Common.Constants;
-using Ares.Common.Manager;
+using Ares.Common.DTOs;
 using Ares.Common.Models.Data;
 using Ares.Common.Models.Preference;
 using Ares.Common.Models.Token;
@@ -73,7 +72,21 @@ public class ConfigCommand
                 return;
             }
 
-            Guild? guild = await guildService.GetGuild(guildId.Value);
+            ApiResult<Guild>? guildResult = await guildService.GetGuild(guildId.Value);
+
+            if (guildResult == null || !guildResult.Success)
+            {
+                await message.ModifyAsync(msg =>
+                    msg.Embed = embed
+                        .WithDescription("Não foi possível acessar as informações do servidor atual.")
+                        .WithColor(Color.Red)
+                        .Build()
+                );
+                return;
+            }
+
+            Guild? guild = guildResult.Data;
+
             const int maxAttempts = 3;
 
             for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
@@ -85,7 +98,22 @@ public class ConfigCommand
                         .Build());
 
                 await Task.Delay(1500);
-                guild = await guildService.CreateOrGetGuild(guildId.Value);
+
+
+                guildResult = await guildService.CreateOrGetGuild(guildId.Value);
+
+                if (guildResult == null || !guildResult.Success)
+                {
+                    await message.ModifyAsync(msg =>
+                        msg.Embed = embed
+                            .WithDescription("Não foi possível acessar as informações do servidor atual.")
+                            .WithColor(Color.Red)
+                            .Build()
+                    );
+                    return;
+                }
+
+                guild = guildResult.Data;
             }
 
             if (guild == null)
@@ -272,12 +300,14 @@ public class ConfigCommand
 
             if (tokenChange)
             {
-                success = await guildService.SaveTokenData(guild.Id, tokenData);
+                ApiResult<bool>? tokenResult = await guildService.SaveTokenData(guild.Id, tokenData);
+                success = tokenResult != null && tokenResult.Success && tokenResult.Data;
             }
 
             if (configChange)
             {
-                success = await guildService.SavePreferenceData(guild.Id, configData);
+                ApiResult<bool>? preferenceResult = await guildService.SavePreferenceData(guild.Id, configData);
+                success = preferenceResult != null && preferenceResult.Success && preferenceResult.Data;
             }
 
             if (success)

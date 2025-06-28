@@ -5,6 +5,7 @@
  */
 
 using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Manager;
 using Ares.Common.Models.Chat.Historic;
 using Ares.Common.Models.Chat.Image;
@@ -224,7 +225,6 @@ public class NeuralService
         ulong channel,
         string prompt)
     {
-        // Validate input parameters first
         if (!ValidateParameters(guild, user, model, prompt, out string errorMessage))
         {
             return (errorMessage, false);
@@ -237,7 +237,6 @@ public class NeuralService
 
         try
         {
-            // Handle different model request types
             if (model.RequestType == ChatRequestType.Local)
             {
                 return await HandleLocalModelRequestAsync(guild, user, model, channel, prompt);
@@ -255,9 +254,6 @@ public class NeuralService
         }
     }
 
-    /// <summary>
-    /// Handles conversation generation using local models via Ollama.
-    /// </summary>
     private static async Task<(string, bool)> HandleLocalModelRequestAsync(
         Guild guild,
         User user,
@@ -265,23 +261,20 @@ public class NeuralService
         ulong channel,
         string prompt)
     {
+        ApiResult<List<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channel);
+        List<UserChatHistoric>? historics = historicsResult != null && historicsResult.Success ? historicsResult.Data : null;
 
-        // Get chat history and info
-        List<UserChatHistoric>? historics = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channel);
-
-        UserChatInfo? info = await _userService.GetChatInfoByChannel(user.Id, guild.Id, channel);
-
-        if (info == null)
+        ApiResult<UserChatInfo>? infoResult = await _userService.GetChatInfoByChannel(user.Id, guild.Id, channel);
+        if (infoResult == null || !infoResult.Success || infoResult.Data == null)
         {
             AresLogger.Log(nameof(HandleLocalModelRequestAsync), "Chat information could not be accessed.", severity: Severity.Error);
             return (Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $" ({nameof(HandleLocalModelRequestAsync)})", false);
         }
+        UserChatInfo info = infoResult.Data;
 
-        // Prepare messages for the API request
-        List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? UserChatHistoric.ToLocal(historics) : new();
-        messages.Add(new(Microsoft.Extensions.AI.ChatRole.User, prompt));
+        List<Microsoft.Extensions.AI.ChatMessage> messages = historics != null ? UserChatHistoric.ToLocal(historics) : new List<Microsoft.Extensions.AI.ChatMessage>();
+        messages.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.User, prompt));
 
-        // Configure the API client
         IChatClient? ollama = Program.OllamaClient;
 
         if (ollama == null)
@@ -299,9 +292,6 @@ public class NeuralService
         return await HandleLocalNonStreamingResponseAsync(guild, user, model, prompt, ollama, chatOptions, info, messages);
     }
 
-    /// <summary>
-    /// Handles conversation generation using remote API models.
-    /// </summary>
     private static async Task<(string, bool)> HandleRemoteModelRequestAsync(
         Guild guild,
         User user,
@@ -323,29 +313,28 @@ public class NeuralService
             return (Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindToken), false);
         }
 
-        // Get chat history and info
-        List<UserChatHistoric>? historics = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channel);
-        UserChatInfo? info = await _userService!.GetChatInfoByChannel(user.Id, guild.Id, channel);
+        ApiResult<List<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channel);
+        List<UserChatHistoric>? historics = historicsResult != null && historicsResult.Success ? historicsResult.Data : null;
 
-        if (info == null)
+        ApiResult<UserChatInfo>? infoResult = await _userService!.GetChatInfoByChannel(user.Id, guild.Id, channel);
+        if (infoResult == null || !infoResult.Success || infoResult.Data == null)
         {
             AresLogger.Log("GenerateConversationAsync", "Chat information could not be accessed.", severity: Severity.Error);
             return (Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $" ({nameof(HandleRemoteModelRequestAsync)})", false);
         }
+        UserChatInfo info = infoResult.Data;
 
-        // Prepare messages for the API request
-        List<OpenAI.Chat.ChatMessage> messages = historics != null ? UserChatHistoric.ToRemote(historics) : new();
+        List<OpenAI.Chat.ChatMessage> messages = historics != null ? UserChatHistoric.ToRemote(historics) : new List<OpenAI.Chat.ChatMessage>();
         messages.Add(new UserChatMessage(prompt));
 
-        // Configure the API client
         OpenAIClientOptions clientOptions = new OpenAIClientOptions
         {
             Endpoint = model.Category.GetEndpoint()
         };
 
-        ChatClient client = new(
+        ChatClient client = new ChatClient(
             model: model.Id,
-            credential: new(modelToken),
+            credential: new ApiKeyCredential(modelToken),
             options: clientOptions
         );
 
@@ -354,9 +343,6 @@ public class NeuralService
         return await HandleRemoteNonStreamingResponseAsync(guild, user, model, prompt, client, chatOptions, info, messages);
     }
 
-    /// <summary>
-    /// Handles non-streaming API responses.
-    /// </summary>
     private static async Task<(string, bool)> HandleRemoteNonStreamingResponseAsync(
         Guild guild,
         User user,
@@ -375,7 +361,6 @@ public class NeuralService
             return (Program.LangManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $" {nameof(HandleRemoteNonStreamingResponseAsync)}", false);
         }
 
-        // Save to history
         UserChatHistoric historic = UserChatHistoric.From(prompt, responseOpenAi: completion)[0];
 
         info.Historics.Add(historic);
@@ -401,9 +386,6 @@ public class NeuralService
         return (result, true);
     }
 
-    /// <summary>
-    /// Handles non-streaming API responses.
-    /// </summary>
     private static async Task<(string, bool)> HandleLocalNonStreamingResponseAsync(
         Guild guild,
         User user,
@@ -422,7 +404,6 @@ public class NeuralService
             return (Program.LangManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $" {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
-        // Save to history
         UserChatHistoric historic = UserChatHistoric.From(prompt, ollamaResponse: response)[0];
 
         info.Historics.Add(historic);
@@ -443,7 +424,6 @@ public class NeuralService
             return (Program.LangManager.GetTranslation(guild, LanguageKeys.InvalidRequest) + $"  {nameof(HandleLocalNonStreamingResponseAsync)}", false);
         }
 
-        // Regular expression to remove everything between <think> and </think>
         string pattern = @"<think>.*?</think>";
         string responseFixed = Regex.Replace(message.Text, pattern, string.Empty, RegexOptions.Singleline);
 
@@ -457,6 +437,52 @@ public class NeuralService
         };
 
         return (result, true);
+    }
+
+    private static async Task<bool> SaveToHistoryAsync(
+        Guild guild,
+        User user,
+        ulong channel,
+        string prompt,
+        List<string>? response = null,
+        string? imageUrl = null,
+        GeneratedImage? imageOpenAi = null,
+        ChatCompletion? responseOpenAi = null,
+        ChatTokenUsage? usage = null)
+    {
+        ApiResult<UserChatInfo>? infoResult = await _userService!.GetChatInfoByChannel(user.Id, guild.Id, channel);
+
+        if (infoResult == null || !infoResult.Success || infoResult.Data == null)
+        {
+            AresLogger.Log(nameof(SaveToHistoryAsync), "It looks like the information could not be accessed.", severity: Severity.Error);
+            return false;
+        }
+
+        UserChatInfo info = infoResult.Data;
+
+        UserChatHistoric historic;
+
+        if (imageOpenAi != null)
+        {
+            historic = UserChatHistoric.From(prompt, imageUrl: imageUrl, imageOpenAi: imageOpenAi)[0];
+        }
+        else if (responseOpenAi != null)
+        {
+            historic = UserChatHistoric.From(prompt, responseOpenAi: responseOpenAi)[0];
+        }
+        else
+        {
+            Common.Models.Chat.ChatTokenUsage? convertedUsage = (usage != null
+                    ? new Common.Models.Chat.ChatTokenUsage(usage.OutputTokenCount, usage.InputTokenCount, usage.TotalTokenCount)
+                    : new Common.Models.Chat.ChatTokenUsage());
+
+            historic = new UserChatHistoric(prompt: prompt, response: response ?? new List<string>(), usage: convertedUsage);
+        }
+
+        info.Historics.Add(historic);
+        await _userService!.UpdateChatInfo(user.Id, guild.Id, info);
+
+        return true;
     }
 
     #endregion
@@ -475,16 +501,16 @@ public class NeuralService
 
         // Dictionary mapping error keys to language keys for error messages
         Dictionary<string, string> errorKeyMapping = new()
-    {
-        { "content_policy_violation", LanguageKeys.ContentPolityViolation },
-        { "rate_limit_exceeded", LanguageKeys.RateLimitExceeded },
-        { "invalid_request", LanguageKeys.InvalidRequest },
-        { "authentication_error", LanguageKeys.AuthenticationError },
-        { "server_error", LanguageKeys.ServerError },
-        { "overloaded_error", LanguageKeys.OverloadedError },
-        { "timeout", LanguageKeys.Timeout },
-        { "model_not_found", LanguageKeys.ModelNotFound }
-    };
+        {
+            { "content_policy_violation", LanguageKeys.ContentPolityViolation },
+            { "rate_limit_exceeded", LanguageKeys.RateLimitExceeded },
+            { "invalid_request", LanguageKeys.InvalidRequest },
+            { "authentication_error", LanguageKeys.AuthenticationError },
+            { "server_error", LanguageKeys.ServerError },
+            { "overloaded_error", LanguageKeys.OverloadedError },
+            { "timeout", LanguageKeys.Timeout },
+            { "model_not_found", LanguageKeys.ModelNotFound }
+        };
 
         // Search for any matching error keys
         foreach (var mapping in errorKeyMapping)
@@ -536,53 +562,6 @@ public class NeuralService
             errorMessage = "There was an internal issue identifying the prompt. Please check if the prompt was provided correctly.";
             return false;
         }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Helper method to save chat or image response to history
-    /// </summary>
-    private static async Task<bool> SaveToHistoryAsync(
-        Guild guild,
-        User user,
-        ulong channel,
-        string prompt,
-        List<string>? response = null,
-        string? imageUrl = null,
-        GeneratedImage? imageOpenAi = null,
-        ChatCompletion? responseOpenAi = null,
-        ChatTokenUsage? usage = null)
-    {
-        UserChatInfo? info = await _userService!.GetChatInfoByChannel(user.Id, guild.Id, channel);
-
-        if (info == null)
-        {
-            AresLogger.Log(nameof(SaveToHistoryAsync), "It looks like the information could not be accessed.", severity: Severity.Error);
-            return false;
-        }
-
-        UserChatHistoric historic;
-
-        if (imageOpenAi != null)
-        {
-            historic = UserChatHistoric.From(prompt, imageUrl: imageUrl, imageOpenAi: imageOpenAi)[0];
-        }
-        else if (responseOpenAi != null)
-        {
-            historic = UserChatHistoric.From(prompt, responseOpenAi: responseOpenAi)[0];
-        }
-        else
-        {
-            Common.Models.Chat.ChatTokenUsage? convertedUsage = (usage != null
-                    ? new Common.Models.Chat.ChatTokenUsage(usage.OutputTokenCount, usage.InputTokenCount, usage.TotalTokenCount)
-                    : new Common.Models.Chat.ChatTokenUsage());
-
-            historic = new UserChatHistoric(prompt: prompt, response: response ?? new(), usage: convertedUsage);
-        }
-
-        info.Historics.Add(historic);
-        await _userService!.UpdateChatInfo(user.Id, guild.Id, info);
 
         return true;
     }

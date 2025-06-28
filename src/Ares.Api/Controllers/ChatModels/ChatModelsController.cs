@@ -16,24 +16,14 @@ public class ChatModelsController : ControllerBase
     private readonly ChatModelRepository _chatModelRepository;
     private readonly ChatModelDataManager _chatModelDataManager;
 
-    /// <summary>
-    /// Initializes a new instance of the ChatModelsController class with required dependencies.
-    /// </summary>
-    /// <param name="chatModelRepository">Repository for chat model operations</param>
-    /// <param name="chatModelDataManager">Manager for chat model data operations</param>
     public ChatModelsController(ChatModelRepository chatModelRepository, ChatModelDataManager chatModelDataManager)
     {
         _chatModelRepository = chatModelRepository;
         _chatModelDataManager = chatModelDataManager;
     }
 
-    /// <summary>
-    /// Creates or retrieves a chat model by ID
-    /// </summary>
-    /// <param name="id">Model ID</param>
-    /// <returns>ChatModel object or error</returns>
     [HttpPost("{id}/create-or-get")]
-    public async Task<ActionResult<ChatModel>> CreateOrGetModel(string id)
+    public async Task<ActionResult<ApiResult<ChatModel>>> CreateOrGetModel(string id)
     {
         try
         {
@@ -41,26 +31,20 @@ public class ChatModelsController : ControllerBase
 
             if (model == null)
             {
-                return StatusCode(500, new { message = "Failed to create or retrieve chat model" });
+                return StatusCode(500, ApiResult<ChatModel>.Fail("Failed to create or retrieve chat model"));
             }
 
-            return Ok(model);
+            return Ok(ApiResult<ChatModel>.Ok(model));
         }
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error creating/getting model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, ApiResult<ChatModel>.Fail("Internal server error"));
         }
     }
 
-    /// <summary>
-    /// Creates or updates a chat model
-    /// </summary>
-    /// <param name="id">Model ID</param>
-    /// <param name="model">Model data to save</param>
-    /// <returns>Updated model or error</returns>
     [HttpPut("{id}")]
-    public async Task<ActionResult<ChatModel>> SaveModel(string id, [FromBody] ChatModel model)
+    public async Task<ActionResult<ApiResult<ChatModel>>> SaveModel(string id, [FromBody] ChatModel model)
     {
         try
         {
@@ -85,14 +69,8 @@ public class ChatModelsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Retrieves a chat model by ID
-    /// </summary>
-    /// <param name="id">Model ID</param>
-    /// <param name="saveInRedis">Whether to save in Redis cache if fetched from database</param>
-    /// <returns>ChatModel object or not found</returns>
     [HttpGet("{id}")]
-    public async Task<ActionResult<ChatModel>> GetModel(string id, [FromQuery] bool saveInRedis = false)
+    public async Task<ActionResult<ApiResult<ChatModel>>> GetModel(string id, [FromQuery] bool saveInRedis = false)
     {
         try
         {
@@ -112,14 +90,8 @@ public class ChatModelsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Retrieves a chat model by nearest matching ID
-    /// </summary>
-    /// <param name="id">Base model ID</param>
-    /// <param name="saveInRedis">Whether to save in Redis cache if fetched from database</param>
-    /// <returns>ChatModel object or not found</returns>
     [HttpGet("{id}/nearest")]
-    public async Task<ActionResult<ChatModel>> GetNearestModel(string id, [FromQuery] bool saveInRedis = false)
+    public async Task<ActionResult<ApiResult<ChatModel>>> GetNearestModel(string id, [FromQuery] bool saveInRedis = false)
     {
         try
         {
@@ -139,15 +111,8 @@ public class ChatModelsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Updates a specific field of a chat model
-    /// </summary>
-    /// <param name="id">Model ID</param>
-    /// <param name="model">Updated model data</param>
-    /// <param name="field">Field name to update</param>
-    /// <returns>Success or error response</returns>
     [HttpPut("{id}/update-field")]
-    public async Task<ActionResult> UpdateModelField(string id, [FromBody] ChatModel model, [FromQuery] string field)
+    public async Task<ActionResult<ApiResult<object>>> UpdateModelField(string id, [FromBody] ChatModel model, [FromQuery] string field)
     {
         try
         {
@@ -177,15 +142,8 @@ public class ChatModelsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Updates multiple fields of a chat model
-    /// </summary>
-    /// <param name="id">Model ID</param>
-    /// <param name="model">Updated model data</param>
-    /// <param name="fields">Comma-separated list of fields to update</param>
-    /// <returns>Success or error response</returns>
     [HttpPut("{id}/update-fields")]
-    public async Task<ActionResult> UpdateModelFields(string id, [FromBody] ChatModel model, [FromQuery] string fields)
+    public async Task<ActionResult<ApiResult<object>>> UpdateModelFields(string id, [FromBody] ChatModel model, [FromQuery] string fields)
     {
         try
         {
@@ -222,18 +180,14 @@ public class ChatModelsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Retrieves all chat models with optional limit
-    /// </summary>
-    /// <param name="limit">Maximum number of models to retrieve (0 for no limit)</param>
-    /// <returns>List of chat models</returns>
     [HttpGet("all")]
-    public async Task<ActionResult<IEnumerable<ChatModel>>> GetAllModels([FromQuery] int limit = 0)
+    public async Task<ActionResult<ApiResult<IEnumerable<ChatModel>>>> GetAllModels([FromQuery] int limit = 0)
     {
         try
         {
             ConcurrentBag<ChatModel> models = await _chatModelRepository.GetAllAsync(limit);
-            return Ok(ApiResult<IEnumerable<ChatModel>>.Ok(models.ToList()));
+            List<ChatModel> modelList = models.ToList();
+            return Ok(ApiResult<IEnumerable<ChatModel>>.Ok(modelList));
         }
         catch (Exception ex)
         {
@@ -242,13 +196,8 @@ public class ChatModelsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Deletes a chat model permanently
-    /// </summary>
-    /// <param name="id">Model ID</param>
-    /// <returns>Success or error response</returns>
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteModel(string id)
+    public async Task<ActionResult<ApiResult<object>>> DeleteModel(string id)
     {
         try
         {
@@ -268,13 +217,8 @@ public class ChatModelsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Removes chat model from cache
-    /// </summary>
-    /// <param name="id">Model ID</param>
-    /// <returns>Success response</returns>
     [HttpDelete("{id}/remove-cache")]
-    public async Task<ActionResult> DeleteModelCache(string id)
+    public async Task<ActionResult<ApiResult<object>>> DeleteModelCache(string id)
     {
         try
         {
@@ -284,17 +228,12 @@ public class ChatModelsController : ControllerBase
         catch (Exception ex)
         {
             await AresLogger.LogAsync("ChatModelsController", $"Error clearing cache for model {id}: {ex.Message}", severity: Severity.Error);
-            return StatusCode(500, ApiResult<ChatModel>.Fail("Internal server error"));
+            return StatusCode(500, ApiResult<object>.Fail("Internal server error"));
         }
     }
 
-    /// <summary>
-    /// Makes chat model data persistent in cache (removes expiration)
-    /// </summary>
-    /// <param name="id">Model ID</param>
-    /// <returns>Success or error response</returns>
     [HttpPost("{id}/persist-cache")]
-    public async Task<ActionResult> PersistModel(string id)
+    public async Task<ActionResult<ApiResult<object>>> PersistModel(string id)
     {
         try
         {

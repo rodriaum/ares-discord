@@ -5,6 +5,7 @@
  */
 
 using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Models.Chat.Historic;
 using Ares.Common.Models.Data;
 using Ares.Common.Objects;
@@ -56,8 +57,15 @@ public class ChatButtonListener
 
                 #region Check if guild is in database
 
+                ApiResult<Guild>? guildResult = await _guildService!.GetGuild(guildId.Value);
 
-                Guild? guild = await _guildService!.GetGuild(guildId.Value);
+                if (guildResult == null || !guildResult.Success)
+                {
+                    await message.ModifyAsync(it => it.Content = "Não foi possível acessar as informações do servidor atual.");
+                    return;
+                }
+
+                Guild? guild = guildResult.Data;
 
                 const int maxAttempts = 3;
 
@@ -65,7 +73,9 @@ public class ChatButtonListener
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    guild = await _guildService!.CreateOrGetGuild(guildId.Value);
+                    ApiResult<Guild>? createResult = await _guildService!.CreateOrGetGuild(guildId.Value);
+                    if (createResult != null && createResult.Success)
+                        guild = createResult.Data;
                 }
 
                 if (guild == null)
@@ -78,13 +88,17 @@ public class ChatButtonListener
 
                 #region Check if user is in database
 
-                User? user = await _userService!.GetUser(args.User.Id, useCache: true);
+                ApiResult<User>? userResult = await _userService!.GetUser(args.User.Id, useCache: true);
+                User? user = (userResult != null && userResult.Success) ? userResult.Data : null;
 
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    user = await _userService.CreateOrGetUser(args.User.Id);
+
+                    ApiResult<User>? createUserResult = await _userService.CreateOrGetUser(args.User.Id);
+                    if (createUserResult != null && createUserResult.Success)
+                        user = createUserResult.Data;
                 }
 
                 if (user == null)
@@ -105,30 +119,32 @@ public class ChatButtonListener
 
                 SocketUser socketUser = args.User;
 
-                if ((!await _userService!.IsChatOwner(user.Id, guild.Id, channel.Id)) ?? false)
+                ApiResult<bool>? isOwnerResult = await _userService!.IsChatOwner(user.Id, guild.Id, channel.Id);
+                if (isOwnerResult == null || !isOwnerResult.Success || !(isOwnerResult.Data))
                 {
                     await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.NotChatOwner));
                     return;
                 }
 
-                if (!await _userService!.ToggleChatStatus(user.Id, guild.Id, channel.Id, false))
+                ApiResult<bool>? toggleResult = await _userService!.ToggleChatStatus(user.Id, guild.Id, channel.Id, false);
+                if (toggleResult == null || !toggleResult.Success || !(toggleResult.Data))
                 {
                     await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (toggle_chat_info)");
                     return;
                 }
 
-                UserChatInfo? info = await _userService.GetChatInfoByChannel(user.Id, guild.Id, channel.Id);
+                ApiResult<UserChatInfo>? infoResult = await _userService.GetChatInfoByChannel(user.Id, guild.Id, channel.Id);
 
-                if (info == null)
+                if (infoResult == null || !infoResult.Success || infoResult.Data == null)
                 {
                     await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (info_null)");
                     return;
                 }
 
-                // Removes the generated conversation snippets as they will no longer be used in that channel.
+                // Remove os snippets gerados pois não serão mais usados nesse canal.
                 await _userService!.RemoveSnippetsByChannel(user.Id, guild.Id, channel.Id);
 
-                AresLogger.Log("Chat", $"Chat \"{info.Id}\" eliminated by \"{user.Id}\"", severity: Severity.Info);
+                AresLogger.Log("Chat", $"Chat \"{infoResult.Data.Id}\" eliminado por \"{user.Id}\"", severity: Severity.Info);
 
                 await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.CloseChat));
 

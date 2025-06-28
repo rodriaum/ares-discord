@@ -5,6 +5,7 @@
  */
 
 using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Models.Chat.Historic;
 using Ares.Common.Models.Data;
 using Ares.Common.Models.Preference;
@@ -66,7 +67,15 @@ public class SelectedChatListener
 
                 #region Check if guild is in database
 
-                Guild? guild = await _guildService!.GetGuild(guildId);
+                ApiResult<Guild>? guildResult = await _guildService!.GetGuild(guildId);
+
+                if (guildResult == null || !guildResult.Success)
+                {
+                    await message.ModifyAsync(it => it.Content = "Não foi possível acessar as informações do servidor atual.");
+                    return;
+                }
+
+                Guild? guild = guildResult.Data;
 
                 const int maxAttempts = 3;
 
@@ -74,7 +83,9 @@ public class SelectedChatListener
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    guild = await _guildService!.CreateOrGetGuild(guildId);
+                    ApiResult<Guild>? createResult = await _guildService!.CreateOrGetGuild(guildId);
+                    if (createResult != null && createResult.Success)
+                        guild = createResult.Data;
                 }
 
                 if (guild == null)
@@ -87,13 +98,16 @@ public class SelectedChatListener
 
                 #region Check if user is in database
 
-                User? user = await _userService!.GetUser(args.User.Id, useCache: true);
+                ApiResult<User>? userResult = await _userService!.GetUser(args.User.Id, useCache: true);
+                User? user = (userResult != null && userResult.Success) ? userResult.Data : null;
 
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
                     await Task.Delay(1500);
-                    user = await _userService!.CreateOrGetUser(args.User.Id);
+                    ApiResult<User>? createUserResult = await _userService!.CreateOrGetUser(args.User.Id);
+                    if (createUserResult != null && createUserResult.Success)
+                        user = createUserResult.Data;
                 }
 
                 if (user == null)
@@ -144,24 +158,26 @@ public class SelectedChatListener
                     return;
                 }
 
-                bool? hasActiveConversation = await _userService!.HasActiveConversation(user.Id, guildId);
+                ApiResult<bool>? hasActiveConversationResult = await _userService!.HasActiveConversation(user.Id, guildId);
 
-                if (hasActiveConversation == null)
+                if (hasActiveConversationResult == null || !hasActiveConversationResult.Success)
                 {
                     await message.ModifyAsync(it => it.Content = "Ops! Não foi possível verificar se você tem uma conversa ativa.");
                     return;
                 }
 
-                if (hasActiveConversation.Value)
+                if (hasActiveConversationResult.Data)
                 {
                     bool isPremium = member.Roles.Contains(exclusiveRole);
-                    int? conversations = await _userService.GetConversationCount(user.Id, guildId, activeOnly: true);
+                    ApiResult<int>? conversationsResult = await _userService.GetConversationCount(user.Id, guildId, activeOnly: true);
 
-                    if (conversations == null)
+                    if (conversationsResult == null || !conversationsResult.Success)
                     {
                         await message.ModifyAsync(it => it.Content = "Ops! Não foi possível verificar o número de conversas ativas.");
                         return;
                     }
+
+                    int conversations = conversationsResult.Data;
 
                     if (!isPremium)
                     {
@@ -181,13 +197,15 @@ public class SelectedChatListener
                     }
                 }
 
-                ChatModel? model = await _chatModelService!.GetModel(args.Data.Values.First(), saveInRedis: true);
+                ApiResult<ChatModel>? modelResult = await _chatModelService!.GetModel(args.Data.Values.First(), saveInRedis: true);
 
-                if (model == null)
+                if (modelResult == null || !modelResult.Success || modelResult.Data == null)
                 {
                     await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.ModelNotFound));
                     return;
                 }
+
+                ChatModel model = modelResult.Data;
 
                 if (model.Dev && !Program.IsDeveloper(socketUser.Id))
                 {
@@ -217,7 +235,6 @@ public class SelectedChatListener
                         active: true,
                         channelId: channel.Id,
                         modelId: model.Id,
-                        // Warn: If this is not an type of image this need to be null, to another systems run correctly.
                         imageGenOptions: (model.Type == ModelType.Image ? new() : null)
                     );
 
@@ -232,8 +249,8 @@ public class SelectedChatListener
                 UserChatHistoric historic = new UserChatHistoric(system: helloMessage);
                 info.Historics.Add(historic);
 
-//#error Erro ao tentar converter resultado de "message" para string.
-                if (!await _userService.CreateChatData(user.Id, guildId, info))
+                ApiResult<bool>? createChatResult = await _userService.CreateChatData(user.Id, guildId, info);
+                if (createChatResult == null || !createChatResult.Success || !createChatResult.Data)
                 {
                     await channel.DeleteAsync();
                     await Task.Delay(500);

@@ -5,6 +5,7 @@
  */
 
 using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Models.Chat.Historic;
 using Ares.Common.Models.Data;
 using Ares.Common.Objects;
@@ -59,11 +60,14 @@ public class ChatCodeSnippetListener
 
                 int maxAttempts = 3;
 
-                User? user = await _userService!.GetUser(args.User.Id, useCache: true);
+                ApiResult<User>? userResult = await _userService!.GetUser(args.User.Id, useCache: true);
+                User? user = (userResult != null && userResult.Success) ? userResult.Data : null;
 
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
-                    user = await _userService!.CreateOrGetUser(args.User.Id);
+                    ApiResult<User>? createUserResult = await _userService!.CreateOrGetUser(args.User.Id);
+                    if (createUserResult != null && createUserResult.Success)
+                        user = createUserResult.Data;
                 }
 
                 if (user == null)
@@ -76,13 +80,14 @@ public class ChatCodeSnippetListener
 
                 string id = args.Data.Values.FirstOrDefault("");
 
-                UserChatSnippet? snippet = await _userService!.GetSnippetById(user.Id, guildId, id);
-
-                if (snippet == null)
+                ApiResult<UserChatSnippet>? snippetResult = await _userService!.GetSnippetById(user.Id, guildId, id);
+                if (snippetResult == null || !snippetResult.Success || snippetResult.Data == null)
                 {
                     await args.RespondAsync(ephemeral: true, text: "Snippet não encontrado ou não pode ser acessado por você.");
                     return;
                 }
+
+                UserChatSnippet snippet = snippetResult.Data;
 
                 string code = StringUtil.GenerateExclusiveCode(length: 4);
 

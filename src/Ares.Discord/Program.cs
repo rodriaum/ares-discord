@@ -5,6 +5,7 @@
  */
 
 using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Manager;
 using Ares.Common.Objects;
 using Ares.Common.Util;
@@ -85,6 +86,11 @@ public class Program
     public static ChatModelService? ChatModelService { get; private set; }
 
     /// <summary>
+    /// Service for interacting with system data.
+    /// </summary>
+    public static SystemService? SystemService { get; private set; }
+
+    /// <summary>
     /// Base URL for API requests.
     /// </summary>
     public static string? ApiBaseUrl { get; private set; }
@@ -125,6 +131,24 @@ public class Program
 
         // Initialize services
         InitializeServices();
+
+        if (SystemService == null)
+        {
+            await AresLogger.LogAsync("Status", "System service is not initialized.", severity: Severity.Error);
+            return;
+        }
+
+        ApiResult<string>? systemInfoResult = await SystemService.GetSystemStatus();
+
+        if (systemInfoResult == null || !systemInfoResult.Success)
+        {
+            await AresLogger.LogAsync("Status", "System information is not available. Please check the API connection.", severity: Severity.Error);
+            return;
+        }
+
+        AresLogger.Log("Status", $"API System information: {systemInfoResult.Message}", severity: Severity.Info);
+
+        // Initialize managers
         await LangManager.Init();
 
         // Configure and start Discord client
@@ -157,6 +181,7 @@ public class Program
         UserService = new UserService(HttpClient, ApiBaseUrl!);
         GuildService = new GuildService(HttpClient, ApiBaseUrl!);
         ChatModelService = new ChatModelService(HttpClient, ApiBaseUrl!);
+        SystemService = new SystemService(HttpClient, ApiBaseUrl!);
 
         Uri ollamaUri = new Uri($"http://{Env.GetString("OLLAMA_HOST")}:{Env.GetInt("OLLAMA_PORT")}");
         OllamaClient = new OllamaChatClient(ollamaUri);

@@ -1,4 +1,5 @@
 ﻿using Ares.Common.Constants;
+using Ares.Common.DTOs;
 using Ares.Common.Models.Data;
 using Ares.Common.Models.Data.Chat.Model;
 using Ares.Common.Objects;
@@ -58,8 +59,9 @@ public class SlashCommandManager
         GuildService? guildService = Program.GuildService;
         if (guildService == null) return;
 
-        Guild? guild = await guildService.GetGuild(guildId);
-        if (guild == null) return;
+        ApiResult<Guild>? guildResult = await guildService.GetGuild(guildId);
+        if (guildResult == null || !guildResult.Success || guildResult.Data == null) return;
+        Guild guild = guildResult.Data;
 
         SocketGuild? socketGuild = _client.GetGuild(guildId);
         if (socketGuild == null) return;
