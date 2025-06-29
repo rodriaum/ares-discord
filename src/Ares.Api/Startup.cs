@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 using Serilog;
 
 namespace Ares.Api;
@@ -63,11 +64,11 @@ public class Startup
             IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
             return new PostgresCredentials
             {
-                Host = configuration["DatabaseSettings:Postgres:Host"],
-                Port = int.Parse(configuration["DatabaseSettings:Postgres:Port"] ?? "5432"),
-                User = configuration["DatabaseSettings:Postgres:User"],
-                Password = configuration["DatabaseSettings:Postgres:Password"],
-                Database = configuration["DatabaseSettings:Postgres:Database"]
+                Host = Environment.GetEnvironmentVariable("POSTGRES_HOST"),
+                Port = int.Parse(Environment.GetEnvironmentVariable("POSTGRES_PORT")),
+                User = Environment.GetEnvironmentVariable("POSTGRES_USER"),
+                Password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD"),
+                Database = Environment.GetEnvironmentVariable("POSTGRES_DATABASE")
             };
         });
 
@@ -77,9 +78,9 @@ public class Startup
             IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
             return new RedisCredentials
             {
-                Host = configuration["DatabaseSettings:Redis:Host"],
-                Port = int.Parse(configuration["DatabaseSettings:Redis:Port"] ?? "6379"),
-                Password = configuration["DatabaseSettings:Redis:Password"]
+                Host = Environment.GetEnvironmentVariable("REDIS_HOST"),
+                Port = int.Parse(Environment.GetEnvironmentVariable("REDIS_PORT")),
+                Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD")
             };
         });
     }
@@ -117,12 +118,12 @@ public class Startup
     /// </summary>
     private void ConfigureCoreServices(IServiceCollection services)
     {
-    services.AddSingleton<CoreService>();
-    services.AddHostedService<CoreHostedService>();
-    // Data Managers
-    services.AddScoped<GuildDataManager>();
-    services.AddScoped<UserDataManager>();
-    services.AddScoped<ChatModelDataManager>();
+        services.AddSingleton<CoreService>();
+        services.AddHostedService<CoreHostedService>();
+        // Data Managers
+        services.AddScoped<GuildDataManager>();
+        services.AddScoped<UserDataManager>();
+        services.AddScoped<ChatModelDataManager>();
     }
 
     #endregion
@@ -333,6 +334,7 @@ public class Startup
         ConfigureCorsMiddleware(app);
         ConfigureAuthentication(app);
         ConfigureResponseOptimization(app);
+        ConfigureMetrics(app);
         ConfigureEndpoints(app);
     }
 
@@ -435,6 +437,14 @@ public class Startup
     }
 
     /// <summary>
+    /// Configures Prometheus metrics middleware
+    /// </summary>
+    private void ConfigureMetrics(IApplicationBuilder app)
+    {
+        app.UseHttpMetrics();
+    }
+
+    /// <summary>
     /// Configures application endpoints
     /// </summary>
     private void ConfigureEndpoints(IApplicationBuilder app)
@@ -443,6 +453,7 @@ public class Startup
         {
             endpoints.MapControllers();
             endpoints.MapHealthChecks("/health");
+            endpoints.MapMetrics();
         });
     }
 
