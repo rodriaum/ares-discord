@@ -14,6 +14,7 @@ using Npgsql;
 using NpgsqlTypes;
 using System.Collections.Concurrent;
 using System.Data;
+using System.Text;
 using System.Text.Json;
 
 namespace Ares.Common.Repository;
@@ -64,7 +65,7 @@ public class ChatModelRepository
     /// </summary>
     public async void CreateTableAndIndexesAsync()
     {
-        await AresLogger.LogAsync("Repo: Chat Models", "Creating table and indexes in the database...");
+        await AresLogger.LogAsync("Repo: Chat Models", "Checking if table exists in the database...");
 
         if (!_postgresDatabase.IsConnected())
         {
@@ -74,26 +75,62 @@ public class ChatModelRepository
 
         try
         {
-            string[] indexSqls = {
-                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_id ON {TableName} (id)",
-                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_updated_at ON {TableName} (updated_at)",
-                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_data_gin ON {TableName} USING GIN (data)"
-            };
-
-            foreach (string indexSql in indexSqls)
+            lock (AppCommon.DatabaseLockObject)
             {
-                try
+                string checkTableSql = $@"SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = '{TableName}'
+                );";
+
+                bool exists = _postgresDatabase.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
+
+                if (exists)
                 {
-                    await _postgresDatabase.ExecuteNonQueryAsync(indexSql);
+                    AresLogger.Log("Repo: Chat Models", $"Table '{TableName}' already exists in the database.");
                 }
-                catch (Exception ex)
+                else
                 {
-                    // Index might already exist, log but continue
-                    await AresLogger.LogAsync("IndexCreation", $"Index creation info: {ex.Message}");
+                    AresLogger.Log("Repo: Chat Models", $"Table '{TableName}' not found, creating...");
+
+                    StringBuilder sb = new StringBuilder();
+
+                    sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{TableName}"" (");
+                    sb.AppendLine(@"""id"" VARCHAR(255) NOT NULL,");
+                    sb.AppendLine(@"""data"" JSONB NOT NULL,");
+                    sb.AppendLine(@"""created_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
+                    sb.AppendLine(@"""updated_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
+                    sb.AppendLine(@"PRIMARY KEY (""id"")");
+                    sb.AppendLine(@");");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{TableName}"".""id"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{TableName}"".""data"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{TableName}"".""created_at"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{TableName}"".""updated_at"" IS '';");
+
+                    _postgresDatabase.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+
+                    AresLogger.Log("Repo: Chat Models", $"Table '{TableName}' created successfully.");
+                }
+
+                string[] indexSqls = {
+                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_id ON {TableName} (id)",
+                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_updated_at ON {TableName} (updated_at)",
+                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_data_gin ON {TableName} USING GIN (data)"
+                };
+
+                foreach (string indexSql in indexSqls)
+                {
+                    try
+                    {
+                        _postgresDatabase.ExecuteNonQueryAsync(indexSql).GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
+                    }
                 }
             }
 
-            await AresLogger.LogAsync("Repo: Chat Models", "Table and indexes created/verified.");
+            await AresLogger.LogAsync("Repo: Chat Models", "Table and indexes checked/created.");
         }
         catch (Exception ex)
         {

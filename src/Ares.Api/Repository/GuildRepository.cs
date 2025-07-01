@@ -13,6 +13,7 @@ using Ares.Common.Util;
 using Npgsql;
 using System.Collections.Concurrent;
 using System.Data;
+using System.Text;
 using System.Text.Json;
 
 namespace Ares.Common.Repository;
@@ -65,7 +66,7 @@ public class GuildRepository
     /// </summary>
     public async void CreateTableAndIndexesAsync()
     {
-        await AresLogger.LogAsync("Repo: Guild", "Creating table and indexes in the database...");
+        await AresLogger.LogAsync("Repo: Guild", "Checking if table exists in the database...");
 
         if (!_database.IsConnected())
         {
@@ -75,13 +76,61 @@ public class GuildRepository
 
         try
         {
-            string createIndexSql = $@"
-                CREATE INDEX IF NOT EXISTS idx_{GuildsTable}_id ON {GuildsTable} (id);
-                CREATE INDEX IF NOT EXISTS idx_{GuildsTable}_data_gin ON {GuildsTable} USING GIN (data);";
+            lock (AppCommon.DatabaseLockObject)
+            {
+                string checkTableSql = $@"SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = '{GuildsTable}'
+                );";
 
-            await _database.ExecuteNonQueryAsync(createIndexSql);
+                bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
 
-            await AresLogger.LogAsync("Repo: Guild", "Table and indexes created.");
+                if (exists)
+                {
+                    AresLogger.Log("Repo: Guild", $"Table '{GuildsTable}' already exists in the database.");
+                }
+                else
+                {
+                    AresLogger.Log("Repo: Guild", $"Table '{GuildsTable}' not found, creating...");
+
+                    StringBuilder sb = new StringBuilder();
+
+                    sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{GuildsTable}"" (");
+                    sb.AppendLine(@"""id"" BIGINT NOT NULL,");
+                    sb.AppendLine(@"""data"" JSONB NOT NULL,");
+                    sb.AppendLine(@"""created_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
+                    sb.AppendLine(@"""updated_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
+                    sb.AppendLine(@"PRIMARY KEY (""id"")");
+                    sb.AppendLine(@");");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{GuildsTable}"".""id"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{GuildsTable}"".""data"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{GuildsTable}"".""created_at"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{GuildsTable}"".""updated_at"" IS '';");
+
+                    _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+
+                    AresLogger.Log("Repo: Guild", $"Table '{GuildsTable}' created successfully.");
+                }
+
+                string[] indexSqls = {
+                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{GuildsTable}_id ON {GuildsTable} (id)",
+                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{GuildsTable}_data_gin ON {GuildsTable} USING GIN (data)"
+                };
+
+                foreach (string indexSql in indexSqls)
+                {
+                    try
+                    {
+                        _database.ExecuteNonQueryAsync(indexSql).GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
+                    }
+                }
+            }
+
+            await AresLogger.LogAsync("Repo: Guild", "Table and indexes checked/created.");
         }
         catch (Exception ex)
         {

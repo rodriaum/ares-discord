@@ -13,6 +13,7 @@ using Ares.Common.Util;
 using Npgsql;
 using System.Collections.Concurrent;
 using System.Data;
+using System.Text;
 using System.Text.Json;
 
 namespace Ares.Common.Repository;
@@ -61,11 +62,11 @@ public class UserRepository
     }
 
     /// <summary>
-    /// Creates the users table and indexes to improve query performance.
+    /// Creates the users table and indexes if they don't exist.
     /// </summary>
     public async void CreateTableAndIndexesAsync()
     {
-        await AresLogger.LogAsync("Repo: User", "Creating table and indexes in the database...");
+        await AresLogger.LogAsync("Repo: User", "Checking if table exists in the database...");
 
         if (!_database.IsConnected())
         {
@@ -75,13 +76,61 @@ public class UserRepository
 
         try
         {
-            string createIndexSql = $@"
-                CREATE INDEX IF NOT EXISTS idx_{UsersTable}_id ON {UsersTable} (id);
-                CREATE INDEX IF NOT EXISTS idx_{UsersTable}_data_gin ON {UsersTable} USING GIN (data);";
+            lock (AppCommon.DatabaseLockObject)
+            {
+                string checkTableSql = $@"SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = '{UsersTable}'
+                );";
 
-            await _database.ExecuteNonQueryAsync(createIndexSql);
+                bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
 
-            await AresLogger.LogAsync("Repo: User", "Table and indexes created.");
+                if (exists)
+                {
+                    AresLogger.Log("Repo: User", $"Table '{UsersTable}' already exists in the database.");
+                }
+                else
+                {
+                    AresLogger.Log("Repo: User", $"Table '{UsersTable}' not found, creating...");
+
+                    StringBuilder sb = new StringBuilder();
+
+                    sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{UsersTable}"" (");
+                    sb.AppendLine(@"""id"" BIGINT NOT NULL,");
+                    sb.AppendLine(@"""data"" JSONB NOT NULL,");
+                    sb.AppendLine(@"""created_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
+                    sb.AppendLine(@"""updated_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
+                    sb.AppendLine(@"PRIMARY KEY (""id"")");
+                    sb.AppendLine(@");");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{UsersTable}"".""id"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{UsersTable}"".""data"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{UsersTable}"".""created_at"" IS '';");
+                    sb.AppendLine($@"COMMENT ON COLUMN ""{UsersTable}"".""updated_at"" IS '';");
+
+                    _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+
+                    AresLogger.Log("Repo: User", $"Table '{UsersTable}' created successfully.");
+                }
+
+                string[] indexSqls = {
+                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UsersTable}_id ON {UsersTable} (id)",
+                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UsersTable}_data_gin ON {UsersTable} USING GIN (data)"
+                };
+
+                foreach (string indexSql in indexSqls)
+                {
+                    try
+                    {
+                        _database.ExecuteNonQueryAsync(indexSql).GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
+                    }
+                }
+            }
+
+            await AresLogger.LogAsync("Repo: User", "Table and indexes checked/created.");
         }
         catch (Exception ex)
         {
