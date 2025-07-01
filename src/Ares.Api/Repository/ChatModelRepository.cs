@@ -55,15 +55,12 @@ public class ChatModelRepository
     {
         _postgresDatabase = postgresDatabase;
         _redisDatabase = redisDatabase;
-
-        // Create table and indexes to optimize queries.
-        CreateTableAndIndexesAsync();
     }
 
     /// <summary>
     /// Creates the chat_models table and indexes to improve query performance.
     /// </summary>
-    public async void CreateTableAndIndexesAsync()
+    public async Task CreateTableAndIndexesAsync()
     {
         await AresLogger.LogAsync("Repo: Chat Models", "Checking if table exists in the database...");
 

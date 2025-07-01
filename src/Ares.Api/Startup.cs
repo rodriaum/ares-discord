@@ -65,7 +65,7 @@ public class Startup
             return new PostgresCredentials
             {
                 Host = Environment.GetEnvironmentVariable("POSTGRES_HOST"),
-                Port = int.Parse(Environment.GetEnvironmentVariable("POSTGRES_PORT")),
+                Port = int.Parse(Environment.GetEnvironmentVariable("POSTGRES_PORT") ?? "0"),
                 User = Environment.GetEnvironmentVariable("POSTGRES_USER"),
                 Password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD"),
                 Database = Environment.GetEnvironmentVariable("POSTGRES_DATABASE")
@@ -79,7 +79,7 @@ public class Startup
             return new RedisCredentials
             {
                 Host = Environment.GetEnvironmentVariable("REDIS_HOST"),
-                Port = int.Parse(Environment.GetEnvironmentVariable("REDIS_PORT")),
+                Port = int.Parse(Environment.GetEnvironmentVariable("REDIS_PORT") ?? "0"),
                 Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD")
             };
         });
@@ -118,7 +118,7 @@ public class Startup
     /// </summary>
     private void ConfigureCoreServices(IServiceCollection services)
     {
-        services.AddSingleton<CoreService>();
+        services.AddScoped<CoreService>();
         services.AddHostedService<CoreHostedService>();
         // Data Managers
         services.AddScoped<GuildDataManager>();

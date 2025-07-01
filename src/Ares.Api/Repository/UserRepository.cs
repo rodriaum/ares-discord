@@ -56,15 +56,12 @@ public class UserRepository
     {
         _database = postgresDatabase;
         _redisDatabase = redisDatabase;
-
-        // Create table and indexes to optimize queries.
-        CreateTableAndIndexesAsync();
     }
 
     /// <summary>
     /// Creates the users table and indexes if they don't exist.
     /// </summary>
-    public async void CreateTableAndIndexesAsync()
+    public async Task CreateTableAndIndexesAsync()
     {
         await AresLogger.LogAsync("Repo: User", "Checking if table exists in the database...");
 
