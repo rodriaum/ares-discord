@@ -7,8 +7,11 @@
 using Ares.Common.Constants;
 using Ares.Common.Database.Postgres;
 using Ares.Common.Database.Redis;
+using Ares.Common.Models.Chat.Price;
 using Ares.Common.Models.Data;
+using Ares.Common.Models.Data.Chat.Model;
 using Ares.Common.Objects;
+using Ares.Common.Objects.Image;
 using Ares.Common.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -42,7 +45,9 @@ public class ChatModelRepository
     /// <summary>
     /// Table name for chat models in PostgreSQL.
     /// </summary>
-    private const string TableName = "chat_models";
+    private const string ModelsTable = "chat_models";
+    private const string ModelPricesTable = "chat_model_prices";
+    private const string ModelPriceDetailsTable = "chat_model_price_details";
 
     #region Constructors and initialization methods.
 
@@ -74,57 +79,9 @@ public class ChatModelRepository
         {
             lock (AppCommon.DatabaseLockObject)
             {
-                string checkTableSql = $@"SELECT EXISTS (
-                    SELECT 1 FROM information_schema.tables 
-                    WHERE table_schema = 'public' AND table_name = '{TableName}'
-                );";
-
-                bool exists = _postgresDatabase.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
-
-                if (exists)
-                {
-                    AresLogger.Log("Repo: Chat Models", $"Table '{TableName}' already exists in the database.");
-                }
-                else
-                {
-                    AresLogger.Log("Repo: Chat Models", $"Table '{TableName}' not found, creating...");
-
-                    StringBuilder sb = new StringBuilder();
-
-                    sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{TableName}"" (");
-                    sb.AppendLine(@"""id"" VARCHAR(255) NOT NULL,");
-                    sb.AppendLine(@"""data"" JSONB NOT NULL,");
-                    sb.AppendLine(@"""created_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
-                    sb.AppendLine(@"""updated_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
-                    sb.AppendLine(@"PRIMARY KEY (""id"")");
-                    sb.AppendLine(@");");
-                    sb.AppendLine($@"COMMENT ON COLUMN ""{TableName}"".""id"" IS '';");
-                    sb.AppendLine($@"COMMENT ON COLUMN ""{TableName}"".""data"" IS '';");
-                    sb.AppendLine($@"COMMENT ON COLUMN ""{TableName}"".""created_at"" IS '';");
-                    sb.AppendLine($@"COMMENT ON COLUMN ""{TableName}"".""updated_at"" IS '';");
-
-                    _postgresDatabase.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
-
-                    AresLogger.Log("Repo: Chat Models", $"Table '{TableName}' created successfully.");
-                }
-
-                string[] indexSqls = {
-                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_id ON {TableName} (id)",
-                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_updated_at ON {TableName} (updated_at)",
-                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{TableName}_data_gin ON {TableName} USING GIN (data)"
-                };
-
-                foreach (string indexSql in indexSqls)
-                {
-                    try
-                    {
-                        _postgresDatabase.ExecuteNonQueryAsync(indexSql).GetAwaiter().GetResult();
-                    }
-                    catch (Exception ex)
-                    {
-                        AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
-                    }
-                }
+                CreateModelsTable();
+                CreateModelPricesTable();
+                CreateModelPriceDetailsTable();
             }
 
             await AresLogger.LogAsync("Repo: Chat Models", "Table and indexes checked/created.");
@@ -132,6 +89,91 @@ public class ChatModelRepository
         catch (Exception ex)
         {
             await AresLogger.LogAsync("TableCreationError", $"Error creating table and indexes: {ex.Message}", severity: Severity.Error);
+        }
+    }
+
+    private void CreateModelsTable()
+    {
+        string checkTableSql = $@"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{ModelsTable}');";
+        if (_postgresDatabase.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult())
+        {
+            AresLogger.Log("Repo: Chat Models", $"Table '{ModelsTable}' already exists.");
+            return;
+        }
+
+        AresLogger.Log("Repo: Chat Models", $"Table '{ModelsTable}' not found, creating...");
+        var sb = new StringBuilder();
+        sb.AppendLine($@"CREATE TABLE ""{ModelsTable}"" (");
+        sb.AppendLine(@"""id"" VARCHAR(255) PRIMARY KEY,");
+        sb.AppendLine(@"""display_name"" VARCHAR(255) NOT NULL,");
+        sb.AppendLine(@"""description_key"" TEXT,");
+        sb.AppendLine(@"""request_type"" VARCHAR(50) NOT NULL,");
+        sb.AppendLine(@"""category"" VARCHAR(50) NOT NULL,");
+        sb.AppendLine(@"""type"" VARCHAR(50) NOT NULL,");
+        sb.AppendLine(@"""exclusive"" BOOLEAN NOT NULL DEFAULT FALSE,");
+        sb.AppendLine(@"""available"" BOOLEAN NOT NULL DEFAULT TRUE,");
+        sb.AppendLine(@"""dev"" BOOLEAN NOT NULL DEFAULT FALSE,");
+        sb.AppendLine(@"""created_at"" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,");
+        sb.AppendLine(@"""updated_at"" TIMESTAMP DEFAULT CURRENT_TIMESTAMP);");
+        _postgresDatabase.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+
+        string[] indexSqls = {
+            $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{ModelsTable}_category ON {ModelsTable} (category)",
+            $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{ModelsTable}_type ON {ModelsTable} (type)"
+        };
+        foreach (var sql in indexSqls) TryExecuteNonQuery(sql);
+    }
+
+    private void CreateModelPricesTable()
+    {
+        string checkTableSql = $@"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{ModelPricesTable}');";
+        if (_postgresDatabase.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult())
+        {
+            AresLogger.Log("Repo: Chat Models", $"Table '{ModelPricesTable}' already exists.");
+            return;
+        }
+
+        AresLogger.Log("Repo: Chat Models", $"Table '{ModelPricesTable}' not found, creating...");
+        var sb = new StringBuilder();
+        sb.AppendLine($@"CREATE TABLE ""{ModelPricesTable}"" (");
+        sb.AppendLine(@"""model_id"" VARCHAR(255) PRIMARY KEY,");
+        sb.AppendLine(@"""output_price_token"" DECIMAL(18, 10) NOT NULL,");
+        sb.AppendLine(@"""input_price_token"" DECIMAL(18, 10) NOT NULL,");
+        sb.AppendLine(@"""input_price_per_image"" DECIMAL(18, 10) NOT NULL,");
+        sb.AppendLine($@"FOREIGN KEY (""model_id"") REFERENCES ""{ModelsTable}""(""id"") ON DELETE CASCADE);");
+        _postgresDatabase.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+    }
+
+    private void CreateModelPriceDetailsTable()
+    {
+        string checkTableSql = $@"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{ModelPriceDetailsTable}');";
+        if (_postgresDatabase.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult())
+        {
+            AresLogger.Log("Repo: Chat Models", $"Table '{ModelPriceDetailsTable}' already exists.");
+            return;
+        }
+
+        AresLogger.Log("Repo: Chat Models", $"Table '{ModelPriceDetailsTable}' not found, creating...");
+        var sb = new StringBuilder();
+        sb.AppendLine($@"CREATE TABLE ""{ModelPriceDetailsTable}"" (");
+        sb.AppendLine(@"""id"" SERIAL PRIMARY KEY,");
+        sb.AppendLine(@"""model_id"" VARCHAR(255) NOT NULL,");
+        sb.AppendLine(@"""size"" INT NOT NULL,");
+        sb.AppendLine(@"""price"" DECIMAL(18, 10) NOT NULL,");
+        sb.AppendLine(@"""quality"" INT NOT NULL,");
+        sb.AppendLine($@"FOREIGN KEY (""model_id"") REFERENCES ""{ModelsTable}""(""id"") ON DELETE CASCADE);");
+        _postgresDatabase.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+    }
+
+    private void TryExecuteNonQuery(string sql)
+    {
+        try
+        {
+            _postgresDatabase.ExecuteNonQueryAsync(sql).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
         }
     }
 
@@ -153,47 +195,73 @@ public class ChatModelRepository
             return null;
         }
 
-        ChatModel model;
-        string selectSql = $"SELECT data FROM {TableName} WHERE id = @id";
+        var modelToSave = newModel ?? await FetchAsync(id) ?? new ChatModel(id);
 
         try
         {
-            string? existingData = await _postgresDatabase.ExecuteScalarAsync<string>(selectSql,
-                new NpgsqlParameter("@id", id));
+            string upsertModelSql = $@"
+                INSERT INTO {ModelsTable} (id, display_name, description_key, request_type, category, type, exclusive, available, dev)
+                VALUES (@id, @display_name, @description_key, @request_type, @category, @type, @exclusive, @available, @dev)
+                ON CONFLICT (id) DO UPDATE SET
+                    display_name = EXCLUDED.display_name,
+                    description_key = EXCLUDED.description_key,
+                    request_type = EXCLUDED.request_type,
+                    category = EXCLUDED.category,
+                    type = EXCLUDED.type,
+                    exclusive = EXCLUDED.exclusive,
+                    available = EXCLUDED.available,
+                    dev = EXCLUDED.dev,
+                    updated_at = CURRENT_TIMESTAMP;";
 
-            if (existingData != null)
+            await _postgresDatabase.ExecuteNonQueryAsync(upsertModelSql,
+                new NpgsqlParameter("@id", modelToSave.Id),
+                new NpgsqlParameter("@display_name", modelToSave.DisplayName),
+                new NpgsqlParameter("@description_key", modelToSave.DescriptionKey),
+                new NpgsqlParameter("@request_type", modelToSave.RequestType.ToString()),
+                new NpgsqlParameter("@category", modelToSave.Category.ToString()),
+                new NpgsqlParameter("@type", modelToSave.Type.ToString()),
+                new NpgsqlParameter("@exclusive", modelToSave.Exclusive),
+                new NpgsqlParameter("@available", modelToSave.Available),
+                new NpgsqlParameter("@dev", modelToSave.Dev));
+
+            if (modelToSave.Price != null)
             {
-                if (newModel != null)
-                {
-                    model = newModel;
-                    string modelJson = JsonSerializer.Serialize(model);
+                string upsertPriceSql = $@"
+                    INSERT INTO {ModelPricesTable} (model_id, output_price_token, input_price_token, input_price_per_image)
+                    VALUES (@model_id, @output_price, @input_price, @image_price)
+                    ON CONFLICT (model_id) DO UPDATE SET
+                        output_price_token = EXCLUDED.output_price_token,
+                        input_price_token = EXCLUDED.input_price_token,
+                        input_price_per_image = EXCLUDED.input_price_per_image;";
 
-                    string updateSql = $"UPDATE {TableName} SET data = @data, updated_at = CURRENT_TIMESTAMP WHERE id = @id";
-                    await _postgresDatabase.ExecuteNonQueryAsync(updateSql,
-                        new NpgsqlParameter("@data", NpgsqlDbType.Jsonb) { Value = modelJson },
-                        new NpgsqlParameter("@id", id));
-                }
-                else
-                {
-                    model = JsonSerializer.Deserialize<ChatModel>(existingData) ?? new ChatModel(id);
+                await _postgresDatabase.ExecuteNonQueryAsync(upsertPriceSql,
+                    new NpgsqlParameter("@model_id", modelToSave.Id),
+                    new NpgsqlParameter("@output_price", modelToSave.Price.OutputPriceToken),
+                    new NpgsqlParameter("@input_price", modelToSave.Price.InputPriceToken),
+                    new NpgsqlParameter("@image_price", modelToSave.Price.InputPricePerImage));
 
-                    // Alert: Always set the id in case of security, if not set when deserialize
-                    model.Id = id;
+                // Handle Price Details
+                string deleteDetailsSql = $"DELETE FROM {ModelPriceDetailsTable} WHERE model_id = @model_id";
+                await _postgresDatabase.ExecuteNonQueryAsync(deleteDetailsSql, new NpgsqlParameter("@model_id", modelToSave.Id));
+
+                if (modelToSave.Price.ChatPriceUsageDetail != null)
+                {
+                    foreach (var detail in modelToSave.Price.ChatPriceUsageDetail)
+                    {
+                        string insertDetailSql = $@"
+                            INSERT INTO {ModelPriceDetailsTable} (model_id, size, price, quality)
+                            VALUES (@model_id, @size, @price, @quality);";
+                        await _postgresDatabase.ExecuteNonQueryAsync(insertDetailSql,
+                            new NpgsqlParameter("@model_id", modelToSave.Id),
+                            new NpgsqlParameter("@size", (int)detail.Size),
+                            new NpgsqlParameter("@price", detail.Price),
+                            new NpgsqlParameter("@quality", (int)detail.Quality));
+                    }
                 }
             }
-            else
-            {
-                model = newModel ?? new ChatModel(id);
-                string modelJson = JsonSerializer.Serialize(model);
 
-                string insertSql = $"INSERT INTO {TableName} (id, data) VALUES (@id, @data)";
-                await _postgresDatabase.ExecuteNonQueryAsync(insertSql,
-                    new NpgsqlParameter("@id", id),
-                    new NpgsqlParameter("@data", NpgsqlDbType.Jsonb) { Value = modelJson });
-            }
-
-            await _redisDatabase.SaveAsync(GRedisKey + id, model);
-            return model;
+            await _redisDatabase.SaveAsync(GRedisKey + id, modelToSave);
+            return modelToSave;
         }
         catch (Exception ex)
         {
@@ -211,35 +279,63 @@ public class ChatModelRepository
     public async Task<ChatModel?> FetchAsync(string id, bool saveInRedis = false)
     {
         ChatModel? model = await _redisDatabase.LoadAsync<ChatModel>(GRedisKey + id);
+        if (model != null) return model;
 
-        if (model == null)
+        try
         {
-            try
+            string selectSql = $@"
+                SELECT m.*, p.output_price_token, p.input_price_token, p.input_price_per_image
+                FROM {ModelsTable} m
+                LEFT JOIN {ModelPricesTable} p ON m.id = p.model_id
+                WHERE m.id = @id";
+
+            using var reader = await _postgresDatabase.ExecuteReaderAsync(selectSql, new NpgsqlParameter("@id", id));
+
+            if (await reader.ReadAsync())
             {
-                string selectSql = $"SELECT data FROM {TableName} WHERE id = @id";
-                string? modelData = await _postgresDatabase.ExecuteScalarAsync<string>(selectSql,
-                    new NpgsqlParameter("@id", id));
-
-                if (modelData != null)
+                model = new ChatModel(reader.GetString(reader.GetOrdinal("id")))
                 {
-                    model = JsonSerializer.Deserialize<ChatModel>(modelData);
+                    DisplayName = reader.GetString(reader.GetOrdinal("display_name")),
+                    DescriptionKey = reader.IsDBNull(reader.GetOrdinal("description_key")) ? string.Empty : reader.GetString(reader.GetOrdinal("description_key")),
+                    RequestType = Enum.Parse<ChatRequestType>(reader.GetString(reader.GetOrdinal("request_type"))),
+                    Category = Enum.Parse<ModelCategory>(reader.GetString(reader.GetOrdinal("category"))),
+                    Type = Enum.Parse<ModelType>(reader.GetString(reader.GetOrdinal("type"))),
+                    Exclusive = reader.GetBoolean(reader.GetOrdinal("exclusive")),
+                    Available = reader.GetBoolean(reader.GetOrdinal("available")),
+                    Dev = reader.GetBoolean(reader.GetOrdinal("dev"))
+                };
 
-                    if (model != null)
+                if (!reader.IsDBNull(reader.GetOrdinal("output_price_token")))
+                {
+                    model.Price = new ChatPriceUsage(
+                        outputPriceToken: reader.GetDecimal(reader.GetOrdinal("output_price_token")),
+                        inputPriceToken: reader.GetDecimal(reader.GetOrdinal("input_price_token")),
+                        inputPricePerImage: reader.GetDecimal(reader.GetOrdinal("input_price_per_image"))
+                    );
+
+                    // Fetch Price Details
+                    string selectDetailsSql = $"SELECT size, price, quality FROM {ModelPriceDetailsTable} WHERE model_id = @model_id";
+                    using var detailsReader = await _postgresDatabase.ExecuteReaderAsync(selectDetailsSql, new NpgsqlParameter("@model_id", id));
+                    model.Price.ChatPriceUsageDetail = new List<ChatPriceUsageDetail>();
+                    while (await detailsReader.ReadAsync())
                     {
-                        // Alert: Always set the id in case of security, if not set when deserialize
-                        model.Id = id;
-
-                        if (saveInRedis)
-                        {
-                            await _redisDatabase.SaveAsync(GRedisKey + id, model);
-                        }
+                        model.Price.ChatPriceUsageDetail.Add(new ChatPriceUsageDetail(
+                            size: (ImageSize)detailsReader.GetInt32(detailsReader.GetOrdinal("size")),
+                            price: detailsReader.GetDecimal(detailsReader.GetOrdinal("price")),
+                            quality: (ImageQuality)detailsReader.GetInt32(detailsReader.GetOrdinal("quality"))
+                        ));
                     }
                 }
+
+                if (saveInRedis)
+                {
+                    await _redisDatabase.SaveAsync(GRedisKey + id, model);
+                }
             }
-            catch (Exception ex)
-            {
-                await AresLogger.LogAsync("FetchError", $"Error fetching chat model: {ex.Message}", severity: Severity.Error);
-            }
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync("FetchError", $"Error fetching chat model: {ex.Message}", severity: Severity.Error);
         }
 
         return model;
@@ -253,35 +349,23 @@ public class ChatModelRepository
     /// <returns>A <see cref="ChatModel"/> object representing the retrieved model, or null if not found.</returns>
     public async Task<ChatModel?> FetchByNearestModelAsync(string id, bool saveInRedis = false)
     {
-        ChatModel? model = await _redisDatabase.LoadAsync<ChatModel>(GRedisKey + id);
-
-        if (model == null)
+        // This method can be simplified by first finding the nearest ID, then calling FetchAsync.
+        try
         {
-            try
+            string selectIdSql = $"SELECT id FROM {ModelsTable} WHERE id LIKE @pattern ORDER BY id LIMIT 1";
+            string? actualId = await _postgresDatabase.ExecuteScalarAsync<string>(selectIdSql, new NpgsqlParameter("@pattern", $"{id}%"));
+
+            if (actualId != null)
             {
-                string selectSql = $"SELECT id, data FROM {TableName} WHERE id LIKE @pattern ORDER BY id LIMIT 1";
-
-                using var reader = await _postgresDatabase.ExecuteReaderAsync(selectSql,
-                    new NpgsqlParameter("@pattern", $"{id}%"));
-
-                if (await reader.ReadAsync())
-                {
-                    string actualId = reader.GetString("id");
-                    string modelData = reader.GetString("data");
-
-                    model = JsonSerializer.Deserialize<ChatModel>(modelData);
-
-                    if (saveInRedis && model != null)
-                        await _redisDatabase.SaveAsync(GRedisKey + actualId, model);
-                }
-            }
-            catch (Exception ex)
-            {
-                await AresLogger.LogAsync("FetchNearestError", $"Error fetching nearest chat model: {ex.Message}", severity: Severity.Error);
+                return await FetchAsync(actualId, saveInRedis);
             }
         }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync("FetchNearestError", $"Error fetching nearest chat model: {ex.Message}", severity: Severity.Error);
+        }
 
-        return model;
+        return null;
     }
 
     /// <summary>
@@ -292,65 +376,10 @@ public class ChatModelRepository
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(ChatModel model, string field)
     {
-        if (!_postgresDatabase.IsConnected())
-        {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not open when updating chat model.", severity: Severity.Error);
-            return false;
-        }
-
-        try
-        {
-            // Get the field value using reflection
-            var property = typeof(ChatModel).GetProperty(field);
-            if (property == null)
-            {
-                await AresLogger.LogAsync("PropertyNotFound", $"Property '{field}' not found in ChatModel.", severity: Severity.Error);
-                return false;
-            }
-
-            object? fieldValue = property.GetValue(model);
-
-            // Update the specific field in the JSONB data
-            string updateSql;
-            NpgsqlParameter[] parameters;
-
-            if (fieldValue != null)
-            {
-                string fieldValueJson = JsonSerializer.Serialize(fieldValue);
-                updateSql = $"UPDATE {TableName} SET data = jsonb_set(data, '{{{field}}}', @value), updated_at = CURRENT_TIMESTAMP WHERE id = @id";
-                parameters = new[]
-                {
-                    new NpgsqlParameter("@value", NpgsqlDbType.Jsonb) { Value = fieldValueJson },
-                    new NpgsqlParameter("@id", model.Id)
-                };
-            }
-            else
-            {
-                updateSql = $"UPDATE {TableName} SET data = data - @field, updated_at = CURRENT_TIMESTAMP WHERE id = @id";
-                parameters = new[]
-                {
-                    new NpgsqlParameter("@field", field),
-                    new NpgsqlParameter("@id", model.Id)
-                };
-            }
-
-            int rowsAffected = await _postgresDatabase.ExecuteNonQueryAsync(updateSql, parameters);
-
-            if (rowsAffected > 0)
-            {
-                // Update Redis
-                await _redisDatabase.UpdateAsync(GRedisKey + model.Id, model);
-                await AresLogger.LogAsync("Repo: Chat Models", $"Updated \"{field}\" for model \"{model.Id}\".");
-                return true;
-            }
-
-            return false;
-        }
-        catch (Exception e)
-        {
-            await AresLogger.LogAsync(e.Source ?? "Exception", "Unable to update model data.", severity: Severity.Error, extra: e.Message);
-            return false;
-        }
+        // With the new structure, it's often easier and safer to save the entire object.
+        // This ensures consistency across all related tables.
+        var savedModel = await SaveAsync(model.Id, model);
+        return savedModel != null;
     }
 
     /// <summary>
@@ -359,7 +388,7 @@ public class ChatModelRepository
     /// <param name="id">Unique ID of the model to be removed from the cache.</param>
     public async Task DeleteCache(string id)
     {
-        await _redisDatabase.CacheAsync(GRedisKey + id, 300);
+        await _redisDatabase.DeleteAsync(GRedisKey + id);
     }
 
     /// <summary>
@@ -387,8 +416,7 @@ public class ChatModelRepository
     /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved models.</returns>
     public async Task<ConcurrentBag<ChatModel>> GetAllAsync(int limit = 0)
     {
-        ConcurrentBag<ChatModel> models = new ConcurrentBag<ChatModel>();
-
+        var models = new ConcurrentBag<ChatModel>();
         if (!_postgresDatabase.IsConnected())
         {
             await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not open when getting all models.", severity: Severity.Error);
@@ -398,29 +426,23 @@ public class ChatModelRepository
         try
         {
             string selectSql = limit > 0
-                ? $"SELECT data FROM {TableName} ORDER BY created_at LIMIT @limit"
-                : $"SELECT data FROM {TableName} ORDER BY created_at";
+                ? $"SELECT id FROM {ModelsTable} ORDER BY id LIMIT @limit"
+                : $"SELECT id FROM {ModelsTable} ORDER BY id";
 
-            NpgsqlParameter[] parameters = limit > 0
-                ? new[] { new NpgsqlParameter("@limit", limit) }
-                : Array.Empty<NpgsqlParameter>();
-
+            var parameters = limit > 0 ? new[] { new NpgsqlParameter("@limit", limit) } : Array.Empty<NpgsqlParameter>();
             using var reader = await _postgresDatabase.ExecuteReaderAsync(selectSql, parameters);
 
+            var tasks = new List<Task<ChatModel?>>();
             while (await reader.ReadAsync())
             {
-                try
-                {
-                    string modelData = reader.GetString("data");
-                    ChatModel? model = JsonSerializer.Deserialize<ChatModel>(modelData);
-
-                    if (model != null)
-                        models.Add(model);
-                }
-                catch (JsonException ex)
-                {
-                    await AresLogger.LogAsync("JsonDeserializationError", "Error deserializing model data.", severity: Severity.Error, extra: ex.Message);
-                }
+                // Fetch each model fully. This could be optimized with a single large JOIN query if performance is critical.
+                tasks.Add(FetchAsync(reader.GetString(0), saveInRedis: true));
+            }
+            
+            var results = await Task.WhenAll(tasks);
+            foreach(var model in results)
+            {
+                if (model != null) models.Add(model);
             }
         }
         catch (Exception ex)
@@ -446,18 +468,15 @@ public class ChatModelRepository
 
         try
         {
-            string deleteSql = $"DELETE FROM {TableName} WHERE id = @id";
-            int rowsAffected = await _postgresDatabase.ExecuteNonQueryAsync(deleteSql,
-                new NpgsqlParameter("@id", id));
+            string deleteSql = $"DELETE FROM {ModelsTable} WHERE id = @id";
+            int rowsAffected = await _postgresDatabase.ExecuteNonQueryAsync(deleteSql, new NpgsqlParameter("@id", id));
 
             if (rowsAffected > 0)
             {
-                // Remove from Redis cache
-                await _redisDatabase.DeleteAsync(GRedisKey + id);
+                await DeleteCache(id);
                 await AresLogger.LogAsync("Repo: Chat Models", $"Deleted model \"{id}\" from database.");
                 return true;
             }
-
             return false;
         }
         catch (Exception ex)

@@ -42,6 +42,8 @@ public class UserRepository
     /// Table name for users in PostgreSQL.
     /// </summary>
     private const string UsersTable = "users";
+    private const string UserChatsTable = "user_chats";
+    private const string UserChatSnippetsTable = "user_chat_snippets";
 
     /*
      * Constructors and initialization methods.
@@ -75,56 +77,14 @@ public class UserRepository
         {
             lock (AppCommon.DatabaseLockObject)
             {
-                string checkTableSql = $@"SELECT EXISTS (
-                    SELECT 1 FROM information_schema.tables 
-                    WHERE table_schema = 'public' AND table_name = '{UsersTable}'
-                );";
+                // Create Users Table
+                CreateUsersTable();
 
-                bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
+                // Create User Chats Table
+                CreateUserChatsTable();
 
-                if (exists)
-                {
-                    AresLogger.Log("Repo: User", $"Table '{UsersTable}' already exists in the database.");
-                }
-                else
-                {
-                    AresLogger.Log("Repo: User", $"Table '{UsersTable}' not found, creating...");
-
-                    StringBuilder sb = new StringBuilder();
-
-                    sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{UsersTable}"" (");
-                    sb.AppendLine(@"""id"" BIGINT NOT NULL,");
-                    sb.AppendLine(@"""data"" JSONB NOT NULL,");
-                    sb.AppendLine(@"""created_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
-                    sb.AppendLine(@"""updated_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
-                    sb.AppendLine(@"PRIMARY KEY (""id"")");
-                    sb.AppendLine(@");");
-                    sb.AppendLine($@"COMMENT ON COLUMN ""{UsersTable}"".""id"" IS '';");
-                    sb.AppendLine($@"COMMENT ON COLUMN ""{UsersTable}"".""data"" IS '';");
-                    sb.AppendLine($@"COMMENT ON COLUMN ""{UsersTable}"".""created_at"" IS '';");
-                    sb.AppendLine($@"COMMENT ON COLUMN ""{UsersTable}"".""updated_at"" IS '';");
-
-                    _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
-
-                    AresLogger.Log("Repo: User", $"Table '{UsersTable}' created successfully.");
-                }
-
-                string[] indexSqls = {
-                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UsersTable}_id ON {UsersTable} (id)",
-                    $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UsersTable}_data_gin ON {UsersTable} USING GIN (data)"
-                };
-
-                foreach (string indexSql in indexSqls)
-                {
-                    try
-                    {
-                        _database.ExecuteNonQueryAsync(indexSql).GetAwaiter().GetResult();
-                    }
-                    catch (Exception ex)
-                    {
-                        AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
-                    }
-                }
+                // Create User Chat Snippets Table
+                CreateUserChatSnippetsTable();
             }
 
             await AresLogger.LogAsync("Repo: User", "Table and indexes checked/created.");
@@ -132,6 +92,123 @@ public class UserRepository
         catch (Exception ex)
         {
             await AresLogger.LogAsync("TableCreationError", $"Error creating table and indexes: {ex.Message}", severity: Severity.Error);
+        }
+    }
+
+    private void CreateUsersTable()
+    {
+        string checkTableSql = $@"SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = '{UsersTable}'
+        );";
+
+        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
+
+        if (exists)
+        {
+            AresLogger.Log("Repo: User", $"Table '{UsersTable}' already exists in the database.");
+        }
+        else
+        {
+            AresLogger.Log("Repo: User", $"Table '{UsersTable}' not found, creating...");
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{UsersTable}"" (");
+            sb.AppendLine(@"""id"" BIGINT NOT NULL,");
+            sb.AppendLine(@"""created_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
+            sb.AppendLine(@"""updated_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
+            sb.AppendLine(@"PRIMARY KEY (""id"")");
+            sb.AppendLine(@");");
+
+            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+            AresLogger.Log("Repo: User", $"Table '{UsersTable}' created successfully.");
+        }
+
+        string indexSql = $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UsersTable}_id ON {UsersTable} (id)";
+        TryExecuteNonQuery(indexSql);
+    }
+
+    private void CreateUserChatsTable()
+    {
+        string checkTableSql = $@"SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = '{UserChatsTable}'
+        );";
+
+        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
+
+        if (!exists)
+        {
+            AresLogger.Log("Repo: User", $"Table '{UserChatsTable}' not found, creating...");
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{UserChatsTable}"" (");
+            sb.AppendLine(@"""id"" SERIAL PRIMARY KEY,");
+            sb.AppendLine(@"""user_id"" BIGINT NOT NULL,");
+            sb.AppendLine(@"""channel_id"" BIGINT NOT NULL,");
+            sb.AppendLine(@"""data"" JSONB NOT NULL,");
+            sb.AppendLine(@"FOREIGN KEY (""user_id"") REFERENCES ""users""(""id"") ON DELETE CASCADE");
+            sb.AppendLine(@");");
+
+            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+            AresLogger.Log("Repo: User", $"Table '{UserChatsTable}' created successfully.");
+
+            string[] indexSqls = {
+                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UserChatsTable}_user_id ON {UserChatsTable} (user_id)",
+                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UserChatsTable}_channel_id ON {UserChatsTable} (channel_id)"
+            };
+
+            foreach (var indexSql in indexSqls)
+            {
+                TryExecuteNonQuery(indexSql);
+            }
+        }
+    }
+
+    private void CreateUserChatSnippetsTable()
+    {
+        string checkTableSql = $@"SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = '{UserChatSnippetsTable}'
+        );";
+
+        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
+
+        if (!exists)
+        {
+            AresLogger.Log("Repo: User", $"Table '{UserChatSnippetsTable}' not found, creating...");
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{UserChatSnippetsTable}"" (");
+            sb.AppendLine(@"""id"" SERIAL PRIMARY KEY,");
+            sb.AppendLine(@"""user_id"" BIGINT NOT NULL,");
+            sb.AppendLine(@"""channel_id"" BIGINT NOT NULL,");
+            sb.AppendLine(@"""data"" JSONB NOT NULL,");
+            sb.AppendLine(@"FOREIGN KEY (""user_id"") REFERENCES ""users""(""id"") ON DELETE CASCADE");
+            sb.AppendLine(@");");
+
+            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
+            AresLogger.Log("Repo: User", $"Table '{UserChatSnippetsTable}' created successfully.");
+
+            string[] indexSqls = {
+                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UserChatSnippetsTable}_user_id ON {UserChatSnippetsTable} (user_id)",
+                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UserChatSnippetsTable}_channel_id ON {UserChatSnippetsTable} (channel_id)"
+            };
+
+            foreach (var indexSql in indexSqls)
+            {
+                TryExecuteNonQuery(indexSql);
+            }
+        }
+    }
+
+    private void TryExecuteNonQuery(string sql)
+    {
+        try
+        {
+            _database.ExecuteNonQueryAsync(sql).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
         }
     }
 
@@ -152,37 +229,24 @@ public class UserRepository
             return null;
         }
 
-        string selectSql = $"SELECT data FROM {UsersTable} WHERE id = @id";
+        string selectSql = $"SELECT id FROM {UsersTable} WHERE id = @id";
         var selectParam = new NpgsqlParameter("@id", (long)id);
 
         try
         {
-            string? userData = await _database.ExecuteScalarAsync<string>(selectSql, selectParam);
+            var existingId = await _database.ExecuteScalarAsync<long?>(selectSql, selectParam);
             User? user = new User(id);
 
-            if (!string.IsNullOrEmpty(userData))
+            if (existingId.HasValue)
             {
-                // User exists, deserialize from JSON
-                user = JsonSerializer.Deserialize<User>(userData) ?? user;
-
-                // Alert: Always set the id in case of security, if not set when deserialize
-                user.Id = id;
+                // User exists, load their related data
+                user = await FetchAsync(id);
             }
             else
             {
                 // User doesn't exist, insert new user
-                string userJson = JsonSerializer.Serialize(user);
-                string insertSql = $@"
-                    INSERT INTO {UsersTable} (id, data) 
-                    VALUES (@id, @data::jsonb)";
-
-                var insertParams = new NpgsqlParameter[]
-                {
-                    new("@id", (long)id),
-                    new("@data", userJson)
-                };
-
-                await _database.ExecuteNonQueryAsync(insertSql, insertParams);
+                string insertSql = $@"INSERT INTO {UsersTable} (id) VALUES (@id)";
+                await _database.ExecuteNonQueryAsync(insertSql, new NpgsqlParameter("@id", (long)id));
                 await _redisDatabase.SaveAsync(GRedisKey + id, user);
             }
 
@@ -217,24 +281,21 @@ public class UserRepository
 
             try
             {
-                string selectSql = $"SELECT data FROM {UsersTable} WHERE id = @id";
+                string selectSql = $"SELECT id FROM {UsersTable} WHERE id = @id";
                 var param = new NpgsqlParameter("@id", (long)id);
 
-                string? userData = await _database.ExecuteScalarAsync<string>(selectSql, param);
+                var userId = await _database.ExecuteScalarAsync<long?>(selectSql, param);
 
-                if (!string.IsNullOrEmpty(userData))
+                if (userId.HasValue)
                 {
-                    user = JsonSerializer.Deserialize<User>(userData);
+                    user = new User((ulong)userId.Value);
+                    // TODO: Implement fetching from the new relational tables (user_chats, etc.)
+                    // For now, we return a new User object. You'll need to query the
+                    // user_chats and user_chat_snippets tables and populate the user.Chat property.
 
-                    if (user != null)
+                    if (saveInRedis)
                     {
-                        // Alert: Always set the id in case of security, if not set when deserialize
-                        user.Id = id;
-
-                        if (saveInRedis)
-                        {
-                            await _redisDatabase.SaveAsync(GRedisKey + id, user);
-                        }
+                        await _redisDatabase.SaveAsync(GRedisKey + id, user);
                     }
                 }
             }
@@ -259,17 +320,13 @@ public class UserRepository
 
         try
         {
-            string userJson = JsonSerializer.Serialize(user);
-            string updateSql = $@"
-                UPDATE {UsersTable} 
-                SET data = @data::jsonb, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = @id";
+            // TODO: Implement logic to update relational tables.
+            // For example, if 'field' is 'Chat', you would update the 'user_chats' table.
+            // This requires a more complex logic than just updating a JSON blob.
+            // For now, we'll just update the 'updated_at' timestamp.
 
-            var parameters = new NpgsqlParameter[]
-            {
-                new("@id", (long)user.Id),
-                new("@data", userJson)
-            };
+            string updateSql = $@"UPDATE {UsersTable} SET updated_at = CURRENT_TIMESTAMP WHERE id = @id";
+            var parameters = new NpgsqlParameter[] { new("@id", (long)user.Id) };
 
             int rowsAffected = await _database.ExecuteNonQueryAsync(updateSql, parameters);
 
@@ -335,8 +392,8 @@ public class UserRepository
         try
         {
             string selectSql = limit > 0
-                ? $"SELECT data FROM {UsersTable} LIMIT @limit"
-                : $"SELECT data FROM {UsersTable}";
+                ? $"SELECT id FROM {UsersTable} LIMIT @limit"
+                : $"SELECT id FROM {UsersTable}";
 
             using var reader = limit > 0
                 ? await _database.ExecuteReaderAsync(selectSql, new NpgsqlParameter("@limit", limit))
@@ -344,17 +401,12 @@ public class UserRepository
 
             while (await reader.ReadAsync())
             {
-                try
+                var userId = reader.GetInt64("id");
+                // Fetch each user individually. This can be optimized with a JOIN if needed.
+                var user = await FetchAsync((ulong)userId);
+                if (user != null)
                 {
-                    string userData = reader.GetString("data");
-                    User? user = JsonSerializer.Deserialize<User>(userData);
-
-                    if (user != null)
-                        users.Add(user);
-                }
-                catch (JsonException ex)
-                {
-                    await AresLogger.LogAsync("JsonDeserializationError", "Error deserializing user data.", severity: Severity.Error, extra: ex.Message);
+                    users.Add(user);
                 }
             }
         }
