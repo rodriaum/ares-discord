@@ -140,11 +140,38 @@ public class Program
 
         ApiResult<string>? systemInfoResult = await SystemService.GetSystemStatus();
 
-        if (systemInfoResult == null || !systemInfoResult.Success)
+        int count = 0;
+        int limit = 3;
+        int seconds = 15;
+
+        while (systemInfoResult == null || !systemInfoResult.Success)
         {
-            await AresLogger.LogAsync("Status", "System information is not available. Please check the API connection.", severity: Severity.Error);
-            return;
+            if (count >= limit)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Red;
+                await AresLogger.LogAsync(null, $"Failed to connect to the API. Exiting... ({count + 1}/{limit})", severity: Severity.Error);
+                Console.ResetColor();
+                Environment.Exit(1);
+            }
+
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            await AresLogger.LogAsync(null, "System information is not available. Please check the API connection.", severity: Severity.Error);
+            await AresLogger.LogAsync(null, $"Retrying to connect to the API... ({count + 1}/{limit})", severity: Severity.Info);
+            Console.Write("\n");
+
+            for (int i = 1; i <= seconds; i++)
+            {
+                ConsoleColor cor = i < 5 ? ConsoleColor.Red : i < 10 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                ProgressBarUtil.DrawProgressBar(i, seconds, cor, useColor: true);
+                await Task.Delay(1000);
+            }
+
+            count++;
+            systemInfoResult = await SystemService.GetSystemStatus();
         }
+
 
         AresLogger.Log("Status", $"API System information: {systemInfoResult.Message}", severity: Severity.Info);
 

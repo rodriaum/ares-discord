@@ -103,7 +103,7 @@ public class AresLogger
     /// <summary>
     /// Asynchronously logs a message with the specified prefix, message, severity, and optional extra information.
     /// </summary>]
-    public static Task LogAsync(string prefix, string message, Severity severity = Severity.Info, params string[] extra)
+    public static Task LogAsync(string? prefix, string message, Severity severity = Severity.Info, params string[] extra)
     {
         Log(prefix, message, severity, extra);
         return Task.CompletedTask;
