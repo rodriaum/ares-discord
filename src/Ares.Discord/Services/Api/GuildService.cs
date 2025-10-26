@@ -27,24 +27,24 @@ public class GuildService
         return HttpUtil.GetAsync<ApiResult<Guild>>(_client, $"{_baseUrl}/api/guilds/{id}?useCache={useCache.ToString().ToLower()}");
     }
 
-    public Task<ApiResult<bool>?> UpdateGuild(ulong id, Guild guild, string field = "data")
+    public Task<ApiResult<object>?> UpdateGuild(ulong id, Guild guild, string field = "data")
     {
-        return HttpUtil.PutAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/guilds/{id}/update?field={field}", guild);
+        return HttpUtil.PutAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/guilds/{id}/update?field={field}", guild);
     }
 
-    public Task<ApiResult<bool>?> SaveTokenData(ulong id, GToken token)
+    public Task<ApiResult<object>?> SaveTokenData(ulong id, GToken token)
     {
-        return HttpUtil.PutAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/guilds/{id}/token", token);
+        return HttpUtil.PutAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/guilds/{id}/token", token);
     }
 
-    public Task<ApiResult<bool>?> SavePreferenceData(ulong id, GPreference preferences)
+    public Task<ApiResult<object>?> SavePreferenceData(ulong id, GPreference preferences)
     {
-        return HttpUtil.PutAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/guilds/{id}/preferences", preferences);
+        return HttpUtil.PutAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/guilds/{id}/preferences", preferences);
     }
 
-    public Task<List<Guild>?> GetAllGuilds(int limit = 0)
+    public Task<ApiResult<IEnumerable<Guild>>?> GetAllGuilds(int limit = 0)
     {
-        return HttpUtil.GetAsync<List<Guild>>(_client, $"{_baseUrl}/api/guilds/all?limit={limit}");
+        return HttpUtil.GetAsync<ApiResult<IEnumerable<Guild>>>(_client, $"{_baseUrl}/api/guilds/all?limit={limit}");
     }
 
     public Task<ApiResult<object>?> DeleteGuild(ulong id)
@@ -57,9 +57,9 @@ public class GuildService
         return HttpUtil.DeleteAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/guilds/{id}/remove-cache");
     }
 
-    public Task<ApiResult<bool>?> PersistGuild(ulong id)
+    public Task<ApiResult<object>?> PersistGuild(ulong id)
     {
-        return HttpUtil.PostAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/guilds/{id}/persist-cache", new { });
+        return HttpUtil.PostAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/guilds/{id}/persist-cache", new { });
     }
 
     public Task<ApiResult<string>?> GetLanguage(ulong id)
@@ -67,8 +67,8 @@ public class GuildService
         return HttpUtil.GetAsync<ApiResult<string>>(_client, $"{_baseUrl}/api/guilds/{id}/language");
     }
 
-    public Task<ApiResult<List<Guild>>?> GetByField(string fieldPath, string value, int limit = 0)
+    public Task<ApiResult<IEnumerable<Guild>>?> GetByField(string fieldPath, string value, int limit = 0)
     {
-        return HttpUtil.GetAsync<ApiResult<List<Guild>>>(_client, $"{_baseUrl}/api/guilds/by-field?fieldPath={fieldPath}&value={value}&limit={limit}");
+        return HttpUtil.GetAsync<ApiResult<IEnumerable<Guild>>>(_client, $"{_baseUrl}/api/guilds/by-field?fieldPath={fieldPath}&value={value}&limit={limit}");
     }
 }

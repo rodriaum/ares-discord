@@ -94,6 +94,16 @@ public class Program
     /// Base URL for API requests.
     /// </summary>
     public static string? ApiBaseUrl { get; private set; }
+    
+    /// <summary>
+    /// Indicates whether the application has been initialized.
+    /// </summary>
+    public static bool IsStarting { get; private set; } = true;
+    
+    /// <summary>
+    /// Indicates whether the application is in the process of shutting down.
+    /// </summary>
+    public static bool IsShuttingDown { get; private set; } = false;
 
     #endregion
 
@@ -105,6 +115,8 @@ public class Program
     /// <returns>A task representing the asynchronous operation.</returns>
     static async Task Main()
     {
+        IsStarting = true;
+        
         Console.OutputEncoding = System.Text.Encoding.UTF8;
 
         // Check if application is already running
@@ -172,26 +184,22 @@ public class Program
             systemInfoResult = await SystemService.GetSystemStatus();
         }
 
-
+        Console.Clear();
         AresLogger.Log("Status", $"API System information: {systemInfoResult.Message}", severity: Severity.Info);
 
-        // Initialize managers
         await LangManager.Init();
-
-        // Configure and start Discord client
         await ConfigureDiscordClient();
-
-        // Setup event handlers
         SetupEventHandlers();
 
-        // Keep the application running until cancellation is requested
+        IsStarting = false;
+
         try
         {
             await Task.Delay(Timeout.Infinite, _cts.Token);
         }
         catch (TaskCanceledException)
         {
-            // Expected when token is canceled
+            IsShuttingDown = true;
         }
     }
 

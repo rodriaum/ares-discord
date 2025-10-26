@@ -49,6 +49,8 @@ public class ChatImageOptionListener
                 args.Data.CustomId.Equals("style-menu") ||
                 args.Data.CustomId.Equals("size-menu")
             )) return;
+            
+            if (Program.IsStarting || Program.IsShuttingDown) return;
 
             await args.RespondAsync(ephemeral: true, text: AppConstants.LoadingEmote);
             RestInteractionMessage message = await args.GetOriginalResponseAsync();

@@ -1,4 +1,4 @@
-﻿/*
+﻿﻿/*
  * Copyright (C) Rodrigo Ferreira, All Rights Reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
@@ -50,6 +50,8 @@ public class SelectedChatListener
         _ = Task.Run(async () =>
         {
             if (!args.Data.CustomId.StartsWith("chat-menu-")) return;
+            
+            if (Program.IsStarting || Program.IsShuttingDown) return;
 
             await args.RespondAsync(ephemeral: true, text: AppConstants.LoadingEmote);
             RestInteractionMessage message = await args.GetOriginalResponseAsync();
@@ -82,8 +84,11 @@ public class SelectedChatListener
                 for (int attempts = maxAttempts; guild == null && attempts > 0; attempts--)
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar guilda no banco de dados... {attempts}/{maxAttempts}");
+
                     await Task.Delay(1500);
+
                     ApiResult<Guild>? createResult = await _guildService!.CreateOrGetGuild(guildId);
+
                     if (createResult != null && createResult.Success)
                         guild = createResult.Data;
                 }
@@ -104,8 +109,11 @@ public class SelectedChatListener
                 for (int attempts = maxAttempts; user == null && attempts > 0; attempts--)
                 {
                     await message.ModifyAsync(it => it.Content = $"A tentar criar a sua conta no banco de dados... {attempts}/{maxAttempts}");
+
                     await Task.Delay(1500);
+
                     ApiResult<User>? createUserResult = await _userService!.CreateOrGetUser(args.User.Id);
+
                     if (createUserResult != null && createUserResult.Success)
                         user = createUserResult.Data;
                 }
@@ -249,8 +257,8 @@ public class SelectedChatListener
                 UserChatHistoric historic = new UserChatHistoric(system: helloMessage);
                 info.Historics.Add(historic);
 
-                ApiResult<bool>? createChatResult = await _userService.CreateChatData(user.Id, guildId, info);
-                if (createChatResult == null || !createChatResult.Success || !createChatResult.Data)
+                ApiResult<object>? createChatResult = await _userService.CreateChatData(user.Id, guildId, info);
+                if (createChatResult == null || !createChatResult.Success)
                 {
                     await channel.DeleteAsync();
                     await Task.Delay(500);
@@ -402,7 +410,7 @@ public class SelectedChatListener
 
                 #endregion
 
-                OverwritePermissions permissions = new OverwritePermissions(
+                OverwritePermissions permissions = new(
                     viewChannel: PermValue.Allow,
                     readMessageHistory: PermValue.Allow,
                     sendMessages: PermValue.Allow

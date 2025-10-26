@@ -24,6 +24,8 @@ public class PingCommand
         _ = Task.Run(async () =>
         {
             if (_client == null || !command.Data.Name.Equals("ping")) return;
+            
+            if (Program.IsStarting || Program.IsShuttingDown) return;
 
             int ms = _client.Latency;
 

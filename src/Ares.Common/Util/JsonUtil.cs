@@ -5,6 +5,8 @@
  */
 
 using Ares.Common.Objects;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -26,6 +28,35 @@ public static class JsonUtil
         {
             AresLogger.Log("JsonUtil", "Failed to generate JSON tree.", severity: Severity.Error, extra: ex.Message);
             return null;
+        }
+    }
+
+    public static object? ElementToBson(JsonNode? element)
+    {
+        if (element is JsonValue value)
+        {
+            if (value.TryGetValue(out string? str)) return str;
+            if (value.TryGetValue(out int intVal)) return intVal;
+            if (value.TryGetValue(out double dblVal)) return dblVal;
+            if (value.TryGetValue(out bool boolVal)) return boolVal;
+        }
+
+        try
+        {
+            return BsonSerializer.Deserialize<BsonDocument>(element?.ToJsonString() ?? "{}");
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Log("JsonUtil", "Fallback to BsonDocument.Parse due to deserialization error.", severity: Severity.Warning, extra: ex.Message);
+            try
+            {
+                return BsonDocument.Parse(element?.ToJsonString() ?? "{}");
+            }
+            catch (Exception parseEx)
+            {
+                AresLogger.Log("JsonUtil", "Failed to parse JsonNode to BsonDocument.", severity: Severity.Error, extra: parseEx.Message);
+                return null;
+            }
         }
     }
 
@@ -133,20 +164,61 @@ public static class JsonUtil
         }
     }
 
-    public static async Task<T?> StringToObjectAsync<T>(string jsonString, JsonSerializerOptions? serializerOptions = null)
+    public static async Task<T?> BsonDocToObjectAsync<T>(
+        BsonDocument document,
+        JsonSerializerOptions? serializerOptions = null,
+        JsonSerializerOptions? deserializeOptions = null)
     {
+        if (document == null)
+            return default;
+
         try
         {
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonString));
-            return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions);
+            object mapped = BsonTypeMapper.MapToDotNetValue(document);
+            using var stream = new MemoryStream();
+            await JsonSerializer.SerializeAsync(stream, mapped, options: serializerOptions);
+            stream.Position = 0;
+
+            return await JsonSerializer.DeserializeAsync<T>(stream, options: deserializeOptions);
         }
         catch (Exception ex)
         {
-            AresLogger.Log("JsonUtil", "Failed to deserialize string to object.", severity: Severity.Error, extra: ex.ToString());
+            AresLogger.Log("JsonUtil", "Failed to deserialize BsonDocument.", severity: Severity.Error, extra: ex.Message);
             return default;
         }
     }
 
+    public static async Task<BsonDocument?> ObjectToBsonDocumentAsync<T>(T obj)
+    {
+        try
+        {
+            using var stream = new MemoryStream();
+            await JsonSerializer.SerializeAsync(stream, obj);
+            stream.Position = 0;
+
+            string json = Encoding.UTF8.GetString(stream.ToArray());
+            return BsonDocument.Parse(json);
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Log("JsonUtil", "Failed to serialize object to BsonDocument.", severity: Severity.Error, extra: ex.Message);
+            return null;
+        }
+    }
+
+    public static async Task<T?> StringToObjectAsync<T>(string jsonString, JsonSerializerOptions? deserializeOptions = null)
+    {
+        try
+        {
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonString));
+            return await JsonSerializer.DeserializeAsync<T>(stream, options: deserializeOptions);
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Log("JsonUtil", "Failed to deserialize string to object.", severity: Severity.Error, extra: ex.Message);
+            return default;
+        }
+    }
 
     public static async Task<T?> BytesToObjectAsync<T>(byte[] bytes)
     {

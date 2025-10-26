@@ -51,6 +51,12 @@ public enum ModelCategory
     Microsoft,
 
     /// <summary>
+    /// Perplexity
+    /// </summary>
+    [WebApi(endpoint: "https://api.perplexity.ai")]
+    Perplexity,
+
+    /// <summary>
     /// Others
     /// </summary>
     Other
@@ -79,7 +85,7 @@ public static class ModelCategoryExtensions
         string? endpoint = attribute.RemoteEndpoint;
         if (string.IsNullOrEmpty(endpoint)) return null;
 
-        return new Uri(endpoint) ?? null;
+        return new Uri(endpoint);
     }
 
     private static WebApiAttribute? GetWebApiAttribute(this ModelCategory category)

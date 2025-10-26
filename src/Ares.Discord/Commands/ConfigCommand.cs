@@ -1,4 +1,4 @@
-﻿/*
+﻿﻿/*
  * Copyright (C) Rodrigo Ferreira, All Rights Reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
@@ -34,6 +34,8 @@ public class ConfigCommand
         {
             if (_client == null || !(command.Data.Name.Equals("config-token") || command.Data.Name.Equals("config-id") || command.Data.Name.Equals("config-lang")))
                 return;
+            
+            if (Program.IsStarting || Program.IsShuttingDown) return;
 
             EmbedBuilder embed = new EmbedBuilder()
             .WithTitle("Config")
@@ -178,6 +180,7 @@ public class ConfigCommand
                     case "xai":
                     case "google":
                     case "imgur":
+                    case "perplexity":
                         tokenData.SetToken(optionName, optionValueString);
                         tokenChange = tokenData.GetToken(optionValueString) != optionValueString;
                         break;
@@ -300,14 +303,14 @@ public class ConfigCommand
 
             if (tokenChange)
             {
-                ApiResult<bool>? tokenResult = await guildService.SaveTokenData(guild.Id, tokenData);
-                success = tokenResult != null && tokenResult.Success && tokenResult.Data;
+                ApiResult<object>? tokenResult = await guildService.SaveTokenData(guild.Id, tokenData);
+                success = tokenResult != null && tokenResult.Success;
             }
 
             if (configChange)
             {
-                ApiResult<bool>? preferenceResult = await guildService.SavePreferenceData(guild.Id, configData);
-                success = preferenceResult != null && preferenceResult.Success && preferenceResult.Data;
+                ApiResult<object>? preferenceResult = await guildService.SavePreferenceData(guild.Id, configData);
+                success = preferenceResult != null && preferenceResult.Success;
             }
 
             if (success)

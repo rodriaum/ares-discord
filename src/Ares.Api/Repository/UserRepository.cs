@@ -5,28 +5,32 @@
  */
 
 using Ares.Common.Constants;
-using Ares.Common.Database.Postgres;
+using Ares.Api.Database.Mongo;
 using Ares.Common.Database.Redis;
 using Ares.Common.Models.Data;
 using Ares.Common.Objects;
 using Ares.Common.Util;
-using Npgsql;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using System.Collections.Concurrent;
-using System.Data;
-using System.Text;
 using System.Text.Json;
 
-namespace Ares.Common.Repository;
+namespace Ares.Api.Repository;
 
 /// <summary>
-/// Class responsible for managing user data in PostgreSQL database.
+/// Class responsible for managing user data in MongoDB database.
 /// </summary>
 public class UserRepository
 {
     /// <summary>
-    /// Reference to the PostgreSQL database connection.
+    /// Represents the "users" collection in MongoDB database.
     /// </summary>
-    private readonly PostgresDatabase _database;
+    private readonly IMongoCollection<BsonDocument>? _collection;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    private readonly MongoDatabase _mongoDatabase;
 
     /// <summary>
     /// Reference to the Redis database used for caching operations and related logic.
@@ -38,177 +42,48 @@ public class UserRepository
     /// </summary>
     private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:user:";
 
-    /// <summary>
-    /// Table name for users in PostgreSQL.
-    /// </summary>
-    private const string UsersTable = "users";
-    private const string UserChatsTable = "user_chats";
-    private const string UserChatSnippetsTable = "user_chat_snippets";
-
     /*
      * Constructors and initialization methods.
      */
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="UserRepository"/> class with the PostgreSQL database.
+    /// Initializes a new instance of the <see cref="UserRepository"/> class with the users collection.
     /// </summary>
-    /// <param name="postgresDatabase">PostgreSQL database instance.</param>
+    /// <param name="mongoDatabase">MongoDB database instance that contains the "users" collection.</param>
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
-    public UserRepository(PostgresDatabase postgresDatabase, RedisDatabase redisDatabase)
+    public UserRepository(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
     {
-        _database = postgresDatabase;
+        _mongoDatabase = mongoDatabase;
         _redisDatabase = redisDatabase;
+        _collection = _mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("users");
     }
 
     /// <summary>
-    /// Creates the users table and indexes if they don't exist.
+    /// Creates indexes in the "users" collection to improve query performance.
     /// </summary>
     public async Task CreateTableAndIndexesAsync()
     {
-        await AresLogger.LogAsync("Repo: User", "Checking if table exists in the database...");
+        await AresLogger.LogAsync("Repo: User", "Creating indexes in the database...");
 
-        if (!_database.IsConnected())
+        // Check if the collection was initialized before trying to create indexes.
+        if (_collection == null)
         {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when creating user table.", severity: Severity.Error);
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when creating user data indexes.", severity: Severity.Error);
             return;
         }
 
         try
         {
-            lock (AppCommon.DatabaseLockObject)
-            {
-                // Create Users Table
-                CreateUsersTable();
+            IndexKeysDefinition<BsonDocument> indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("id");
+            CreateIndexModel<BsonDocument> indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
 
-                // Create User Chats Table
-                CreateUserChatsTable();
+            await _collection.Indexes.CreateOneAsync(indexModel);
 
-                // Create User Chat Snippets Table
-                CreateUserChatSnippetsTable();
-            }
-
-            await AresLogger.LogAsync("Repo: User", "Table and indexes checked/created.");
+            await AresLogger.LogAsync("Repo: User", "Indexes created.");
         }
         catch (Exception ex)
         {
-            await AresLogger.LogAsync("TableCreationError", $"Error creating table and indexes: {ex.Message}", severity: Severity.Error);
-        }
-    }
-
-    private void CreateUsersTable()
-    {
-        string checkTableSql = $@"SELECT EXISTS (
-            SELECT 1 FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name = '{UsersTable}'
-        );";
-
-        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
-
-        if (exists)
-        {
-            AresLogger.Log("Repo: User", $"Table '{UsersTable}' already exists in the database.");
-        }
-        else
-        {
-            AresLogger.Log("Repo: User", $"Table '{UsersTable}' not found, creating...");
-
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{UsersTable}"" (");
-            sb.AppendLine(@"""id"" BIGINT NOT NULL,");
-            sb.AppendLine(@"""created_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
-            sb.AppendLine(@"""updated_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
-            sb.AppendLine(@"PRIMARY KEY (""id"")");
-            sb.AppendLine(@");");
-
-            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
-            AresLogger.Log("Repo: User", $"Table '{UsersTable}' created successfully.");
-        }
-
-        string indexSql = $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UsersTable}_id ON {UsersTable} (id)";
-        TryExecuteNonQuery(indexSql);
-    }
-
-    private void CreateUserChatsTable()
-    {
-        string checkTableSql = $@"SELECT EXISTS (
-            SELECT 1 FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name = '{UserChatsTable}'
-        );";
-
-        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
-
-        if (!exists)
-        {
-            AresLogger.Log("Repo: User", $"Table '{UserChatsTable}' not found, creating...");
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{UserChatsTable}"" (");
-            sb.AppendLine(@"""id"" SERIAL PRIMARY KEY,");
-            sb.AppendLine(@"""user_id"" BIGINT NOT NULL,");
-            sb.AppendLine(@"""channel_id"" BIGINT NOT NULL,");
-            sb.AppendLine(@"""data"" JSONB NOT NULL,");
-            sb.AppendLine(@"FOREIGN KEY (""user_id"") REFERENCES ""users""(""id"") ON DELETE CASCADE");
-            sb.AppendLine(@");");
-
-            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
-            AresLogger.Log("Repo: User", $"Table '{UserChatsTable}' created successfully.");
-
-            string[] indexSqls = {
-                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UserChatsTable}_user_id ON {UserChatsTable} (user_id)",
-                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UserChatsTable}_channel_id ON {UserChatsTable} (channel_id)"
-            };
-
-            foreach (var indexSql in indexSqls)
-            {
-                TryExecuteNonQuery(indexSql);
-            }
-        }
-    }
-
-    private void CreateUserChatSnippetsTable()
-    {
-        string checkTableSql = $@"SELECT EXISTS (
-            SELECT 1 FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name = '{UserChatSnippetsTable}'
-        );";
-
-        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
-
-        if (!exists)
-        {
-            AresLogger.Log("Repo: User", $"Table '{UserChatSnippetsTable}' not found, creating...");
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{UserChatSnippetsTable}"" (");
-            sb.AppendLine(@"""id"" SERIAL PRIMARY KEY,");
-            sb.AppendLine(@"""user_id"" BIGINT NOT NULL,");
-            sb.AppendLine(@"""channel_id"" BIGINT NOT NULL,");
-            sb.AppendLine(@"""data"" JSONB NOT NULL,");
-            sb.AppendLine(@"FOREIGN KEY (""user_id"") REFERENCES ""users""(""id"") ON DELETE CASCADE");
-            sb.AppendLine(@");");
-
-            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
-            AresLogger.Log("Repo: User", $"Table '{UserChatSnippetsTable}' created successfully.");
-
-            string[] indexSqls = {
-                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UserChatSnippetsTable}_user_id ON {UserChatSnippetsTable} (user_id)",
-                $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{UserChatSnippetsTable}_channel_id ON {UserChatSnippetsTable} (channel_id)"
-            };
-
-            foreach (var indexSql in indexSqls)
-            {
-                TryExecuteNonQuery(indexSql);
-            }
-        }
-    }
-
-    private void TryExecuteNonQuery(string sql)
-    {
-        try
-        {
-            _database.ExecuteNonQueryAsync(sql).GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
+            await AresLogger.LogAsync("IndexCreationError", $"Error creating indexes: {ex.Message}", severity: Severity.Error);
         }
     }
 
@@ -223,85 +98,63 @@ public class UserRepository
     /// <returns>A <see cref="User"/> object representing the saved or updated user.</returns>
     public async Task<User?> SaveAsync(ulong id)
     {
-        if (!_database.IsConnected())
+        if (_collection == null)
         {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when saving user data.", severity: Severity.Error);
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save user data.", severity: Severity.Error);
             return null;
         }
 
-        string selectSql = $"SELECT id FROM {UsersTable} WHERE id = @id";
-        var selectParam = new NpgsqlParameter("@id", (long)id);
+        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
-        try
+        IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+        BsonDocument element = await cursor.FirstOrDefaultAsync();
+
+        User? user = new User(id);
+
+        if (element != null)
         {
-            var existingId = await _database.ExecuteScalarAsync<long?>(selectSql, selectParam);
-            User? user = new User(id);
-
-            if (existingId.HasValue)
-            {
-                // User exists, load their related data
-                user = await FetchAsync(id);
-            }
-            else
-            {
-                // User doesn't exist, insert new user
-                string insertSql = $@"INSERT INTO {UsersTable} (id) VALUES (@id)";
-                await _database.ExecuteNonQueryAsync(insertSql, new NpgsqlParameter("@id", (long)id));
-                await _redisDatabase.SaveAsync(GRedisKey + id, user);
-            }
-
-            return user;
+            user = await JsonUtil.BsonDocToObjectAsync<User>(element) ?? user;
         }
-        catch (Exception ex)
+        else
         {
-            await AresLogger.LogAsync("SaveUserError", $"Error saving user {id}: {ex.Message}", severity: Severity.Error);
-            return null;
+            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(user);
+
+            if (document != null)
+            {
+                // Insert the document in the database if it doesn't exist.
+                await _collection.InsertOneAsync(document);
+            }
+
+            await _redisDatabase.SaveAsync(GRedisKey + id, user);
         }
+
+        return user;
     }
 
     /// <summary>
     /// Retrieves a user from the cache or database using its ID.
     /// </summary>
     /// <param name="id">Unique ID of the user.</param>
-    /// <param name="saveInRedis">Whether to save the data in Redis if fetched from database.</param>
     /// <returns>A <see cref="User"/> object representing the retrieved user, or null if not found.</returns>
+    /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
+    /// <seealso cref="FetchAsync(ulong, bool)"/>
     public async Task<User?> FetchAsync(ulong id, bool saveInRedis = false)
     {
-        // Try to get from Redis cache first
         User? user = await _redisDatabase.LoadAsync<User>(GRedisKey + id);
 
         if (user == null)
         {
-            // Not in cache, fetch from database
-            if (!_database.IsConnected())
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+
+            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+            BsonDocument element = await cursor.FirstOrDefaultAsync();
+
+            if (element != null)
             {
-                await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when fetching user data.", severity: Severity.Error);
-                return null;
-            }
+                user = await JsonUtil.BsonDocToObjectAsync<User>(element);
 
-            try
-            {
-                string selectSql = $"SELECT id FROM {UsersTable} WHERE id = @id";
-                var param = new NpgsqlParameter("@id", (long)id);
-
-                var userId = await _database.ExecuteScalarAsync<long?>(selectSql, param);
-
-                if (userId.HasValue)
-                {
-                    user = new User((ulong)userId.Value);
-                    // TODO: Implement fetching from the new relational tables (user_chats, etc.)
-                    // For now, we return a new User object. You'll need to query the
-                    // user_chats and user_chat_snippets tables and populate the user.Chat property.
-
-                    if (saveInRedis)
-                    {
-                        await _redisDatabase.SaveAsync(GRedisKey + id, user);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                await AresLogger.LogAsync("FetchUserError", $"Error fetching user {id}: {ex.Message}", severity: Severity.Error);
+                if (saveInRedis && user != null)
+                    await _redisDatabase.SaveAsync(GRedisKey + id, user);
             }
         }
 
@@ -312,33 +165,34 @@ public class UserRepository
     /// Updates a specific field of a user in the database.
     /// </summary>
     /// <param name="user">A <see cref="User"/> object representing the user to be updated.</param>
-    /// <param name="field">Name of the field to be updated (used for logging purposes).</param>
+    /// <param name="field">Name of the field to be updated.</param>
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(User user, string field)
     {
-        if (!_database.IsConnected()) return false;
+        if (_collection == null) return false;
 
         try
         {
-            // TODO: Implement logic to update relational tables.
-            // For example, if 'field' is 'Chat', you would update the 'user_chats' table.
-            // This requires a more complex logic than just updating a JSON blob.
-            // For now, we'll just update the 'updated_at' timestamp.
+            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(user);
+            if (tree == null) return false;
 
-            string updateSql = $@"UPDATE {UsersTable} SET updated_at = CURRENT_TIMESTAMP WHERE id = @id";
-            var parameters = new NpgsqlParameter[] { new("@id", (long)user.Id) };
+            if (!tree.TryGetValue(field, out BsonValue? value))
+                value = null;
 
-            int rowsAffected = await _database.ExecuteNonQueryAsync(updateSql, parameters);
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", user.Id);
 
-            if (rowsAffected > 0)
-            {
-                // Update Redis
-                await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
-                await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\"");
-                return true;
-            }
+            UpdateDefinition<BsonDocument> update = value != null
+                ? Builders<BsonDocument>.Update.Set(field, value)
+                : Builders<BsonDocument>.Update.Unset(field);
 
-            return false;
+            // Update MongoDB
+            await _collection.UpdateOneAsync(filter, update);
+
+            // Update Redis
+            await _redisDatabase.UpdateAsync(GRedisKey + user.Id, user);
+
+            await AresLogger.LogAsync("Repo: User", $"Updated \"{field}\" for user \"{user.Id}\"");
+            return true;
         }
         catch (Exception e)
         {
@@ -375,6 +229,28 @@ public class UserRepository
     }
 
     /// <summary>
+    /// Deletes a user from the database and cache by its ID.
+    /// </summary>
+    /// <param name="id">Unique ID of the user to delete.</param>
+    /// <returns>True if deleted, false otherwise.</returns>
+    public async Task<bool> DeleteAsync(ulong id)
+    {
+        if (_collection == null) return false;
+        try
+        {
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+            var result = await _collection.DeleteOneAsync(filter);
+            await _redisDatabase.DeleteAsync(GRedisKey + id);
+            return result.DeletedCount > 0;
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync("Repo: User", $"Error deleting user {id}: {ex.Message}", severity: Severity.Error);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Retrieves all users from the database, with the option to limit the number of results.
     /// </summary>
     /// <param name="limit">Maximum number of users to retrieve (0 for no limit).</param>
@@ -383,71 +259,30 @@ public class UserRepository
     {
         ConcurrentBag<User> users = new ConcurrentBag<User>();
 
-        if (!_database.IsConnected())
+        if (_collection == null)
         {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when getting all users.", severity: Severity.Error);
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when get all users.", severity: Severity.Error);
             return users;
         }
 
-        try
+        FindOptions<BsonDocument> options = new FindOptions<BsonDocument> { Limit = limit };
+        IAsyncCursor<BsonDocument> documents = await _collection.FindAsync(new BsonDocument(), options);
+
+        await documents.ForEachAsync(async document =>
         {
-            string selectSql = limit > 0
-                ? $"SELECT id FROM {UsersTable} LIMIT @limit"
-                : $"SELECT id FROM {UsersTable}";
-
-            using var reader = limit > 0
-                ? await _database.ExecuteReaderAsync(selectSql, new NpgsqlParameter("@limit", limit))
-                : await _database.ExecuteReaderAsync(selectSql);
-
-            while (await reader.ReadAsync())
+            try
             {
-                var userId = reader.GetInt64("id");
-                // Fetch each user individually. This can be optimized with a JOIN if needed.
-                var user = await FetchAsync((ulong)userId);
+                User? user = await JsonUtil.BsonDocToObjectAsync<User>(document);
+
                 if (user != null)
-                {
                     users.Add(user);
-                }
             }
-        }
-        catch (Exception ex)
-        {
-            await AresLogger.LogAsync("GetAllUsersError", $"Error retrieving all users: {ex.Message}", severity: Severity.Error);
-        }
+            catch (JsonException ex)
+            {
+                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", severity: Severity.Error, extra: ex.Message);
+            }
+        });
 
         return users;
-    }
-
-    /// <summary>
-    /// Deletes a user from the database permanently.
-    /// </summary>
-    /// <param name="id">Unique ID of the user to be deleted.</param>
-    /// <returns>True if the deletion was successful, false otherwise.</returns>
-    public async Task<bool> DeleteAsync(ulong id)
-    {
-        if (!_database.IsConnected()) return false;
-
-        try
-        {
-            string deleteSql = $"DELETE FROM {UsersTable} WHERE id = @id";
-            var param = new NpgsqlParameter("@id", (long)id);
-
-            int rowsAffected = await _database.ExecuteNonQueryAsync(deleteSql, param);
-
-            if (rowsAffected > 0)
-            {
-                // Also remove from Redis cache
-                await DeleteCache(id);
-                await AresLogger.LogAsync("Repo: User", $"Deleted user \"{id}\" from database");
-                return true;
-            }
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            await AresLogger.LogAsync("DeleteUserError", $"Error deleting user {id}: {ex.Message}", severity: Severity.Error);
-            return false;
-        }
     }
 }

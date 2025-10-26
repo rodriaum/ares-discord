@@ -45,6 +45,8 @@ public class ChatCodeSnippetListener
         {
             if (!args.Data.CustomId.StartsWith("chat-snippet-")) return;
 
+            if (Program.IsStarting || Program.IsShuttingDown) return;
+            
             try
             {
                 SocketUser socketUser = args.User;

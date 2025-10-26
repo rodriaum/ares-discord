@@ -8,7 +8,7 @@ using Ares.Common.Models.Data;
 using Ares.Common.Models.Preference;
 using Ares.Common.Models.Token;
 using Ares.Common.Objects;
-using Ares.Common.Repository;
+using Ares.Api.Repository;
 using Ares.Common.Util;
 
 namespace Ares.Common.Manager;

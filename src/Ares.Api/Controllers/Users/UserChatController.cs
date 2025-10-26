@@ -4,7 +4,7 @@ using Ares.Common.Models.Chat;
 using Ares.Common.Models.Chat.Historic;
 using Ares.Common.Models.Data;
 using Ares.Common.Objects;
-using Ares.Common.Repository;
+using Ares.Api.Repository;
 using Ares.Common.Util;
 using Microsoft.AspNetCore.Mvc;
 
@@ -60,7 +60,7 @@ public class UserChatController : ControllerBase
             if (!success)
                 return StatusCode(500, ApiResult<object>.Fail("Failed to create chat data"));
 
-            return Ok(ApiResult<object>.Ok(null, "Chat data created successfully"));
+            return Ok(ApiResult<object>.Ok(true, "Chat data created successfully"));
         }
         catch (Exception ex)
         {

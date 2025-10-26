@@ -5,28 +5,27 @@
  */
 
 using Ares.Common.Constants;
-using Ares.Common.Database.Postgres;
+using Ares.Api.Database.Mongo;
 using Ares.Common.Database.Redis;
 using Ares.Common.Models.Data;
-using Ares.Common.Models.Preference;
 using Ares.Common.Objects;
 using Ares.Common.Util;
-using Npgsql;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using System.Collections.Concurrent;
-using System.Data;
-using System.Text;
+using System.Text.Json;
 
-namespace Ares.Common.Repository;
+namespace Ares.Api.Repository;
 
 /// <summary>
-/// Class responsible for managing guild data in PostgreSQL database.
+/// Class responsible for managing guild data in MongoDB database.
 /// </summary>
 public class GuildRepository
 {
     /// <summary>
-    /// Reference to the PostgreSQL database connection.
+    /// Represents the "guilds" collection in MongoDB database.
     /// </summary>
-    private readonly PostgresDatabase _database;
+    private readonly IMongoCollection<BsonDocument>? _collection;
 
     /// <summary>
     /// Reference to the Redis database used for caching operations and related logic.
@@ -38,157 +37,48 @@ public class GuildRepository
     /// </summary>
     private readonly string GRedisKey = $"{AppConstants.AppName.ToLower()}:guild:";
 
-    /// <summary>
-    /// Table name for guilds in PostgreSQL.
-    /// </summary>
-    private const string GuildsTable = "guilds";
-    private const string GuildPreferencesTable = "guild_preferences";
-    private const string GuildTokensTable = "guild_tokens";
-
     /*
      * Constructors and initialization methods.
      */
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GuildRepository"/> class with the PostgreSQL database.
+    /// Initializes a new instance of the <see cref="GuildRepository"/> class with the guilds collection and guild manager.
     /// </summary>
-    /// <param name="postgresDatabase">PostgreSQL database instance.</param>
+    /// <param name="mongoDatabase">MongoDB database instance that contains the "guilds" collection.</param>
     /// <param name="redisDatabase">Redis database instance used for caching operations.</param>
-    public GuildRepository(PostgresDatabase postgresDatabase, RedisDatabase redisDatabase)
+    public GuildRepository(MongoDatabase mongoDatabase, RedisDatabase redisDatabase)
     {
-        _database = postgresDatabase;
+        _collection = mongoDatabase.mongoDatabase?.GetCollection<BsonDocument>("guilds");
         _redisDatabase = redisDatabase;
+
     }
 
     /// <summary>
-    /// Creates the guilds table and indexes to improve query performance.
+    /// Creates indexes in the "guilds" collection to improve query performance.
     /// </summary>
     public async Task CreateTableAndIndexesAsync()
     {
-        await AresLogger.LogAsync("Repo: Guild", "Checking if table exists in the database...");
+        await AresLogger.LogAsync("Repo: Guild", "Creating indexes in the database...");
 
-        if (!_database.IsConnected())
+        // Check if the collection was initialized before trying to create indexes.
+        if (_collection == null)
         {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when creating guild table.", severity: Severity.Error);
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when creating guild data indexes.", severity: Severity.Error);
             return;
         }
 
         try
         {
-            lock (AppCommon.DatabaseLockObject)
-            {
-                CreateGuildsTable();
-                CreateGuildPreferencesTable();
-                CreateGuildTokensTable();
-            }
+            IndexKeysDefinition<BsonDocument> indexKeys = Builders<BsonDocument>.IndexKeys.Ascending("id");
+            CreateIndexModel<BsonDocument> indexModel = new CreateIndexModel<BsonDocument>(indexKeys);
 
-            await AresLogger.LogAsync("Repo: Guild", "Table and indexes checked/created.");
+            await _collection.Indexes.CreateOneAsync(indexModel);
+
+            await AresLogger.LogAsync("Repo: Guild", "Indexes created.");
         }
         catch (Exception ex)
         {
-            await AresLogger.LogAsync("TableCreationError", $"Error creating table and indexes: {ex.Message}", severity: Severity.Error);
-        }
-    }
-
-    private void CreateGuildsTable()
-    {
-        string checkTableSql = $@"SELECT EXISTS (
-            SELECT 1 FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name = '{GuildsTable}'
-        );";
-
-        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
-
-        if (exists)
-        {
-            AresLogger.Log("Repo: Guild", $"Table '{GuildsTable}' already exists in the database.");
-        }
-        else
-        {
-            AresLogger.Log("Repo: Guild", $"Table '{GuildsTable}' not found, creating...");
-
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{GuildsTable}"" (");
-            sb.AppendLine(@"""id"" BIGINT NOT NULL,");
-            sb.AppendLine(@"""created_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
-            sb.AppendLine(@"""updated_at"" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,");
-            sb.AppendLine(@"PRIMARY KEY (""id"")");
-            sb.AppendLine(@");");
-
-            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
-            AresLogger.Log("Repo: Guild", $"Table '{GuildsTable}' created successfully.");
-        }
-
-        string indexSql = $"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_{GuildsTable}_id ON {GuildsTable} (id)";
-        TryExecuteNonQuery(indexSql);
-    }
-
-    private void CreateGuildPreferencesTable()
-    {
-        string checkTableSql = $@"SELECT EXISTS (
-            SELECT 1 FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name = '{GuildPreferencesTable}'
-        );";
-
-        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
-
-        if (!exists)
-        {
-            AresLogger.Log("Repo: Guild", $"Table '{GuildPreferencesTable}' not found, creating...");
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{GuildPreferencesTable}"" (");
-            sb.AppendLine(@"""guild_id"" BIGINT NOT NULL,");
-            sb.AppendLine(@"""lang"" VARCHAR(10) DEFAULT 'en-US',");
-            sb.AppendLine(@"""member_role_id"" BIGINT,");
-            sb.AppendLine(@"""usage_role_id"" BIGINT,");
-            sb.AppendLine(@"""exclusive_role_id"" BIGINT,");
-            sb.AppendLine(@"""setup_channel_id"" BIGINT,");
-            sb.AppendLine(@"""log_channel_id"" BIGINT,");
-            sb.AppendLine(@"""chats_category_id"" BIGINT,");
-            sb.AppendLine(@"PRIMARY KEY (""guild_id""),");
-            sb.AppendLine(@"FOREIGN KEY (""guild_id"") REFERENCES ""guilds""(""id"") ON DELETE CASCADE");
-            sb.AppendLine(@");");
-
-            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
-            AresLogger.Log("Repo: Guild", $"Table '{GuildPreferencesTable}' created successfully.");
-        }
-    }
-
-    private void CreateGuildTokensTable()
-    {
-        string checkTableSql = $@"SELECT EXISTS (
-            SELECT 1 FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name = '{GuildTokensTable}'
-        );";
-
-        bool exists = _database.ExecuteScalarAsync<bool>(checkTableSql).GetAwaiter().GetResult();
-
-        if (!exists)
-        {
-            AresLogger.Log("Repo: Guild", $"Table '{GuildTokensTable}' not found, creating...");
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($@"CREATE TABLE IF NOT EXISTS ""{GuildTokensTable}"" (");
-            sb.AppendLine(@"""guild_id"" BIGINT NOT NULL,");
-            sb.AppendLine(@"""token_key"" VARCHAR(255) NOT NULL,");
-            sb.AppendLine(@"""token_value"" TEXT NOT NULL,");
-            sb.AppendLine(@"PRIMARY KEY (""guild_id"", ""token_key""),");
-            sb.AppendLine(@"FOREIGN KEY (""guild_id"") REFERENCES ""guilds""(""id"") ON DELETE CASCADE");
-            sb.AppendLine(@");");
-
-            _database.ExecuteNonQueryAsync(sb.ToString()).GetAwaiter().GetResult();
-            AresLogger.Log("Repo: Guild", $"Table '{GuildTokensTable}' created successfully.");
-        }
-    }
-
-    private void TryExecuteNonQuery(string sql)
-    {
-        try
-        {
-            _database.ExecuteNonQueryAsync(sql).GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            AresLogger.Log("IndexCreation", $"Index creation info: {ex.Message}");
+            await AresLogger.LogAsync("IndexCreationError", $"Error creating indexes: {ex.Message}", severity: Severity.Error);
         }
     }
 
@@ -200,110 +90,67 @@ public class GuildRepository
     /// Saves or updates a guild in the database, returning the updated object.
     /// </summary>
     /// <param name="id">Unique ID of the guild.</param>
-    /// <returns>A <see cref="Guild"/> object representing the saved or updated guild.</returns>
+    /// <returns>A <see cref="User"/> object representing the saved or updated guild.</returns>
     public async Task<Guild?> SaveAsync(ulong id)
     {
-        if (!_database.IsConnected())
+        if (_collection == null)
         {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when saving guild data.", severity: Severity.Error);
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when save guild data.", severity: Severity.Error);
             return null;
         }
 
-        string selectSql = $"SELECT id FROM {GuildsTable} WHERE id = @id";
-        var selectParam = new NpgsqlParameter("@id", (long)id);
+        FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
-        try
+        IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+        BsonDocument element = await cursor.FirstOrDefaultAsync();
+
+        Guild? guild = new Guild(id);
+
+        if (element != null)
         {
-            var existingId = await _database.ExecuteScalarAsync<long?>(selectSql, selectParam);
-            Guild? guild = new Guild(id);
+            guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element) ?? guild;
+        }
+        else
+        {
+            BsonDocument? document = await JsonUtil.ObjectToBsonDocumentAsync(guild);
 
-            if (existingId.HasValue)
+            if (document != null)
             {
-                guild = await FetchAsync(id);
-            }
-            else
-            {
-                // Guild doesn't exist, insert new guild and its default preferences
-                string insertGuildSql = $@"INSERT INTO {GuildsTable} (id) VALUES (@id)";
-                await _database.ExecuteNonQueryAsync(insertGuildSql, new NpgsqlParameter("@id", (long)id));
-
-                string insertPrefsSql = $@"INSERT INTO {GuildPreferencesTable} (guild_id) VALUES (@guild_id)";
-                await _database.ExecuteNonQueryAsync(insertPrefsSql, new NpgsqlParameter("@guild_id", (long)id));
-
-                await _redisDatabase.SaveAsync(GRedisKey + id, guild);
+                // Insert the document in the database if it doesn't exist.
+                await _collection.InsertOneAsync(document);
             }
 
-            return guild;
+            await _redisDatabase.SaveAsync(GRedisKey + id, guild);
         }
-        catch (Exception ex)
-        {
-            await AresLogger.LogAsync("SaveGuildError", $"Error saving guild {id}: {ex.Message}", severity: Severity.Error);
-            return null;
-        }
+
+        return guild;
     }
 
     /// <summary>
     /// Retrieves a guild from the cache or database using its ID.
     /// </summary>
     /// <param name="id">Unique ID of the guild.</param>
-    /// <param name="saveInRedis">Whether to save the data in Redis if fetched from database.</param>
-    /// <returns>A <see cref="Guild"/> object representing the retrieved guild, or null if not found.</returns>
+    /// <returns>A <see cref="User"/> object representing the retrieved guild, or null if not found.</returns>
+    /// <returns>A <see cref="bool"/> if you need to save the fetch data in redis</returns>
+    /// <seealso cref="FetchAsync(ulong, bool)"/>
     public async Task<Guild?> FetchAsync(ulong id, bool saveInRedis = false)
     {
         Guild? guild = await _redisDatabase.LoadAsync<Guild>(GRedisKey + id);
-        if (guild != null) return guild;
 
-        if (!_database.IsConnected())
+        if (guild == null)
         {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when fetching guild data.", severity: Severity.Error);
-            return null;
-        }
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
 
-        try
-        {
-            string selectPrefsSql = $"SELECT * FROM {GuildPreferencesTable} WHERE guild_id = @id";
-            using var reader = await _database.ExecuteReaderAsync(selectPrefsSql, new NpgsqlParameter("@id", (long)id));
+            IAsyncCursor<BsonDocument> cursor = await _collection.FindAsync(filter);
+            BsonDocument element = await cursor.FirstOrDefaultAsync();
 
-            if (await reader.ReadAsync())
+            if (element != null)
             {
-                guild = new Guild(id)
-                {
-                    Preferences = new GPreference
-                    {
-                        Lang = reader.GetString(reader.GetOrdinal("lang")),
-                        MemberRoleId = (ulong)reader.GetInt64(reader.GetOrdinal("member_role_id")),
-                        UsageRoleId = (ulong)reader.GetInt64(reader.GetOrdinal("usage_role_id")),
-                        ExclusiveRoleId = (ulong)reader.GetInt64(reader.GetOrdinal("exclusive_role_id")),
-                        SetupChannelId = (ulong)reader.GetInt64(reader.GetOrdinal("setup_channel_id")),
-                        LogChannelId = (ulong)reader.GetInt64(reader.GetOrdinal("log_channel_id")),
-                        ChatsCategoryId = (ulong)reader.GetInt64(reader.GetOrdinal("chats_category_id"))
-                    }
-                };
-            }
-            else
-            {
-                // If no preferences found, it might be a new guild, return a default object
-                return new Guild(id);
-            }
-            await reader.CloseAsync();
+                guild = await JsonUtil.BsonDocToObjectAsync<Guild>(element);
 
-            // Fetch tokens
-            string selectTokensSql = $"SELECT token_key, token_value FROM {GuildTokensTable} WHERE guild_id = @id";
-            using var tokenReader = await _database.ExecuteReaderAsync(selectTokensSql, new NpgsqlParameter("@id", (long)id));
-            while (await tokenReader.ReadAsync())
-            {
-                guild.Token.List[tokenReader.GetString(0)] = tokenReader.GetString(1);
+                if (saveInRedis && guild != null)
+                    await _redisDatabase.SaveAsync(GRedisKey + id, guild);
             }
-
-            if (saveInRedis)
-            {
-                await _redisDatabase.SaveAsync(GRedisKey + id, guild);
-            }
-        }
-        catch (Exception ex)
-        {
-            await AresLogger.LogAsync("FetchGuildError", $"Error fetching guild {id}: {ex.Message}", severity: Severity.Error);
-            return null;
         }
 
         return guild;
@@ -312,56 +159,33 @@ public class GuildRepository
     /// <summary>
     /// Updates a specific field of a guild in the database.
     /// </summary>
-    /// <param name="guild">A <see cref="Guild"/> object representing the guild to be updated.</param>
-    /// <param name="field">Name of the field to be updated (used for logging purposes).</param>
+    /// <param name="guild">A <see cref="User"/> object representing the guild to be updated.</param>
+    /// <param name="field">Name of the field to be updated.</param>
     /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateAsync(Guild guild, string field)
     {
-        if (!_database.IsConnected()) return false;
+        if (_collection == null) return false;
 
         try
         {
-            // Update Preferences
-            var prefs = guild.Preferences;
-            string updatePrefsSql = $@"
-                UPDATE {GuildPreferencesTable} SET
-                    lang = @lang,
-                    member_role_id = @member_role_id,
-                    usage_role_id = @usage_role_id,
-                    exclusive_role_id = @exclusive_role_id,
-                    setup_channel_id = @setup_channel_id,
-                    log_channel_id = @log_channel_id,
-                    chats_category_id = @chats_category_id
-                WHERE guild_id = @guild_id";
+            BsonDocument? tree = await JsonUtil.ObjectToBsonDocumentAsync(guild);
+            if (tree == null) return false;
 
-            await _database.ExecuteNonQueryAsync(updatePrefsSql,
-                new NpgsqlParameter("@lang", prefs.Lang),
-                new NpgsqlParameter("@member_role_id", (long)prefs.MemberRoleId),
-                new NpgsqlParameter("@usage_role_id", (long)prefs.UsageRoleId),
-                new NpgsqlParameter("@exclusive_role_id", (long)prefs.ExclusiveRoleId),
-                new NpgsqlParameter("@setup_channel_id", (long)prefs.SetupChannelId),
-                new NpgsqlParameter("@log_channel_id", (long)prefs.LogChannelId),
-                new NpgsqlParameter("@chats_category_id", (long)prefs.ChatsCategoryId),
-                new NpgsqlParameter("@guild_id", (long)guild.Id));
+            if (!tree.TryGetValue(field, out BsonValue? value))
+                value = null;
 
-            // Update Tokens (delete and re-insert)
-            string deleteTokensSql = $"DELETE FROM {GuildTokensTable} WHERE guild_id = @guild_id";
-            await _database.ExecuteNonQueryAsync(deleteTokensSql, new NpgsqlParameter("@guild_id", (long)guild.Id));
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", guild.Id);
 
-            foreach (var tokenPair in guild.Token.List)
-            {
-                string insertTokenSql = $"INSERT INTO {GuildTokensTable} (guild_id, token_key, token_value) VALUES (@guild_id, @key, @value)";
-                await _database.ExecuteNonQueryAsync(insertTokenSql,
-                    new NpgsqlParameter("@guild_id", (long)guild.Id),
-                    new NpgsqlParameter("@key", tokenPair.Key),
-                    new NpgsqlParameter("@value", tokenPair.Value));
-            }
+            UpdateDefinition<BsonDocument> update = value != null
+                ? Builders<BsonDocument>.Update.Set(field, value)
+                : Builders<BsonDocument>.Update.Unset(field);
 
-            // Update timestamp
-            string updateTimestampSql = $"UPDATE {GuildsTable} SET updated_at = CURRENT_TIMESTAMP WHERE id = @id";
-            await _database.ExecuteNonQueryAsync(updateTimestampSql, new NpgsqlParameter("@id", (long)guild.Id));
+            // Update MongoDB
+            await _collection.UpdateOneAsync(filter, update);
 
+            // Update Redis
             await _redisDatabase.UpdateAsync(GRedisKey + guild.Id, guild);
+
             await AresLogger.LogAsync("Repo: Guild", $"Updated \"{field}\" for guild \"{guild.Id}\".");
             return true;
         }
@@ -406,125 +230,84 @@ public class GuildRepository
     /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved guilds.</returns>
     public async Task<ConcurrentBag<Guild>> GetAllAsync(int limit = 0)
     {
-        ConcurrentBag<Guild> guilds = new ConcurrentBag<Guild>();
+        ConcurrentBag<Guild> users = new ConcurrentBag<Guild>();
 
-        if (!_database.IsConnected())
+        if (_collection == null)
         {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when getting all guilds.", severity: Severity.Error);
-            return guilds;
+            await AresLogger.LogAsync("CollectionNull", "Collection returned null when get all guilds.", severity: Severity.Error);
+            return users;
         }
 
-        try
+        FindOptions<BsonDocument> options = new FindOptions<BsonDocument> { Limit = limit };
+        IAsyncCursor<BsonDocument> documents = await _collection.FindAsync(new BsonDocument(), options);
+
+        await documents.ForEachAsync(async document =>
         {
-            string selectSql = limit > 0
-                ? $"SELECT id FROM {GuildsTable} LIMIT @limit"
-                : $"SELECT id FROM {GuildsTable}";
-
-            using var reader = limit > 0
-                ? await _database.ExecuteReaderAsync(selectSql, new NpgsqlParameter("@limit", limit))
-                : await _database.ExecuteReaderAsync(selectSql);
-
-            while (await reader.ReadAsync())
+            try
             {
-                var guildId = reader.GetInt64("id");
-                var guild = await FetchAsync((ulong)guildId);
-                if (guild != null)
-                {
-                    guilds.Add(guild);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await AresLogger.LogAsync("GetAllGuildsError", $"Error retrieving all guilds: {ex.Message}", severity: Severity.Error);
-        }
+                Guild? guild = await JsonUtil.BsonDocToObjectAsync<Guild>(document);
 
-        return guilds;
+                if (guild != null)
+                    users.Add(guild);
+            }
+            catch (JsonException ex)
+            {
+                await AresLogger.LogAsync("JsonReaderException", "Error deserializing document.", severity: Severity.Error, extra: ex.Message);
+            }
+        });
+
+        return users;
     }
 
     /// <summary>
-    /// Deletes a guild from the database permanently.
+    /// Deletes a guild from the database and cache by its ID.
     /// </summary>
-    /// <param name="id">Unique ID of the guild to be deleted.</param>
-    /// <returns>True if the deletion was successful, false otherwise.</returns>
+    /// <param name="id">Unique ID of the guild to delete.</param>
+    /// <returns>True if deleted, false otherwise.</returns>
     public async Task<bool> DeleteAsync(ulong id)
     {
-        if (!_database.IsConnected()) return false;
-
+        if (_collection == null) return false;
         try
         {
-            string deleteSql = $"DELETE FROM {GuildsTable} WHERE id = @id";
-            var param = new NpgsqlParameter("@id", (long)id);
-
-            int rowsAffected = await _database.ExecuteNonQueryAsync(deleteSql, param);
-
-            if (rowsAffected > 0)
-            {
-                // Also remove from Redis cache
-                await DeleteCache(id);
-                await AresLogger.LogAsync("Repo: Guild", $"Deleted guild \"{id}\" from database");
-                return true;
-            }
-
-            return false;
+            FilterDefinition<BsonDocument> filter = Builders<BsonDocument>.Filter.Eq("id", id);
+            var result = await _collection.DeleteOneAsync(filter);
+            await _redisDatabase.DeleteAsync(GRedisKey + id);
+            return result.DeletedCount > 0;
         }
         catch (Exception ex)
         {
-            await AresLogger.LogAsync("DeleteGuildError", $"Error deleting guild {id}: {ex.Message}", severity: Severity.Error);
+            await AresLogger.LogAsync("Repo: Guild", $"Error deleting guild {id}: {ex.Message}", severity: Severity.Error);
             return false;
         }
     }
 
     /// <summary>
-    /// Retrieves guilds by a specific preference field value.
+    /// Retrieves guilds by a specific field value.
     /// </summary>
-    /// <param name="fieldName">The name of the column in the guild_preferences table.</param>
-    /// <param name="value">Value to search for.</param>
-    /// <param name="limit">Maximum number of guilds to retrieve (0 for no limit).</param>
-    /// <returns>A <see cref="ConcurrentBag{T}"/> containing the retrieved guilds.</returns>
-    public async Task<ConcurrentBag<Guild>> GetByFieldAsync(string fieldName, object value, int limit = 0)
+    /// <param name="fieldPath">JSON path to the field (e.g., "preference.lang")</param>
+    /// <param name="value">Value to search for</param>
+    /// <param name="limit">Maximum number of guilds to return (0 for no limit)</param>
+    /// <returns>ConcurrentBag of Guilds</returns>
+    public async Task<ConcurrentBag<Guild>> GetByFieldAsync(string fieldPath, string value, int limit = 0)
     {
         ConcurrentBag<Guild> guilds = new ConcurrentBag<Guild>();
-        if (!_database.IsConnected())
-        {
-            await AresLogger.LogAsync("DatabaseNotConnected", "Database connection is not available when getting guilds by field.", severity: Severity.Error);
-            return guilds;
-        }
-
+        if (_collection == null) return guilds;
         try
         {
-            // Sanitize fieldName to prevent SQL injection
-            var allowedFields = new[] { "lang", "member_role_id", "usage_role_id", "exclusive_role_id", "setup_channel_id", "log_channel_id", "chats_category_id" };
-            if (!allowedFields.Contains(fieldName))
+            var filter = Builders<BsonDocument>.Filter.Eq(fieldPath, value);
+            var options = new FindOptions<BsonDocument> { Limit = limit > 0 ? limit : (int?)null };
+            var cursor = await _collection.FindAsync(filter, options);
+            await cursor.ForEachAsync(async document =>
             {
-                throw new ArgumentException($"Invalid field name: {fieldName}", nameof(fieldName));
-            }
-
-            string limitClause = limit > 0 ? "LIMIT @limit" : "";
-            string selectSql = $@"SELECT guild_id FROM {GuildPreferencesTable} WHERE ""{fieldName}"" = @value {limitClause}";
-
-            var parameters = new List<NpgsqlParameter> { new NpgsqlParameter("@value", value) };
-            if (limit > 0)
-            {
-                parameters.Add(new NpgsqlParameter("@limit", limit));
-            }
-
-            using var reader = await _database.ExecuteReaderAsync(selectSql, parameters.ToArray());
-            while (await reader.ReadAsync())
-            {
-                var guildId = (ulong)reader.GetInt64(0);
-                var guild = await FetchAsync(guildId, saveInRedis: true);
+                Guild? guild = await JsonUtil.BsonDocToObjectAsync<Guild>(document);
                 if (guild != null)
-                {
                     guilds.Add(guild);
-                }
-            }
+            });
         }
         catch (Exception ex)
         {
-            await AresLogger.LogAsync("GetGuildsByFieldError", $"Error retrieving guilds by field {fieldName}: {ex.Message}", severity: Severity.Error);
+            await AresLogger.LogAsync("Repo: Guild", $"Error in GetByFieldAsync: {ex.Message}", severity: Severity.Error);
         }
-
         return guilds;
     }
 }

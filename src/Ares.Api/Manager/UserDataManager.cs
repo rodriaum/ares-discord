@@ -8,7 +8,7 @@ using Ares.Common.Models.Chat;
 using Ares.Common.Models.Chat.Historic;
 using Ares.Common.Models.Data;
 using Ares.Common.Objects;
-using Ares.Common.Repository;
+using Ares.Api.Repository;
 using Ares.Common.Util;
 
 namespace Ares.Common.Manager;
@@ -175,10 +175,39 @@ public class UserDataManager
     /// </summary>
     public List<UserChatHistoric>? AllChatHistorics(User user, ulong guildId)
     {
-        List<UserChatInfo>? infos = Infos(user)?.GetValueOrDefault(guildId);
-        if (infos == null) return null;
+        try
+        {
+            // Safely get user infos with null checks
+            if (user?.Chat?.Infos == null)
+                return new List<UserChatHistoric>();
 
-        return infos.SelectMany(info => info.Historics).ToList();
+            List<UserChatInfo>? infos = user.Chat.Infos.GetValueOrDefault(guildId);
+            if (infos == null || infos.Count == 0)
+                return new List<UserChatHistoric>();
+
+            // Safely flatten all historics with comprehensive null checks
+            List<UserChatHistoric> historics = new List<UserChatHistoric>();
+            foreach (var info in infos)
+            {
+                if (info?.Historics != null)
+                {
+                    foreach (var historic in info.Historics)
+                    {
+                        if (historic != null)
+                        {
+                            historics.Add(historic);
+                        }
+                    }
+                }
+            }
+
+            return historics;
+        }
+        catch (Exception ex)
+        {
+            AresLogger.Log(nameof(AllChatHistorics), $"Error retrieving all chat historics for user {user?.Id} in guild {guildId}: {ex.Message}", severity: Severity.Error);
+            return new List<UserChatHistoric>();
+        }
     }
 
     /// <summary>
@@ -189,17 +218,47 @@ public class UserDataManager
     /// <returns>List of chat history records or null if not found.</returns>
     public List<UserChatHistoric>? ChatHistorics(User user, ulong guildId, ulong channelId = 0)
     {
-        List<UserChatInfo>? infos = Infos(user)?.GetValueOrDefault(guildId);
-        if (infos == null) return null;
-
-        if (channelId != 0)
+        try
         {
-            infos = infos.FindAll(historic => historic.ChannelId == channelId);
+            // Safely get user infos with null checks
+            if (user?.Chat?.Infos == null)
+                return new List<UserChatHistoric>();
+
+            List<UserChatInfo>? infos = user.Chat.Infos.GetValueOrDefault(guildId);
+            if (infos == null || infos.Count == 0)
+                return new List<UserChatHistoric>();
+
+            // Filter by channel if specified
+            if (channelId != 0)
+            {
+                infos = infos.FindAll(info => info != null && info.ChannelId == channelId);
+                if (infos == null || infos.Count == 0)
+                    return new List<UserChatHistoric>();
+            }
+
+            // Safely flatten all historics with comprehensive null checks
+            List<UserChatHistoric> historics = new List<UserChatHistoric>();
+            foreach (var info in infos)
+            {
+                if (info?.Historics != null)
+                {
+                    foreach (var historic in info.Historics)
+                    {
+                        if (historic != null)
+                        {
+                            historics.Add(historic);
+                        }
+                    }
+                }
+            }
+
+            return historics;
         }
-
-        List<UserChatHistoric> historics = infos.SelectMany(info => info.Historics).ToList();
-
-        return historics;
+        catch (Exception ex)
+        {
+            AresLogger.Log(nameof(ChatHistorics), $"Error retrieving chat historics for user {user?.Id} in guild {guildId}: {ex.Message}", severity: Severity.Error);
+            return new List<UserChatHistoric>();
+        }
     }
 
     /// <summary>

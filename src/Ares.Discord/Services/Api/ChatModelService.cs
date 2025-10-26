@@ -36,19 +36,19 @@ public class ChatModelService
         return HttpUtil.GetAsync<ApiResult<ChatModel>>(_client, $"{_baseUrl}/api/chat-models/{id}/nearest?saveInRedis={saveInRedis.ToString().ToLower()}");
     }
 
-    public Task<ApiResult<bool>?> UpdateModelField(string id, ChatModel model, string field)
+    public Task<ApiResult<object>?> UpdateModelField(string id, ChatModel model, string field)
     {
-        return HttpUtil.PutAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/chat-models/{id}/update-field?field={field}", model);
+        return HttpUtil.PutAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/chat-models/{id}/update-field?field={field}", model);
     }
 
-    public Task<ApiResult<bool>?> UpdateModelFields(string id, ChatModel model, string fields)
+    public Task<ApiResult<object>?> UpdateModelFields(string id, ChatModel model, string fields)
     {
-        return HttpUtil.PutAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/chat-models/{id}/update-fields?fields={fields}", model);
+        return HttpUtil.PutAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/chat-models/{id}/update-fields?fields={fields}", model);
     }
 
-    public Task<ApiResult<ConcurrentBag<ChatModel>>?> GetAllModels(int limit = 0)
+    public Task<ApiResult<IEnumerable<ChatModel>>?> GetAllModels(int limit = 0)
     {
-        return HttpUtil.GetAsync<ApiResult<ConcurrentBag<ChatModel>>>(_client, $"{_baseUrl}/api/chat-models/all?limit={limit}");
+        return HttpUtil.GetAsync<ApiResult<IEnumerable<ChatModel>>>(_client, $"{_baseUrl}/api/chat-models/all?limit={limit}");
     }
 
     public Task<ApiResult<object>?> DeleteModel(string id)
@@ -61,8 +61,8 @@ public class ChatModelService
         return HttpUtil.DeleteAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/chat-models/{id}/remove-cache");
     }
 
-    public Task<ApiResult<bool>?> PersistModel(string id)
+    public Task<ApiResult<object>?> PersistModel(string id)
     {
-        return HttpUtil.PostAsync<ApiResult<bool>>(_client, $"{_baseUrl}/api/chat-models/{id}/persist-cache", new { });
+        return HttpUtil.PostAsync<ApiResult<object>>(_client, $"{_baseUrl}/api/chat-models/{id}/persist-cache", new { });
     }
 }

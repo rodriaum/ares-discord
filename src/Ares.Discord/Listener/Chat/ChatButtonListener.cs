@@ -1,4 +1,4 @@
-﻿/*
+﻿﻿/*
  * Copyright (C) Rodrigo Ferreira, All Rights Reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
@@ -42,6 +42,8 @@ public class ChatButtonListener
         {
             if (!args.Data.CustomId.Equals("close-chat")) return;
 
+            if (Program.IsStarting || Program.IsShuttingDown) return;
+            
             await args.RespondAsync(ephemeral: true, text: AppConstants.LoadingEmote);
             RestInteractionMessage message = await args.GetOriginalResponseAsync();
 
@@ -126,8 +128,8 @@ public class ChatButtonListener
                     return;
                 }
 
-                ApiResult<bool>? toggleResult = await _userService!.ToggleChatStatus(user.Id, guild.Id, channel.Id, false);
-                if (toggleResult == null || !toggleResult.Success || !(toggleResult.Data))
+                ApiResult<object>? toggleResult = await _userService!.ToggleChatStatus(user.Id, guild.Id, channel.Id, false);
+                if (toggleResult == null || !toggleResult.Success)
                 {
                     await message.ModifyAsync(it => it.Content = Program.LangManager.GetTranslation(guild, LanguageKeys.UnableFindChat) + " (toggle_chat_info)");
                     return;

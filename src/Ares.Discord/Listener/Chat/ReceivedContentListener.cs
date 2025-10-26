@@ -1,4 +1,4 @@
-﻿/*
+﻿﻿/*
  * Copyright (C) Rodrigo Ferreira, All Rights Reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
@@ -58,6 +58,8 @@ public class ReceivedContentListener
         {
             try
             {
+                if (Program.IsStarting || Program.IsShuttingDown) return;
+                
                 if (args is not SocketUserMessage message)
                     return;
 
@@ -132,8 +134,23 @@ public class ReceivedContentListener
 
                 SocketGuildUser guildUser = socketGuild.GetUser(iuser.Id);
 
-                ApiResult<List<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channel.Id);
-                List<UserChatHistoric>? historics = historicsResult != null && historicsResult.Success ? historicsResult.Data : null;
+                // Safely retrieve chat history with proper null checks
+                List<UserChatHistoric>? historics = null;
+                try
+                {
+                    ApiResult<IEnumerable<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channel.Id);
+                    
+                    if (historicsResult != null && historicsResult.Success && historicsResult.Data != null)
+                    {
+                        // Safely convert to list, handling potential null enumerable
+                        historics = historicsResult.Data?.ToList() ?? new List<UserChatHistoric>();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await AresLogger.LogAsync(nameof(MessageReceivedHandler), $"Failed to retrieve chat history: {ex.Message}", severity: Severity.Warning);
+                    // Continue without history - not a critical failure
+                }
 
                 switch (model.Type)
                 {
@@ -253,8 +270,8 @@ public class ReceivedContentListener
                     .WithFooter($"{date.Year} - {AppConstants.AppName} | {model.DisplayName}");
             }
 
-            ApiResult<List<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channelId);
-
+            ApiResult<IEnumerable<UserChatHistoric>>? historicsResult = await _userService.GetChatHistory(user.Id, guild.Id, channelId: channelId);
+            
             if (historicsResult == null || !historicsResult.Success)
             {
                 embed.WithDescription(result)
@@ -264,7 +281,7 @@ public class ReceivedContentListener
             else
             {
                 // Atualiza o historico de chat após a geracão.
-                historics = historicsResult?.Data;
+                historics = historicsResult.Data?.ToList();
 
                 // Process pricing information
                 priceEmbed = CreatePriceEmbedForChat(guild, model, historics);

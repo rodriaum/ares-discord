@@ -1,18 +1,19 @@
+using Ares.Api.Database.Mongo;
 using Ares.Api.Filter;
 using Ares.Api.HealthChecks;
+using Ares.Api.Repository;
 using Ares.Api.Services.Core;
 using Ares.Common.Constants;
-using Ares.Common.Database.Postgres;
 using Ares.Common.Database.Redis;
 using Ares.Common.Manager;
 using Ares.Common.Models.Database;
-using Ares.Common.Repository;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
 using Prometheus;
 using Serilog;
 
@@ -58,17 +59,17 @@ public class Startup
     /// </summary>
     private void ConfigureDatabaseCredentials(IServiceCollection services)
     {
-        // PostgreSQL Credentials
+        // Mongo Credentials
         services.AddSingleton(provider =>
         {
             IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
-            return new PostgresCredentials
+            return new MongoCredentials
             {
-                Host = Environment.GetEnvironmentVariable("POSTGRES_HOST"),
-                Port = int.Parse(Environment.GetEnvironmentVariable("POSTGRES_PORT") ?? "0"),
-                User = Environment.GetEnvironmentVariable("POSTGRES_USER"),
-                Password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD"),
-                Database = Environment.GetEnvironmentVariable("POSTGRES_DATABASE")
+                Host = Environment.GetEnvironmentVariable("MONGO_HOST"),
+                Port = int.Parse(Environment.GetEnvironmentVariable("MONGO_PORT") ?? "0"),
+                User = Environment.GetEnvironmentVariable("MONGO_USER"),
+                Password = Environment.GetEnvironmentVariable("MONGO_PASSWORD"),
+                Database = Environment.GetEnvironmentVariable("MONGO_DATABASE")
             };
         });
 
@@ -90,10 +91,10 @@ public class Startup
     /// </summary>
     private void ConfigureDatabaseConnections(IServiceCollection services)
     {
-        services.AddSingleton<PostgresDatabase>(provider =>
+        services.AddSingleton<MongoDatabase>(provider =>
         {
-            var credentials = provider.GetRequiredService<PostgresCredentials>();
-            return new PostgresDatabase(credentials);
+            var credentials = provider.GetRequiredService<MongoCredentials>();
+            return new MongoDatabase(credentials);
         });
 
         services.AddSingleton<RedisDatabase>(provider =>
@@ -406,7 +407,7 @@ public class Startup
     /// </summary>
     private void ConfigureHttpsAndRouting(IApplicationBuilder app)
     {
-        app.UseHttpsRedirection();
+        //app.UseHttpsRedirection();
         app.UseRouting();
     }
 

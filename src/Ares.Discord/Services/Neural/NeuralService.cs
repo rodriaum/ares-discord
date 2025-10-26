@@ -261,8 +261,23 @@ public class NeuralService
         ulong channel,
         string prompt)
     {
-        ApiResult<List<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channel);
-        List<UserChatHistoric>? historics = historicsResult != null && historicsResult.Success ? historicsResult.Data : null;
+        // Safely retrieve chat history with proper null checks
+        List<UserChatHistoric>? historics = null;
+        try
+        {
+            ApiResult<IEnumerable<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channel);
+            
+            if (historicsResult != null && historicsResult.Success && historicsResult.Data != null)
+            {
+                // Safely convert to list, handling potential null enumerable
+                historics = historicsResult.Data?.ToList() ?? new List<UserChatHistoric>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync(nameof(HandleLocalModelRequestAsync), $"Failed to retrieve chat history: {ex.Message}", severity: Severity.Warning);
+            // Continue without history - not a critical failure
+        }
 
         ApiResult<UserChatInfo>? infoResult = await _userService.GetChatInfoByChannel(user.Id, guild.Id, channel);
         if (infoResult == null || !infoResult.Success || infoResult.Data == null)
@@ -313,13 +328,28 @@ public class NeuralService
             return (Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindToken), false);
         }
 
-        ApiResult<List<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channel);
-        List<UserChatHistoric>? historics = historicsResult != null && historicsResult.Success ? historicsResult.Data : null;
+        // Safely retrieve chat history with proper null checks
+        List<UserChatHistoric>? historics = null;
+        try
+        {
+            ApiResult<IEnumerable<UserChatHistoric>>? historicsResult = await _userService!.GetChatHistory(user.Id, guild.Id, channelId: channel);
+            
+            if (historicsResult != null && historicsResult.Success && historicsResult.Data != null)
+            {
+                // Safely convert to list, handling potential null enumerable
+                historics = historicsResult.Data?.ToList() ?? new List<UserChatHistoric>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await AresLogger.LogAsync(nameof(HandleRemoteModelRequestAsync), $"Failed to retrieve chat history: {ex.Message}", severity: Severity.Warning);
+            // Continue without history - not a critical failure
+        }
 
         ApiResult<UserChatInfo>? infoResult = await _userService!.GetChatInfoByChannel(user.Id, guild.Id, channel);
         if (infoResult == null || !infoResult.Success || infoResult.Data == null)
         {
-            AresLogger.Log("GenerateConversationAsync", "Chat information could not be accessed.", severity: Severity.Error);
+            AresLogger.Log(nameof(HandleRemoteModelRequestAsync), "Chat information could not be accessed.", severity: Severity.Error);
             return (Program.LangManager.GetTranslation(guild, LanguageKeys.CouldNotFindInfo) + $" ({nameof(HandleRemoteModelRequestAsync)})", false);
         }
         UserChatInfo info = infoResult.Data;

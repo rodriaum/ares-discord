@@ -1,4 +1,4 @@
-﻿/*
+﻿﻿/*
  * Copyright (C) Rodrigo Ferreira, All Rights Reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
@@ -45,6 +45,8 @@ public class SetupCommand
         _ = Task.Run(async () =>
         {
             if (_client == null || !command.Data.Name.Equals("setup")) return;
+            
+            if (Program.IsStarting || Program.IsShuttingDown) return;
 
             ulong? guildId = command.GuildId;
 
@@ -100,7 +102,7 @@ public class SetupCommand
             embed.WithFooter($"Modelos {requestType}");
 
 
-        ApiResult<ConcurrentBag<ChatModel>>? modelsResult = await _chatModelService!.GetAllModels();
+        ApiResult<IEnumerable<ChatModel>>? modelsResult = await _chatModelService!.GetAllModels();
 
         if (modelsResult == null || !modelsResult.Success)
         {
@@ -113,7 +115,7 @@ public class SetupCommand
             return;
         }
 
-        ConcurrentBag<ChatModel>? models = modelsResult.Data;
+        IEnumerable<ChatModel>? models = modelsResult.Data;
 
         if (models == null || !models.Any())
         {

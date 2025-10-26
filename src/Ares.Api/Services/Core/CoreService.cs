@@ -1,8 +1,8 @@
-﻿using Ares.Common.Constants;
-using Ares.Common.Database.Postgres;
+﻿using Ares.Api.Database.Mongo;
+using Ares.Api.Repository;
+using Ares.Common.Constants;
 using Ares.Common.Database.Redis;
 using Ares.Common.Monitor;
-using Ares.Common.Repository;
 
 namespace Ares.Api.Services.Core;
 
@@ -11,7 +11,7 @@ namespace Ares.Api.Services.Core;
 /// </summary>
 public class CoreService
 {
-    private readonly PostgresDatabase _postgresDatabase;
+    private readonly MongoDatabase _mongoDatabase;
     private readonly RedisDatabase _redisDatabase;
 
     private readonly ChatModelRepository _chatModelRepository;
@@ -21,14 +21,14 @@ public class CoreService
     private readonly ILogger<CoreService> _logger;
 
     public CoreService(
-        PostgresDatabase postgresDatabase,
+        MongoDatabase mongoDatabase,
         RedisDatabase redisDatabase,
         ChatModelRepository chatModelRepository,
         GuildRepository guildRepository,
         UserRepository userRepository,
         ILogger<CoreService> logger)
     {
-        _postgresDatabase = postgresDatabase;
+        _mongoDatabase = mongoDatabase;
         _redisDatabase = redisDatabase;
 
         _chatModelRepository = chatModelRepository;
@@ -42,7 +42,7 @@ public class CoreService
     {
         try
         {
-            await _postgresDatabase.ConnectAsync();
+            await _mongoDatabase.ConnectAsync();
             await _redisDatabase.ConnectAsync();
 
             await _chatModelRepository.CreateTableAndIndexesAsync();
@@ -66,7 +66,7 @@ public class CoreService
 
     public async Task CloseAsync()
     {
-        await _postgresDatabase.CloseAsync();
+        await _mongoDatabase.CloseAsync();
         await _redisDatabase.CloseAsync();
     }
 
