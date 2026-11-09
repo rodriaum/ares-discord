@@ -68,3 +68,7 @@ Ares follows a modular architecture designed to make it easier to integrate new 
 - **AI Services:** OpenAI, Anthropic, DeepSeek, and xAI.
 - **Data Storage:** MongoDB for persistent data and Redis for optimized caching.
 - **Discord Integration:** Discord API support for creating and managing bots.
+
+## License
+
+This project is distributed under the [MIT License](./LICENSE).
