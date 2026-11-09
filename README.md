@@ -1,44 +1,51 @@
 # Ares
 
-Ares é uma plataforma de chat privado poderosa e flexível projetada para aprimorar sua experiência no Discord com interações inteligentes. Esta plataforma utiliza tecnologias de IA de ponta para gerar texto, imagens e mais, tudo isso mantendo armazenamento de dados seguro e em conformidade.
+Ares is a powerful and flexible private chat platform designed to enhance your Discord experience through intelligent interactions. It uses modern AI technologies to generate text, images, and more while keeping data storage secure and reliable.
 
-## Demonstração em Vídeo
+## Video Demo
 
 https://github.com/user-attachments/assets/4adcdaf8-8a5a-4a45-ac0b-68eb1518bc1f
 
-*O vídeo acima demonstra como criar um chat privado. Aviso! A edição da mensagem em tempo real foi retirada, devido ao rate-limit do Discord.*
+*The video above demonstrates how to create a private chat. Note: real-time message editing was removed due to Discord rate limits.*
 
-## Recursos
+## Features
 
-### Chat Privado
-- **Chats Personalizáveis**: Crie chats privados adaptados às suas necessidades.
-- **Multi Linguagem**: Suporta diversas linguagens tais como Português, Inglês, etc. Podendo criar um arquivo `.json` para cada idioma.
+### Private Chat
+- **Customizable Chats:** Create private chats tailored to your needs.
+- **Multilingual Support:** Supports multiple languages, including Portuguese and English. Add a `.json` file for each language.
 
-### Interações com IA
-- **Geração de Texto**: Crie de conversas naturais usando modelos de vários provedores de IA.
-- **Criação de Imagens**: Gere imagens de alta qualidade baseadas em descrições do usuário.
-- **Gerenciamento de Modelos**: Acesse e alterne entre diferentes modelos de IA sem problemas.
+### AI-Powered Interactions
+- **Text Generation:** Generate natural conversations using models from multiple AI providers.
+- **Image Generation:** Create high-quality images from user-provided prompts.
+- **Model Management:** Easily access and switch between different AI models.
 
-### Armazenamento de Dados
-- **Local Storage**: Funciona como um cache primário à frente do Redis, proporcionando armazenamento temporário de acesso rápido para guardar, recuperar e eliminar dados com eficiência.
-- **MongoDB**: Armazene extenso histórico de conversas, URLs de imagens e usos de tokens com segurança no MongoDB.
-- **Redis**: Atua como um cache intermediário de alta velocidade, otimizando a recuperação de dados persistidos no MongoDB e reduzindo a latência nas interações.
+### Data Storage
+- **Local Storage:** Acts as the primary cache before Redis, providing fast temporary storage for efficient data retrieval and deletion.
+- **MongoDB:** Securely stores extensive conversation history, image URLs, and token usage.
+- **Redis:** Provides a high-speed intermediate cache, improving access to persisted MongoDB data and reducing interaction latency.
 
-## Pré-requisitos
-Para usar o Ares, certifique-se de ter o seguinte configurado:
-1. **Discord.Net**: A plataforma principal para interagir com o Ares.
-2. **Serviços de IA**: Acesso aos modelos OpenAI, Anthropic, DeepSeek, xAI, etc.
-3. **Driver MongoDB**: Para armazenar grandes conjuntos de dados eficientemente.
-4. **Driver Redis**: Para otimização e caching de dados, tornando as consultas mais rápidas.
+## Prerequisites
 
-## Instalação
-Siga estes passos para configurar seu ambiente:
-1. Clone o repositório:
+Before using Ares, make sure you have the following:
+
+1. **.NET and Discord.Net:** The platform and library used to interact with Discord.
+2. **AI Providers:** Access to AI models from providers such as OpenAI, Anthropic, DeepSeek, and xAI.
+3. **MongoDB Driver:** Used to store conversation data and related information.
+4. **Redis:** Used for caching and faster data access.
+
+## Installation
+
+Follow these steps to set up your development environment:
+
+1. Clone the repository:
+
    ```bash
    git clone https://github.com/rodriaum/ares-discord.git
    cd ares-discord
    ```
-2. Instale os pacotes NuGet necessários:
+
+2. Install the required NuGet packages:
+
    ```bash
    dotnet add package Discord.Net
    dotnet add package DotNetEnv
@@ -47,13 +54,17 @@ Siga estes passos para configurar seu ambiente:
    dotnet add package StackExchange.Redis
    dotnet add package OpenAI
    ```
-3. Crie um arquivo `.env` na pasta de compilação (Release ou Build) do projeto com base no `.env.example`:
-   ```
-   DISCORD_TOKEN=...
+
+3. Create a `.env` file in the project's build output directory (`Release` or `Build`), using `.env.example` as a reference:
+
+   ```env
+   DISCORD_TOKEN=your_discord_bot_token
    ```
 
-## Arquitetura
-Ares é construído com uma arquitetura modular que permite fácil integração de novos modelos e serviços de IA. A plataforma utiliza:
-- Serviços de IA: OpenAI, Anthropic, DeepSeek, xAI.
-- Armazenamento de Dados:  MongoDB para gerenciamento eficiente e Redis para caching otimizado.
-- Integração com Discord: Suporte completo à API do Discord para criação e gerenciamento de bots.
+## Architecture
+
+Ares follows a modular architecture designed to make it easier to integrate new AI models and services. It uses:
+
+- **AI Services:** OpenAI, Anthropic, DeepSeek, and xAI.
+- **Data Storage:** MongoDB for persistent data and Redis for optimized caching.
+- **Discord Integration:** Discord API support for creating and managing bots.
