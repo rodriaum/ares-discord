@@ -12,14 +12,16 @@ public class GTokenModel
     public string? Anthropic { get; set; }
     public string? Deepseek { get; set; }
     public string? xAI { get; set; }
+    public string? Google { get; set; }
     public string? Imgur { get; set; }
 
-    public GTokenModel(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? imgur = "")
+    public GTokenModel(string openai = "", string anthropic = "", string deepseek = "", string xai = "", string? imgur = "", string? google = "")
     {
         this.OpenAi = openai;
         this.Anthropic = anthropic;
         this.Deepseek = deepseek;
         this.xAI = xai;
+        this.Google = google;
         this.Imgur = imgur;
     }
 }

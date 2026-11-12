@@ -134,33 +134,33 @@ internal class ConfigCommand
                  */
 
                 case "openai":
+                    tokenChange |= !string.Equals(tokenData.OpenAi, optionValue, StringComparison.Ordinal);
                     tokenData.OpenAi = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                    tokenChange = tokenData.OpenAi != optionValue;
                     break;
 
                 case "anthropic":
+                    tokenChange |= !string.Equals(tokenData.Anthropic, optionValue, StringComparison.Ordinal);
                     tokenData.Anthropic = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                    tokenChange = tokenData.Anthropic != optionValue;
                     break;
 
                 case "deepseek":
+                    tokenChange |= !string.Equals(tokenData.Deepseek, optionValue, StringComparison.Ordinal);
                     tokenData.Deepseek = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                    tokenChange = tokenData.Deepseek != optionValue;
                     break;
 
                 case "xai":
+                    tokenChange |= !string.Equals(tokenData.xAI, optionValue, StringComparison.Ordinal);
                     tokenData.xAI = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                    tokenChange = tokenData.xAI != optionValue;
+                    break;
+
+                case "google":
+                    tokenChange |= !string.Equals(tokenData.Google, optionValue, StringComparison.Ordinal);
+                    tokenData.Google = optionValue;
                     break;
 
                 case "imgur":
+                    tokenChange |= !string.Equals(tokenData.Imgur, optionValue, StringComparison.Ordinal);
                     tokenData.Imgur = optionValue;
-                    // Só salva se o token for diferente. Não há mensagem para evitar força bruta.
-                    tokenChange = tokenData.Imgur != optionValue;
                     break;
 
                 /*
