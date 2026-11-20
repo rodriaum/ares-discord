@@ -316,6 +316,7 @@ public class AiService
             ModelCategory.Anthropic => tokenData.Anthropic,
             ModelCategory.DeepSeek => tokenData.Deepseek,
             ModelCategory.xAI => tokenData.xAI,
+            ModelCategory.Google => tokenData.Google,
             _ => null
         };
 

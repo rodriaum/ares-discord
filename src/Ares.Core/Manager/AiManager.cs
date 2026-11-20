@@ -7,7 +7,6 @@
 using Ares.Ares.Core.Objects.Model;
 using Ares.Core.Objects.Chat.Image;
 using Ares.Core.Objects.Chat.Price;
-using Ares.Core.Objects.Language;
 using Ares.Core.Objects.Model;
 using Ares.Core.Util;
 using System.Collections.ObjectModel;
@@ -31,343 +30,203 @@ public class AiManager
 
         List<ChatModel> models = new List<ChatModel>
         {
-
             /*
-             * OpenAI Models
+             * OpenAI
              */
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "GPT-4.5 Preview",
-                model: "gpt-4.5-preview",
-                descriptionKey: LangKeys.ModelDescGpt45,
+                display: "GPT-6 Astra",
+                model: "gpt-6-astra",
                 task: ModelTaskCategory.Flagship,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00015m, inputPricePerToken: 0.000068m),
-                exclusive: true
+                price: new ChatPriceUsage(outputPricePerToken: 0.00005m, inputPricePerToken: 0.00001m)
             ),
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "o1 Pro",
-                model: "o1-pro",
-                descriptionKey: LangKeys.ModelDescO1Pro,
+                display: "GPT-6.1 Sol",
+                model: "gpt-6.1-sol",
                 task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0006m, inputPricePerToken: 0.00015m),
-                exclusive: true
+                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.000002m)
             ),
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "o1",
-                model: "o1",
-                descriptionKey: LangKeys.ModelDescO1,
-                task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000044m, inputPricePerToken: 0.000015m),
-                exclusive: true
-            ),
-
-            new(
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "o1-mini",
-                model: "o1-mini",
-                task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.0000011m),
-                available: true
-            ),
-
-            new(
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "o3-mini",
-                model: "o3-mini",
-                descriptionKey: LangKeys.ModelDescO3Mini,
-                task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.0000011m),
-                available: true
-            ),
-
-            new(
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "GPT-4o",
-                model: "gpt-4o",
-                descriptionKey: LangKeys.ModelDescGpt4o,
-                task: ModelTaskCategory.Flagship,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.0000025m),
-                available: true
-            ),
-
-            new(
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "GPT-4o Mini",
-                model: "gpt-4o-mini",
-                descriptionKey: LangKeys.ModelDescGpt4oMini,
+                display: "GPT-6.1 Terra",
+                model: "gpt-6.1-terra",
                 task: ModelTaskCategory.CostOptimized,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.00000015m),
-                available: true
+                price: new ChatPriceUsage(outputPricePerToken: 0.000005m, inputPricePerToken: 0.000001m)
             ),
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Chat,
-                display: "GPT-4o Search Preview",
-                model: "gpt-4o-search-preview",
-                descriptionKey: LangKeys.ModelDescGpt4oS,
-                task: ModelTaskCategory.ToolSpecific,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.0000025m),
-                available: true
-            ),
-
-            new(
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "GPT-4o Mini Search Preview",
-                model: "gpt-4o-mini-search-preview",
-                task: ModelTaskCategory.ToolSpecific,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.00000015m),
-                available: true
-            ),
-
-            new(
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "GPT-4 Turbo",
-                model: "gpt-4-turbo",
-                task: ModelTaskCategory.Older,
-                price: new ChatPriceUsage(outputPricePerToken:0.00003m, inputPricePerToken: 0.00001m),
-                available: true
-            ),
-
-            new(
-                category: ModelCategory.OpenAI,
-                type: ModelType.Chat,
-                display: "GPT-3 Turbo",
-                model: "gpt-3.5-turbo",
-                task: ModelTaskCategory.Older,
-                price: new ChatPriceUsage(outputPricePerToken: 0.0000015m, inputPricePerToken: 0.0000005m),
-                available: true
+                display: "GPT-6 Luna",
+                model: "gpt-6-luna",
+                task: ModelTaskCategory.CostOptimized,
+                price: new ChatPriceUsage(outputPricePerToken: 0.0000005m, inputPricePerToken: 0.0000001m)
             ),
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Image,
-                display: "DALL·E 3",
-                model: "dall-e-3",
+                display: "GPT Image 2.6 Sunburst",
+                model: "gpt-image-2.6",
                 task: ModelTaskCategory.Image,
-                price: new ChatPriceUsage(
-                    details: new List<ChatPriceUsageDetail>()
-                    {
-                        new ChatPriceUsageDetail(ImageQuality.High, ImageSize.W1024xH1792, 0.12m),
-                        new ChatPriceUsageDetail(ImageQuality.High, ImageSize.W1024xH1024, 0.08m),
-                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W1024xH1792, 0.08m),
-                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W1024xH1024, 0.04m)
-                    }
-                ),
-                available: true
+                price: new ChatPriceUsage()
             ),
 
             new(
                 category: ModelCategory.OpenAI,
                 type: ModelType.Image,
-                display: "DALL·E 2",
-                model: "dall-e-2",
+                display: "GPT Image 2.6 Flare",
+                model: "gpt-image-2.6",
                 task: ModelTaskCategory.Image,
-                price: new ChatPriceUsage(
-                    details: new List<ChatPriceUsageDetail>()
-                    {
-                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W1024xH1024, 0.016m),
-                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W512xH512, 0.018m),
-                        new ChatPriceUsageDetail(ImageQuality.Standard, ImageSize.W256xH256, 0.02m)
-                    }
-                ),
-                available: true
+                price: new ChatPriceUsage()
             ),
 
             new(
                 category: ModelCategory.OpenAI,
-                type: ModelType.TTS,
-                display: "TTS 1",
-                model: "tts-1",
-                task: ModelTaskCategory.TTS,
-                price: new ChatPriceUsage(outputPricePerToken: 0.000015m),
-                available: true
+                type: ModelType.Image,
+                display: "GPT Image 2.5 Sunburst",
+                model: "gpt-image-2.5",
+                task: ModelTaskCategory.Image,
+                price: new ChatPriceUsage()
             ),
 
             new(
                 category: ModelCategory.OpenAI,
-                type: ModelType.TTS,
-                display: "TTS 1 HD",
-                model: "tts-1-hd",
-                task: ModelTaskCategory.TTS,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00003m),
-                exclusive: true
+                type: ModelType.Image,
+                display: "GPT Image 2.5 Flare",
+                model: "gpt-image-2.5",
+                task: ModelTaskCategory.Image,
+                price: new ChatPriceUsage()
             ),
 
             /*
-             * Anthropic Models
+             * Anthropic
              */
 
             new(
                 category: ModelCategory.Anthropic,
                 type: ModelType.Chat,
-                display: "Claude v2.1",
-                model: "claude-2.1",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
-                available: false
-            ),
-
-            new(
-                category: ModelCategory.Anthropic,
-                type: ModelType.Chat,
-                display: "Claude v2.0",
-                model: "claude-2.0",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
-                available: false
-            ),
-
-            new(
-                category: ModelCategory.Anthropic,
-                type: ModelType.Chat,
-                display: "Claude Instant v1.2",
-                model: "claude-instant-1.2",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
-                available: false
-            ),
-
-            new(
-                category: ModelCategory.Anthropic,
-                type: ModelType.Chat,
-                display: "Claude 3 Opus",
-                model: "claude-3-opus-20240229",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000075m, inputPricePerToken: 0.000015m),
-                available: false
-            ),
-
-            new(
-                category: ModelCategory.Anthropic,
-                type: ModelType.Chat,
-                display: "Claude 3 Sonnet",
-                model: "claude-3-sonnet-20240229",
-                price: new ChatPriceUsage(outputPricePerToken: 0.0m, inputPricePerToken: 0.0m),
-                available: false
-            ),
-
-            new(
-                category: ModelCategory.Anthropic,
-                type: ModelType.Chat,
-                display: "Claude 3.7 Sonnet",
-                model: "claude-3-7-sonnet-20250219",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000015m, inputPricePerToken: 0.000003m),
-                exclusive: true
-            ),
-
-            new(
-                category: ModelCategory.Anthropic,
-                type: ModelType.Chat,
-                display: "Claude 3.5 Sonnet",
-                model: "claude-3-5-sonnet-20241022",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000015m, inputPricePerToken: 0.000003m),
-                available: true
-            ),
-
-            new(
-                category: ModelCategory.Anthropic,
-                type: ModelType.Chat,
-                display: "Claude 3.5 Haiku",
-                model: "claude-3-5-haiku-20241022",
-                price: new ChatPriceUsage(outputPricePerToken: 0.000004m, inputPricePerToken: 0.0000008m),
-                available: true
-            ),
-
-            new(
-                category: ModelCategory.Anthropic,
-                type: ModelType.Chat,
-                display: "Claude 3 Haiku",
-                model: "claude-3-haiku-20240307",
-                price: new ChatPriceUsage(outputPricePerToken: 0.00000125m, inputPricePerToken: 0.00000025m),
-                available: true
-            ),
-
-            /*
-             * DeepSeek Models
-             */
-
-            new(
-                category: ModelCategory.DeepSeek,
-                type: ModelType.Chat,
-                display: "Deepseek V3",
-                model: "deepseek-chat",
+                display: "Claude Fable 5.2",
+                model: "claude-fable-5-2",
                 task: ModelTaskCategory.Flagship,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00000110m, inputPricePerToken: 0.00000027m),
-                available: true
+                price: new ChatPriceUsage(outputPricePerToken: 0.00004m, inputPricePerToken: 0.000008m)
+            ),
+
+            new(
+                category: ModelCategory.Anthropic,
+                type: ModelType.Chat,
+                display: "Claude Opus 5.5",
+                model: "claude-opus-5-5",
+                task: ModelTaskCategory.Reasoning,
+                price: new ChatPriceUsage(outputPricePerToken: 0.00002m, inputPricePerToken: 0.000004m)
+            ),
+
+            new(
+                category: ModelCategory.Anthropic,
+                type: ModelType.Chat,
+                display: "Claude Sonnet 5.5",
+                model: "claude-sonnet-5-5",
+                task: ModelTaskCategory.Flagship,
+                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.000002m)
+            ),
+
+            new(
+                category: ModelCategory.Anthropic,
+                type: ModelType.Chat,
+                display: "Claude Haiku 5.5",
+                model: "claude-haiku-5-5",
+                task: ModelTaskCategory.CostOptimized,
+                price: new ChatPriceUsage(outputPricePerToken: 0.0000005m, inputPricePerToken: 0.0000001m)
+            ),
+
+            /*
+             * DeepSeek
+             */
+
+            new(
+                category: ModelCategory.DeepSeek,
+                type: ModelType.Chat,
+                display: "DeepSeek V4.1 Flash",
+                model: "deepseek-flash",
+                task: ModelTaskCategory.CostOptimized,
+                price: new ChatPriceUsage(outputPricePerToken: 0.0000006m, inputPricePerToken: 0.00000015m)
             ),
 
             new(
                 category: ModelCategory.DeepSeek,
                 type: ModelType.Chat,
-                display: "Deepseek R1",
-                model: "deepseek-reasoner",
+                display: "DeepSeek V4 Pro",
+                model: "deepseek-v4-pro",
                 task: ModelTaskCategory.Reasoning,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00000219m, inputPricePerToken: 0.00000055m),
-                available: true
+                price: new ChatPriceUsage(outputPricePerToken: 0.00000198m, inputPricePerToken: 0.00000066m)
             ),
 
             /*
-             * xAI Models
+             * xAI
              */
 
             new(
                 category: ModelCategory.xAI,
                 type: ModelType.Chat,
-                display: "Grok 2",
-                model: "grok-2-latest",
-                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.000002m),
-                available: true
+                display: "Grok 4.7",
+                model: "grok-4.7",
+                task: ModelTaskCategory.Flagship,
+                price: new ChatPriceUsage(outputPricePerToken: 0.000006m, inputPricePerToken: 0.000002m)
+            ),
+
+            /*
+             * Google
+             */
+
+            new(
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 4 Carbon",
+                model: "gemini-4-carbon",
+                task: ModelTaskCategory.Reasoning,
+                price: new ChatPriceUsage()
             ),
 
             new(
-                category: ModelCategory.xAI,
-                type: ModelType.Vision,
-                display: "Grok 2 Vision",
-                model: "grok-2-vision-latest",
-                task: ModelTaskCategory.Vision,
-                price: new ChatPriceUsage(outputPricePerToken: 0.00001m, inputPricePerToken: 0.000002m, inputPricePerImage: 0.000002m),
-                available: false
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 4 Argon",
+                model: "gemini-4-argon",
+                task: ModelTaskCategory.Flagship,
+                price: new ChatPriceUsage()
             ),
 
             new(
-                category: ModelCategory.xAI,
-                type: ModelType.Image,
-                display: "Grok 2 Image",
-                model: "grok-2-image",
-                task: ModelTaskCategory.Image,
-                price: new ChatPriceUsage(),
-                available: false
-            ),
+                category: ModelCategory.Google,
+                type: ModelType.Chat,
+                display: "Gemini 3.8 Flash",
+                model: "gemini-3.8-flash",
+                task: ModelTaskCategory.CostOptimized,
+                price: new ChatPriceUsage(outputPricePerToken: 0.00000375m, inputPricePerToken: 0.00000075m)
+            )
         };
 
-        // Empty Message
         Console.WriteLine();
 
         foreach (ChatModel model in models)
         {
             AresLogger.Log(
-                $"AI: {model.Category.ToString()}",
-                $"Type \"{model.Type.ToString().ToLower()}\" with model \"{model.Model.ToString().ToLower()}\" registered."
+                $"AI: {model.Category}",
+                $"Type \"{model.Type.ToString().ToLower()}\" with model \"{model.Model.ToLowerInvariant()}\" registered."
             );
         }
 
-        // Empty Message
         Console.WriteLine();
 
         AresLogger.Log("AI", "Registered AI models.");
 
         return models;
     }
-
 }
